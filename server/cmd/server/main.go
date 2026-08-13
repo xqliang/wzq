@@ -42,6 +42,8 @@ func main() {
 		DailyAiWinCap: 20,
 		WebDir:        cfg.Web.Dir,
 	}
+	// 对局结束回调：结算真人对战经验并落库战绩。
+	srv.Hub.SetOnGameOver(srv.SettlePvP)
 	log.Printf("listening %s", cfg.Addr)
 	log.Fatal(http.ListenAndServe(cfg.Addr, srv.Routes()))
 }

@@ -21,6 +21,13 @@ type client struct {
 	send chan ServerMsg
 }
 
+// GameOver 携带一局对战结束时的完整信息，供上层结算经验与落库战绩。
+type GameOver struct {
+	Black, White, Winner int64
+	Reason               string
+	Moves                int
+}
+
 // Room 表示一个内存房间：最多两名玩家，持有对局状态机与回合计时器。
 type Room struct {
 	ID      string
@@ -30,6 +37,7 @@ type Room struct {
 	game    *Game
 	timer   *time.Timer
 	onOver  func(r *Room, res *Result)
+	hub     *Hub // 反向引用，用于在对局结束时回调 Hub 级别的结算钩子。
 }
 
 // addPlayer 将玩家加入房间；已在房则幂等返回，满员返回错误。
@@ -48,9 +56,10 @@ func (r *Room) addPlayer(uid int64) error {
 
 // Hub 管理全部内存房间与 WebSocket 升级器。
 type Hub struct {
-	mu    sync.Mutex
-	rooms map[string]*Room
-	up    websocket.Upgrader
+	mu         sync.Mutex
+	rooms      map[string]*Room
+	up         websocket.Upgrader
+	onGameOver func(GameOver) // 对局结束时的全局结算钩子（可选）。
 }
 
 // NewHub 构造 Hub，允许任意来源的跨域升级（前端与后端可能不同源）。
@@ -58,12 +67,15 @@ func NewHub() *Hub {
 	return &Hub{rooms: map[string]*Room{}, up: websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }}}
 }
 
+// SetOnGameOver 注册对局结束回调（用于结算 PvP 经验与落库战绩）。
+func (h *Hub) SetOnGameOver(f func(GameOver)) { h.onGameOver = f }
+
 // Create 创建一个新房间并返回 8 位房间号。
 func (h *Hub) Create(owner int64) string {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	id := uuid.NewString()[:8]
-	h.rooms[id] = &Room{ID: id, clients: map[int64]*client{}}
+	h.rooms[id] = &Room{ID: id, clients: map[int64]*client{}, hub: h}
 	return id
 }
 
@@ -112,7 +124,7 @@ func (r *Room) startTurnTimer() {
 	})
 }
 
-// finish 结束对局：停表、广播结果、触发 onOver 回调（若有）。
+// finish 结束对局：停表、广播结果、触发 onOver 回调（若有）、再触发 Hub 级结算钩子。
 func (r *Room) finish(res *Result) {
 	if r.timer != nil {
 		r.timer.Stop()
@@ -120,6 +132,15 @@ func (r *Room) finish(res *Result) {
 	r.broadcast(ServerMsg{Type: "game_over", Winner: res.Winner, Reason: res.Reason})
 	if r.onOver != nil {
 		r.onOver(r, res)
+	}
+	if r.hub != nil && r.hub.onGameOver != nil && r.game != nil {
+		r.hub.onGameOver(GameOver{
+			Black:  r.game.black,
+			White:  r.game.white,
+			Winner: res.Winner,
+			Reason: res.Reason,
+			Moves:  r.game.MovesCount(),
+		})
 	}
 }
 

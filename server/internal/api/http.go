@@ -3,11 +3,13 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/wzq/gomoku/internal/auth"
 	"github.com/wzq/gomoku/internal/endgame"
@@ -72,6 +74,8 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/bind", s.handleBind)
 	mux.HandleFunc("/api/login", s.handleLogin)
 	mux.HandleFunc("/api/ai/result", s.handleAiResult)
+	mux.HandleFunc("/api/me/stats", s.handleMyStats)
+	mux.HandleFunc("/api/share", s.handleShare)
 	mux.HandleFunc("/api/room", s.handleRoom)
 	mux.HandleFunc("/api/endgame/levels", s.handleEndgameLevels)
 	mux.HandleFunc("/api/endgame/level", s.handleEndgameLevel)
@@ -186,6 +190,7 @@ func (s *Server) handleAiResult(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Level int  `json:"level"`
 		Win   bool `json:"win"`
+		Moves int  `json:"moves"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad request"})
@@ -203,8 +208,95 @@ func (s *Server) handleAiResult(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
+	// 落库人机战绩：玩家恒为黑方，胜则 winner=black，负则 white。落库失败不影响经验结算。
+	winnerStr := "white"
+	if body.Win {
+		winnerStr = "black"
+	}
+	if _, err := s.Records.Save(record.Game{
+		Mode: "ai", AILevel: body.Level, BlackUID: uid, WhiteUID: 0,
+		Winner: winnerStr, Moves: body.Moves, EndReason: "ai", CreatedAt: time.Now(),
+	}); err != nil {
+		log.Printf("save ai record: %v", err)
+	}
 	u, _ := s.Users.Get(uid)
 	writeJSON(w, http.StatusOK, map[string]any{"expDelta": delta, "user": u})
+}
+
+// SettlePvP 结算一局真人对战：给胜者 +20、负者 +5 经验，并落库战绩。
+// 平局或异常（Winner==0）时跳过。落库失败仅记录日志，不影响经验结算。
+func (s *Server) SettlePvP(g room.GameOver) {
+	if g.Winner == 0 {
+		return
+	}
+	loser := g.Black
+	if g.Winner == g.Black {
+		loser = g.White
+	}
+	if err := s.Users.AddExp(g.Winner, 20); err != nil {
+		log.Printf("settle pvp winner exp: %v", err)
+	}
+	if loser != 0 {
+		if err := s.Users.AddExp(loser, 5); err != nil {
+			log.Printf("settle pvp loser exp: %v", err)
+		}
+	}
+	winnerStr := "white"
+	if g.Winner == g.Black {
+		winnerStr = "black"
+	}
+	if _, err := s.Records.Save(record.Game{
+		Mode: "pvp", BlackUID: g.Black, WhiteUID: g.White,
+		Winner: winnerStr, Moves: g.Moves, EndReason: g.Reason, CreatedAt: time.Now(),
+	}); err != nil {
+		log.Printf("save pvp record: %v", err)
+	}
+}
+
+// handleMyStats 返回当前用户的战绩统计与用户信息（需鉴权）。
+func (s *Server) handleMyStats(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	st, err := s.Records.StatsFor(uid)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	u, err := s.Users.Get(uid)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"stats": st, "user": u})
+}
+
+// handleShare 返回某用户的公开炫耀视图（无需鉴权）：昵称、等级、胜场、连胜、总局数。
+func (s *Server) handleShare(w http.ResponseWriter, r *http.Request) {
+	uid, err := strconv.ParseInt(r.URL.Query().Get("uid"), 10, 64)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad uid"})
+		return
+	}
+	u, err := s.Users.Get(uid)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return
+	}
+	st, err := s.Records.StatsFor(uid)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"nickname": u.Nickname,
+		"level":    u.Level,
+		"wins":     st.Wins,
+		"streak":   st.Streak,
+		"total":    st.Total,
+	})
 }
 
 // handleRoom 创建房间并返回房间号。

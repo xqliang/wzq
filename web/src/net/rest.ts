@@ -133,6 +133,10 @@ export const endgameLevel = (id: string) =>
 export const endgameSubmit = (id: string, x: number, y: number) =>
   req('/api/endgame/submit', 'POST', { id, x, y }) as Promise<{ correct: boolean }>
 
+// 上报一次完整「接着下」闯关结果（玩家是否取胜）；首次通关服务端按难度奖励经验。
+export const endgameComplete = (id: string, win: boolean) =>
+  req('/api/endgame/complete', 'POST', { id, win }) as Promise<{ ok: boolean }>
+
 // 请求提示：返回推荐落子坐标。
 export const endgameHint = (id: string) =>
   req('/api/endgame/hint', 'POST', { id }) as Promise<{ x: number; y: number }>

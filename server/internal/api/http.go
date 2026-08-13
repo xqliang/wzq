@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/wzq/gomoku/internal/auth"
+	"github.com/wzq/gomoku/internal/endgame"
 	"github.com/wzq/gomoku/internal/record"
 	"github.com/wzq/gomoku/internal/room"
 	"github.com/wzq/gomoku/internal/user"
@@ -21,6 +22,7 @@ type Server struct {
 	Auth          *auth.Manager
 	Hub           *room.Hub
 	Records       *record.Service
+	Endgame       *endgame.Service
 	DailyAiWinCap int
 	WebDir        string // 前端构建产物目录；为空则不托管前端（仅提供 API）。
 }
@@ -71,6 +73,11 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/login", s.handleLogin)
 	mux.HandleFunc("/api/ai/result", s.handleAiResult)
 	mux.HandleFunc("/api/room", s.handleRoom)
+	mux.HandleFunc("/api/endgame/levels", s.handleEndgameLevels)
+	mux.HandleFunc("/api/endgame/level", s.handleEndgameLevel)
+	mux.HandleFunc("/api/endgame/submit", s.handleEndgameSubmit)
+	mux.HandleFunc("/api/endgame/hint", s.handleEndgameHint)
+	mux.HandleFunc("/api/endgame/answer", s.handleEndgameAnswer)
 	mux.HandleFunc("/ws", s.handleWS)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
 	// 托管前端：静态文件命中则直出，未命中回退 index.html（支持前端路由 /room/:id 等）。
@@ -219,4 +226,87 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.Hub.ServeWS(w, r, r.URL.Query().Get("room"), uid)
+}
+
+// handleEndgameLevels 返回全部残局关卡及当前用户进度。
+func (s *Server) handleEndgameLevels(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.Endgame.List(uid))
+}
+
+// handleEndgameLevel 返回单关详情（不含答案）；?id= 指定关卡。
+func (s *Server) handleEndgameLevel(w http.ResponseWriter, r *http.Request) {
+	if _, err := s.uidFrom(r); err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	d, ok := s.Endgame.Detail(r.URL.Query().Get("id"))
+	if !ok {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, d)
+}
+
+// handleEndgameSubmit 判定一次落子并返回是否正确。
+func (s *Server) handleEndgameSubmit(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	var body struct {
+		ID string `json:"id"`
+		X  int    `json:"x"`
+		Y  int    `json:"y"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad request"})
+		return
+	}
+	correct, err := s.Endgame.Submit(uid, body.ID, body.X, body.Y)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"correct": correct})
+}
+
+// handleEndgameHint 返回一个可接受落子并累加提示计数。
+func (s *Server) handleEndgameHint(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	var body struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad request"})
+		return
+	}
+	cell, err := s.Endgame.Hint(uid, body.ID)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return
+	}
+	if cell == nil {
+		writeJSON(w, http.StatusOK, map[string]any{"cell": nil})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"cell": cell, "x": cell[0], "y": cell[1]})
+}
+
+// handleEndgameAnswer 返回该关全部可接受落子（看答案）；?id= 指定关卡。
+func (s *Server) handleEndgameAnswer(w http.ResponseWriter, r *http.Request) {
+	if _, err := s.uidFrom(r); err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"answers": s.Endgame.Answer(r.URL.Query().Get("id"))})
 }

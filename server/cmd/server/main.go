@@ -9,6 +9,7 @@ import (
 	"github.com/wzq/gomoku/internal/api"
 	"github.com/wzq/gomoku/internal/auth"
 	"github.com/wzq/gomoku/internal/config"
+	"github.com/wzq/gomoku/internal/endgame"
 	"github.com/wzq/gomoku/internal/record"
 	"github.com/wzq/gomoku/internal/room"
 	"github.com/wzq/gomoku/internal/store"
@@ -31,11 +32,13 @@ func main() {
 	if err := st.Migrate(); err != nil {
 		log.Fatalf("migrate: %v", err)
 	}
+	userSvc := user.New(st)
 	srv := &api.Server{
-		Users:         user.New(st),
+		Users:         userSvc,
 		Auth:          auth.NewManager(cfg.Auth.Secret, cfg.Auth.AuthTTLMinutes),
 		Hub:           room.NewHub(),
 		Records:       record.New(st),
+		Endgame:       endgame.New(st, userSvc),
 		DailyAiWinCap: 20,
 		WebDir:        cfg.Web.Dir,
 	}

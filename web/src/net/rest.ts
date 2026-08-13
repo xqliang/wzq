@@ -58,8 +58,37 @@ export async function login(username: string, password: string): Promise<User> {
   return user
 }
 
-// 上报人机对局结果，服务端返回本局经验增量与最新用户信息。
-export const reportAiResult = (level: number, win: boolean) => req('/api/ai/result', 'POST', { level, win })
+// 上报人机对局结果，服务端返回本局经验增量与最新用户信息。moves 为总手数（可选）。
+export const reportAiResult = (level: number, win: boolean, moves = 0) =>
+  req('/api/ai/result', 'POST', { level, win, moves })
+
+// 战绩统计结构，与服务端 record.Stats JSON 对齐。
+export interface Stats {
+  total: number
+  wins: number
+  losses: number
+  winRate: number
+  streak: number
+  aiGames: number
+  pvpGames: number
+}
+
+// 拉取我的战绩统计与用户信息（需登录）。
+export const myStats = () =>
+  req('/api/me/stats', 'GET') as Promise<{
+    stats: Stats
+    user: { id: number; nickname: string; level: number; exp: number }
+  }>
+
+// 拉取某用户的公开炫耀视图（后端无需鉴权；req 仍带 Bearer 不影响）。
+export const shareStats = (uid: number) =>
+  req(`/api/share?uid=${uid}`, 'GET') as Promise<{
+    nickname: string
+    level: number
+    wins: number
+    streak: number
+    total: number
+  }>
 
 // 创建真人对战房间，返回房间 id。
 export const createRoom = () => req('/api/room', 'POST') as Promise<{ roomId: string }>

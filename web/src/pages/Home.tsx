@@ -28,6 +28,9 @@ export function Home({ user }: { user: User }) {
         <button className="entry" onClick={() => nav('/endgame')}>
           残局闯关
         </button>
+        <button className="entry" onClick={() => nav('/stats')}>
+          我的战绩
+        </button>
       </main>
     </div>
   )

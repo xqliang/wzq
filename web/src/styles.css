@@ -345,3 +345,61 @@ button:disabled {
 .endgame-prompt .lv-stars {
   color: var(--gold);
 }
+
+/* 战绩页：标题 + 统计卡片网格。 */
+.stats-title {
+  margin: 8px 0 4px;
+  color: var(--accent);
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 340px;
+}
+.stat-card {
+  background: var(--panel);
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.stat-label {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+/* 分享页：古风炫耀卡片。 */
+.share-card {
+  width: 100%;
+  max-width: 340px;
+  background: linear-gradient(180deg, rgba(246, 236, 216, 0.96), rgba(233, 216, 180, 0.96));
+  border: 2px solid var(--accent);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.share-brag {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.share-line {
+  margin-top: 12px;
+  font-size: 18px;
+  color: var(--ink);
+}
+.share-sub {
+  margin-top: 6px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}

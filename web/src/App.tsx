@@ -9,6 +9,8 @@ import { Result } from './pages/Result'
 import { Room } from './pages/Room'
 import { Endgame } from './pages/Endgame'
 import { EndgamePlay } from './pages/EndgamePlay'
+import { Stats } from './pages/Stats'
+import { Share } from './pages/Share'
 
 // 应用根组件：挂载时确保拥有游客身份，再渲染路由。
 export default function App() {
@@ -27,6 +29,8 @@ export default function App() {
         <Route path="/room/:id?" element={<Room />} />
         <Route path="/endgame" element={<Endgame />} />
         <Route path="/endgame/play/:id" element={<EndgamePlay />} />
+        <Route path="/stats" element={<Stats />} />
+        <Route path="/share/:uid" element={<Share />} />
       </Routes>
     </BrowserRouter>
   )

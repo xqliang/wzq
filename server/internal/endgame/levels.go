@@ -22,89 +22,106 @@ type Level struct {
 	Kind       string // "win1" | "block1"
 }
 
-// Levels 是全部预置关卡（局面均经棋规验证可解）。
+// Levels 是全部预置关卡（每关 6-12 子的中局局面，答案均由棋规自动推导、经守卫测试验证）。
+// 每关由「关键威胁线」+ 若干远离答案点的点缀子构成，看起来更像真实对局。
 var Levels = []Level{
-	// 第一章「入门·连五」：执黑一步连五。
+	// 第一章「入门·连五」：执黑一步连五（活四两端皆可）。
 	{
 		ID: "1-1", Chapter: 1, Name: "入门·连五", Difficulty: 1, Kind: "win1", ToMove: gomoku.Black,
 		Stones: []Stone{
 			{3, 7, gomoku.Black}, {4, 7, gomoku.Black}, {5, 7, gomoku.Black}, {6, 7, gomoku.Black},
+			{10, 10, gomoku.Black}, {1, 1, gomoku.Black},
+			{4, 8, gomoku.White}, {5, 9, gomoku.White}, {9, 3, gomoku.White}, {11, 11, gomoku.White},
 		},
 	},
 	{
 		ID: "1-2", Chapter: 1, Name: "入门·连五", Difficulty: 1, Kind: "win1", ToMove: gomoku.Black,
 		Stones: []Stone{
 			{7, 3, gomoku.Black}, {7, 4, gomoku.Black}, {7, 5, gomoku.Black}, {7, 6, gomoku.Black},
+			{2, 11, gomoku.Black}, {12, 2, gomoku.Black},
+			{6, 4, gomoku.White}, {8, 5, gomoku.White}, {3, 3, gomoku.White}, {11, 11, gomoku.White},
 		},
 	},
 	{
-		ID: "1-3", Chapter: 1, Name: "入门·连五", Difficulty: 1, Kind: "win1", ToMove: gomoku.Black,
+		ID: "1-3", Chapter: 1, Name: "入门·连五", Difficulty: 2, Kind: "win1", ToMove: gomoku.Black,
 		Stones: []Stone{
 			{3, 3, gomoku.Black}, {4, 4, gomoku.Black}, {5, 5, gomoku.Black}, {6, 6, gomoku.Black},
+			{11, 3, gomoku.Black}, {2, 12, gomoku.Black},
+			{4, 3, gomoku.White}, {6, 5, gomoku.White}, {9, 9, gomoku.White}, {1, 7, gomoku.White},
 		},
 	},
-	// 第二章「进阶·挡杀」：白已成四但一端被堵，只有一个点能挡。
+	{
+		ID: "1-4", Chapter: 1, Name: "入门·连五", Difficulty: 2, Kind: "win1", ToMove: gomoku.Black,
+		Stones: []Stone{
+			{2, 2, gomoku.Black}, {2, 3, gomoku.Black}, {2, 4, gomoku.Black}, {2, 5, gomoku.Black},
+			{10, 10, gomoku.Black}, {12, 4, gomoku.Black},
+			{3, 3, gomoku.White}, {1, 4, gomoku.White}, {3, 5, gomoku.White}, {8, 8, gomoku.White},
+		},
+	},
+	{
+		ID: "1-5", Chapter: 1, Name: "入门·连五", Difficulty: 2, Kind: "win1", ToMove: gomoku.Black,
+		Stones: []Stone{
+			{9, 9, gomoku.Black}, {10, 9, gomoku.Black}, {11, 9, gomoku.Black}, {12, 9, gomoku.Black},
+			{2, 2, gomoku.Black}, {5, 6, gomoku.Black},
+			{9, 8, gomoku.White}, {11, 10, gomoku.White}, {4, 12, gomoku.White}, {13, 10, gomoku.White},
+		},
+	},
+	// 第二章「进阶·挡杀」：白已成四且一端被堵，唯一挡点。
 	{
 		ID: "2-1", Chapter: 2, Name: "进阶·挡杀", Difficulty: 3, Kind: "block1", ToMove: gomoku.Black,
 		Stones: []Stone{
 			{4, 7, gomoku.White}, {5, 7, gomoku.White}, {6, 7, gomoku.White}, {7, 7, gomoku.White},
-			{3, 7, gomoku.Black},
+			{2, 11, gomoku.White}, {12, 1, gomoku.White}, {0, 0, gomoku.White},
+			{3, 7, gomoku.Black}, {5, 5, gomoku.Black}, {6, 9, gomoku.Black}, {10, 3, gomoku.Black},
 		},
 	},
 	{
 		ID: "2-2", Chapter: 2, Name: "进阶·挡杀", Difficulty: 3, Kind: "block1", ToMove: gomoku.Black,
 		Stones: []Stone{
 			{7, 4, gomoku.White}, {7, 5, gomoku.White}, {7, 6, gomoku.White}, {7, 7, gomoku.White},
-			{7, 3, gomoku.Black},
+			{11, 11, gomoku.White}, {1, 9, gomoku.White}, {13, 2, gomoku.White},
+			{7, 3, gomoku.Black}, {6, 5, gomoku.Black}, {8, 6, gomoku.Black}, {2, 2, gomoku.Black},
 		},
 	},
-	// 第三章「高手·连五」：跳四，中间空一格。
+	{
+		ID: "2-3", Chapter: 2, Name: "进阶·挡杀", Difficulty: 4, Kind: "block1", ToMove: gomoku.Black,
+		Stones: []Stone{
+			{5, 5, gomoku.White}, {6, 6, gomoku.White}, {7, 7, gomoku.White}, {8, 8, gomoku.White},
+			{12, 2, gomoku.White}, {1, 1, gomoku.White}, {3, 12, gomoku.White},
+			{4, 4, gomoku.Black}, {6, 5, gomoku.Black}, {7, 6, gomoku.Black}, {2, 10, gomoku.Black},
+		},
+	},
+	{
+		ID: "2-4", Chapter: 2, Name: "进阶·挡杀", Difficulty: 4, Kind: "block1", ToMove: gomoku.Black,
+		Stones: []Stone{
+			{2, 10, gomoku.White}, {3, 10, gomoku.White}, {4, 10, gomoku.White}, {5, 10, gomoku.White},
+			{12, 12, gomoku.White}, {8, 1, gomoku.White}, {0, 5, gomoku.White},
+			{6, 10, gomoku.Black}, {3, 9, gomoku.Black}, {4, 11, gomoku.Black}, {9, 3, gomoku.Black},
+		},
+	},
+	// 第三章「高手·连五」：跳四/断点，唯一补点成五。
 	{
 		ID: "3-1", Chapter: 3, Name: "高手·连五", Difficulty: 5, Kind: "win1", ToMove: gomoku.Black,
 		Stones: []Stone{
 			{5, 7, gomoku.Black}, {6, 7, gomoku.Black}, {8, 7, gomoku.Black}, {9, 7, gomoku.Black},
+			{11, 11, gomoku.Black}, {1, 5, gomoku.Black},
+			{6, 8, gomoku.White}, {8, 6, gomoku.White}, {2, 2, gomoku.White}, {12, 3, gomoku.White},
 		},
 	},
-	// —— 追加关卡 ——
-	// 第一章续：更多一步连五（不同方向/位置）。
-	{
-		ID: "1-4", Chapter: 1, Name: "入门·连五", Difficulty: 1, Kind: "win1", ToMove: gomoku.Black,
-		Stones: []Stone{
-			{2, 2, gomoku.Black}, {2, 3, gomoku.Black}, {2, 4, gomoku.Black}, {2, 5, gomoku.Black},
-		},
-	},
-	{
-		ID: "1-5", Chapter: 1, Name: "入门·连五", Difficulty: 1, Kind: "win1", ToMove: gomoku.Black,
-		Stones: []Stone{
-			{9, 9, gomoku.Black}, {10, 9, gomoku.Black}, {11, 9, gomoku.Black}, {12, 9, gomoku.Black},
-		},
-	},
-	// 第二章续：白成四一端已堵，唯一挡点。
-	{
-		ID: "2-3", Chapter: 2, Name: "进阶·挡杀", Difficulty: 3, Kind: "block1", ToMove: gomoku.Black,
-		Stones: []Stone{
-			{5, 5, gomoku.White}, {6, 6, gomoku.White}, {7, 7, gomoku.White}, {8, 8, gomoku.White},
-			{4, 4, gomoku.Black},
-		},
-	},
-	{
-		ID: "2-4", Chapter: 2, Name: "进阶·挡杀", Difficulty: 3, Kind: "block1", ToMove: gomoku.Black,
-		Stones: []Stone{
-			{2, 10, gomoku.White}, {3, 10, gomoku.White}, {4, 10, gomoku.White}, {5, 10, gomoku.White},
-			{6, 10, gomoku.Black},
-		},
-	},
-	// 第三章续：跳四/断点，唯一补点成五。
 	{
 		ID: "3-2", Chapter: 3, Name: "高手·连五", Difficulty: 5, Kind: "win1", ToMove: gomoku.Black,
 		Stones: []Stone{
 			{5, 3, gomoku.Black}, {6, 3, gomoku.Black}, {7, 3, gomoku.Black}, {9, 3, gomoku.Black},
+			{2, 10, gomoku.Black}, {12, 12, gomoku.Black},
+			{5, 2, gomoku.White}, {7, 4, gomoku.White}, {11, 9, gomoku.White}, {1, 1, gomoku.White},
 		},
 	},
 	{
 		ID: "3-3", Chapter: 3, Name: "高手·连五", Difficulty: 6, Kind: "win1", ToMove: gomoku.Black,
 		Stones: []Stone{
 			{3, 5, gomoku.Black}, {4, 6, gomoku.Black}, {6, 8, gomoku.Black}, {7, 9, gomoku.Black},
+			{1, 1, gomoku.Black}, {12, 12, gomoku.Black},
+			{4, 5, gomoku.White}, {6, 7, gomoku.White}, {10, 2, gomoku.White}, {2, 12, gomoku.White},
 		},
 	},
 }

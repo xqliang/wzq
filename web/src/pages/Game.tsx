@@ -182,8 +182,6 @@ export function Game() {
       <div className="hud">
         {g.turn === g.myColor ? <span className="tip">轮到你落子</span> : <span>对方思考中…</span>}
         {st.mode === 'pvp' && <span className={remain <= 10 ? 'warn' : ''}>{remain}s</span>}
-        {g.pending && <button onClick={onConfirm}>✓ 确认</button>}
-        {g.pending && <button onClick={() => g.cancel()}>取消</button>}
         {st.mode === 'ai' && !previewSteps && (
           <>
             <button onClick={onHint}>💡 提示</button>

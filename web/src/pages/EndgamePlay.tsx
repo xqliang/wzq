@@ -30,8 +30,6 @@ export function EndgamePlay() {
   const [overlays, setOverlays] = useState<Overlay[] | undefined>(undefined)
   // 下一关 id（从关卡列表顺序推导）。
   const [nextId, setNextId] = useState<string | null>(null)
-  // 订阅预落子状态，用于控制“确认/取消”按钮的显隐（保证响应式重渲染）。
-  const pending = useGame((s) => s.pending)
 
   // 加载关卡：构建预置棋盘并注入 store；同时拉取列表以推导下一关。
   useEffect(() => {
@@ -127,8 +125,6 @@ export function EndgamePlay() {
       <div className="hud">
         {verdict === null && (
           <>
-            {pending && <button onClick={onConfirm}>✓ 确认</button>}
-            {pending && <button onClick={() => useGame.getState().cancel()}>取消</button>}
             <button onClick={onHint}>💡 查看提示</button>
             <button onClick={onAnswer}>查看答案</button>
           </>

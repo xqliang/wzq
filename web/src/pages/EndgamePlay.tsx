@@ -32,20 +32,25 @@ export function EndgamePlay() {
   const [nextId, setNextId] = useState<string | null>(null)
   // AI Web Worker：在后台线程计算防守方落子，避免卡顿主线程。
   const workerRef = useRef<Worker | null>(null)
+  // 记录请求 AI 的起始时刻，用于把"思考"总时长控制在 1~2s。
+  const aiStartRef = useRef(0)
 
   // 订阅轮次与胜负，驱动 AI 落子与结算。
   const turn = useGame((s) => s.turn)
   const winner = useGame((s) => s.winner)
 
-  // 创建 AI Worker（仅一次）：收到落子后以防守方颜色落子并播放音效。
+  // 创建 AI Worker（仅一次）：收到落子后延时到 1~2s 再以防守方颜色落子并播放音效。
   useEffect(() => {
     const w = new Worker(new URL('../ai/worker.ts', import.meta.url), { type: 'module' })
     w.onmessage = (e: MessageEvent<{ x: number; y: number }>) => {
-      const st = useGame.getState()
-      if (st.winner) return // 已分胜负，丢弃迟到结果
-      const defender: Color = st.myColor === 'black' ? 'white' : 'black'
-      st.place(e.data.x, e.data.y, defender)
-      playSfx('place')
+      const wait = Math.max(0, 1000 + Math.random() * 1000 - (performance.now() - aiStartRef.current))
+      window.setTimeout(() => {
+        const st = useGame.getState()
+        if (st.winner) return // 已分胜负，丢弃迟到结果
+        const defender: Color = st.myColor === 'black' ? 'white' : 'black'
+        st.place(e.data.x, e.data.y, defender)
+        playSfx('place')
+      }, wait)
     }
     workerRef.current = w
     return () => w.terminate()
@@ -78,6 +83,7 @@ export function EndgamePlay() {
     const defender: Color = detail.toMove === 'black' ? 'white' : 'black'
     if (turn !== defender) return
     const board = useGame.getState().board
+    aiStartRef.current = performance.now()
     workerRef.current?.postMessage({ board, color: defender, level: 3 })
   }, [turn, winner, done, detail])
 

@@ -33,6 +33,8 @@ export function Game() {
   const [waitLeft, setWaitLeft] = useState(300)
   // 防止重复结算（例如落子与动画/事件竞态）。
   const settledRef = useRef(false)
+  // 记录本次请求 AI 的起始时刻，用于把"思考"总时长控制在 1~2s（含真实运算耗时）。
+  const aiStartRef = useRef(0)
 
   // 人机结算：播放音效、上报结果并跳转结果页。只结算一次。
   const settleAi = (win: boolean) => {
@@ -121,10 +123,15 @@ export function Game() {
       g.reset('black')
       workerRef.current = new Worker(new URL('../ai/worker.ts', import.meta.url), { type: 'module' })
       workerRef.current.onmessage = (e: MessageEvent<{ x: number; y: number; color: Color }>) => {
-        useGame.getState().place(e.data.x, e.data.y, 'white')
-        playSfx('place')
-        const w = useGame.getState().winner
-        if (w) settleAi(w === useGame.getState().myColor) // AI 落子后若分出胜负立即结算
+        // 让 AI「思考」总时长落在 1~2s 随机区间（扣除真实运算耗时），避免落子过快。
+        const wait = Math.max(0, 1000 + Math.random() * 1000 - (performance.now() - aiStartRef.current))
+        window.setTimeout(() => {
+          if (settledRef.current || useGame.getState().winner) return
+          useGame.getState().place(e.data.x, e.data.y, 'white')
+          playSfx('place')
+          const w = useGame.getState().winner
+          if (w) settleAi(w === useGame.getState().myColor) // AI 落子后若分出胜负立即结算
+        }, wait)
       }
     } else if (st.roomId) {
       g.reset('black') // 占位，start 消息到达后会按指派颜色再次重置
@@ -140,6 +147,7 @@ export function Game() {
   // 人机模式：轮到 AI（白）且未分胜负时请求 Worker 计算。
   useEffect(() => {
     if (st.mode === 'ai' && g.turn === 'white' && !g.winner) {
+      aiStartRef.current = performance.now()
       workerRef.current?.postMessage({ board: g.board, color: 'white', level: st.level })
     }
   }, [g.turn, g.winner, g.board, st.mode, st.level])

@@ -7,6 +7,15 @@ const CELL = 40 // 相邻交叉点像素间距
 const PAD = 30 // 棋盘外边距
 const PX = CELL * (SIZE - 1) + PAD * 2 // 画布逻辑边长
 
+// 预加载古风玉石棋子贴图（模块级，只加载一次）。若贴图未就绪则回退到圆形绘制，
+// 保证素材缺失/加载中时棋盘仍可正常渲染。
+const pieceImgs: Record<'black' | 'white', HTMLImageElement> = {
+  black: new Image(),
+  white: new Image(),
+}
+pieceImgs.black.src = '/assets/img/piece_black.png'
+pieceImgs.white.src = '/assets/img/piece_white.png'
+
 // Canvas 棋盘：绘制木色底 + 网格 + 棋子；预落子半透明；最近一手呼吸灯动画。
 // 点击就近取交叉点：若点在已预落子处则确认，否则设为新的预落子。
 export function BoardCanvas({ onConfirm }: { onConfirm: () => void }) {
@@ -79,6 +88,7 @@ export function BoardCanvas({ onConfirm }: { onConfirm: () => void }) {
 }
 
 // 绘制单颗棋子；alpha 用于预落子半透明。
+// 若对应贴图已加载完成则用贴图（居中、约 CELL*0.9 见方），否则回退到圆形绘制。
 function drawStone(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -88,11 +98,21 @@ function drawStone(
 ) {
   ctx.save()
   ctx.globalAlpha = alpha
-  ctx.beginPath()
-  ctx.arc(PAD + x * CELL, PAD + y * CELL, CELL * 0.42, 0, Math.PI * 2)
-  ctx.fillStyle = color === 'black' ? '#1a1a1a' : '#f5f5f0'
-  ctx.fill()
-  ctx.strokeStyle = 'rgba(0,0,0,0.3)'
-  ctx.stroke()
+  const cx = PAD + x * CELL
+  const cy = PAD + y * CELL
+  const img = pieceImgs[color]
+  if (img.complete && img.naturalWidth > 0) {
+    // 贴图就绪：居中绘制约 CELL*0.9 见方，保留传入的 alpha（预落子预览半透明）。
+    const size = CELL * 0.9
+    ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size)
+  } else {
+    // 回退：原圆形绘制。
+    ctx.beginPath()
+    ctx.arc(cx, cy, CELL * 0.42, 0, Math.PI * 2)
+    ctx.fillStyle = color === 'black' ? '#1a1a1a' : '#f5f5f0'
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)'
+    ctx.stroke()
+  }
   ctx.restore()
 }

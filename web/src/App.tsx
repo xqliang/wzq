@@ -12,6 +12,7 @@ import { EndgamePlay } from './pages/EndgamePlay'
 import { Stats } from './pages/Stats'
 import { Share } from './pages/Share'
 import { Admin } from './pages/Admin'
+import { Settings } from './pages/Settings'
 
 // 应用根组件：挂载时确保拥有游客身份，再渲染路由。
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/stats" element={<Stats />} />
         <Route path="/share/:uid" element={<Share />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </BrowserRouter>
   )

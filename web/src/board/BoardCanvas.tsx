@@ -23,6 +23,10 @@ const pieceImgs: Record<'black' | 'white', HTMLImageElement> = {
 pieceImgs.black.src = '/assets/img/piece_black.png'
 pieceImgs.white.src = '/assets/img/piece_white.png'
 
+// 两色贴图的透明留白不同，用不同放大系数抵消，使黑白子视觉大小一致。
+// 数值偏大不怕相邻重叠：贴图边缘是透明的，可见石身仍在格内。
+const STONE_FACTOR: Record<'black' | 'white', number> = { black: 2.0, white: 1.5 }
+
 // Canvas 棋盘：木色底 + 网格 + 棋子；预落子半透明；最近一手呼吸灯；覆盖标记。
 // 自适应：绘制永远用固定逻辑坐标 PX（配合 dpr 保持清晰），显示尺寸按容器宽度缩放，
 // 因此在手机上棋盘会整体缩小铺满而不被裁切。点击坐标按显示/逻辑比例换算。
@@ -163,8 +167,10 @@ export function BoardCanvas({
     const x = Math.round((lx - PAD) / CELL)
     const y = Math.round((ly - PAD) / CELL)
     if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) return
-    // 只做“预选”，落子仅由 ✓ 按钮触发（点原位不再直接落子）。
-    preview(x, y)
+    // 点击已选中的预落子点 = 确认落子；否则移动预落子点。
+    // （✓ 按钮亦可确认，二者皆可，避免手机上难以点中小图标。）
+    if (pending && pending.x === x && pending.y === y) onConfirm()
+    else preview(x, y)
   }
 
   // 预落子旁的 ✓ 确认按钮位置（显示坐标）。靠右/顶边自动翻到另一侧，避免出界。
@@ -218,7 +224,7 @@ function drawStone(
   const cy = PAD + y * CELL
   const img = pieceImgs[color]
   if (img.complete && img.naturalWidth > 0) {
-    const size = CELL * 1.06 * scale
+    const size = CELL * STONE_FACTOR[color] * scale
     ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size)
   } else {
     ctx.beginPath()

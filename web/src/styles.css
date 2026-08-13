@@ -189,8 +189,8 @@ button:disabled {
 .board-btn {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   min-height: 0;
   padding: 0;
   border-radius: 50%;
@@ -517,4 +517,52 @@ button:disabled {
   to {
     transform: scale(1.25);
   }
+}
+
+/* 设置页。 */
+.settings-panel {
+  width: 100%;
+  max-width: 420px;
+  background: var(--panel);
+  border: 1.5px solid var(--ink);
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.settings-panel h2 {
+  margin: 0 0 4px;
+  color: var(--accent);
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 17px;
+}
+.setting-row input[type='range'] {
+  flex: 1;
+  max-width: 200px;
+}
+
+/* 好友对战等待页的邀请链接。 */
+.room-invite {
+  background: var(--panel);
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  max-width: min(94vw, 520px);
+}
+.room-invite .invite-link {
+  font-size: 13px;
+  color: var(--ink-soft);
+  word-break: break-all;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 6px 8px;
+  border-radius: 8px;
 }

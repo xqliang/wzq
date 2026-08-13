@@ -29,6 +29,8 @@ export function Game() {
   const [hint, setHint] = useState<{ x: number; y: number } | null>(null)
   // 三步预演的标记；非空即处于预演态（禁用落子，仅展示）。
   const [previewSteps, setPreviewSteps] = useState<Overlay[] | null>(null)
+  // 好友对战等待剩余秒数（最多 5 分钟）。
+  const [waitLeft, setWaitLeft] = useState(300)
 
   // 预演双方各再走 3 步（共 6 手）的分步配色（绿/蓝/紫，深浅区分先后）。
   const PREVIEW_COLORS = ['#2ecc71', '#3498db', '#9b59b6', '#27ae60', '#2980b9', '#8e44ad']
@@ -183,10 +185,58 @@ export function Game() {
     if (st.mode === 'pvp' && wsRef.current) sendMove(wsRef.current, p.x, p.y)
   }
 
+  // 认输/退出：真人模式上报服务端认输；人机模式判我方负并结算。
+  const onResign = () => {
+    if (!window.confirm('确定认输并结束本局？')) return
+    if (st.mode === 'pvp' && wsRef.current) {
+      sendResign(wsRef.current)
+      return
+    }
+    playSfx('lose')
+    reportAiResult(st.level ?? 1, false).then((r) =>
+      nav('/result', {
+        state: { win: false, expDelta: r.expDelta, reason: 'resign', mode: 'ai', level: st.level },
+      }),
+    )
+  }
+
+  // 好友对战等待超时（5 分钟）：关闭连接、弹窗提示后返回首页。
+  useEffect(() => {
+    if (started || st.mode !== 'pvp') return
+    const dl = Date.now() + 300000
+    const t = setInterval(() => {
+      const left = Math.max(0, Math.round((dl - Date.now()) / 1000))
+      setWaitLeft(left)
+      if (left <= 0) {
+        clearInterval(t)
+        wsRef.current?.close()
+        window.alert('等待好友超时，返回首页')
+        nav('/')
+      }
+    }, 1000)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [started, st.mode])
+
   if (!started) {
+    const inviteUrl = st.roomId ? `${window.location.origin}/room/${st.roomId}` : ''
+    const mm = Math.floor(waitLeft / 60)
+    const ss = String(waitLeft % 60).padStart(2, '0')
     return (
       <div className="game screen">
-        <p>等待对手加入…</p>
+        <h2 className="tip">等待对手加入…</h2>
+        <p className="countdown warn">
+          剩余等待 {mm}:{ss}
+        </p>
+        {st.roomId && (
+          <div className="room-invite">
+            <p>房间号：{st.roomId}</p>
+            <p className="invite-link">{inviteUrl}</p>
+            <button onClick={() => navigator.clipboard?.writeText(inviteUrl).catch(() => {})}>
+              复制邀请链接
+            </button>
+          </div>
+        )}
         <button onClick={() => nav('/')}>退出</button>
       </div>
     )
@@ -216,12 +266,10 @@ export function Game() {
           </>
         )}
         {previewSteps && <button onClick={endPreview}>结束预演</button>}
-        {st.mode === 'pvp' && wsRef.current && (
-          <>
-            <button onClick={() => sendUndoReq(wsRef.current!)}>悔棋</button>
-            <button onClick={() => sendResign(wsRef.current!)}>认输</button>
-          </>
+        {st.mode === 'pvp' && wsRef.current && !previewSteps && (
+          <button onClick={() => sendUndoReq(wsRef.current!)}>悔棋</button>
         )}
+        {!previewSteps && <button onClick={onResign}>认输</button>}
       </div>
     </div>
   )

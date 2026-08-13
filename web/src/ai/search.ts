@@ -24,6 +24,20 @@ function candidates(board: Board): { x: number; y: number }[] {
   return [...set].map((v) => ({ x: v % SIZE, y: Math.floor(v / SIZE) }))
 }
 
+// 按启发式（落子后的局面评估）对候选点排序并截断，既提升 α-β 剪枝效率，也聚焦要点。
+function orderedCandidates(board: Board, color: Color, cap: number): { x: number; y: number }[] {
+  const cs = candidates(board)
+  if (cs.length <= 1) return cs
+  const scored = cs.map((c) => ({
+    c,
+    s: evaluate(applyMove(board, { x: c.x, y: c.y, color }), color),
+  }))
+  scored.sort((a, b) => b.s - a.s)
+  return scored.slice(0, cap).map((o) => o.c)
+}
+
+const CAP = 12 // 每个节点最多考虑的候选点数
+
 // 负极大值搜索 + α-β 剪枝。lastX/lastY 为对手刚落子的位置，用于快速判定是否已经形成五连。
 function negamax(board: Board, color: Color, depth: number, alpha: number, beta: number, lastX: number, lastY: number): number {
   // 对手上一手已经连五 => 当前视角是必败局面，深度越浅（越早败）惩罚越重
@@ -31,7 +45,7 @@ function negamax(board: Board, color: Color, depth: number, alpha: number, beta:
   if (depth === 0) return evaluate(board, color)
   const opp: Color = color === 'black' ? 'white' : 'black'
   let best = -Infinity
-  for (const c of candidates(board)) {
+  for (const c of orderedCandidates(board, color, CAP)) {
     const nb = applyMove(board, { x: c.x, y: c.y, color })
     // 递归取对手视角得分的相反数（negamax 框架）
     const score = -negamax(nb, opp, depth - 1, -beta, -alpha, c.x, c.y)
@@ -44,8 +58,8 @@ function negamax(board: Board, color: Color, depth: number, alpha: number, beta:
 
 // 顶层决策：根据难度决定搜索深度与随机扰动，返回最佳落子。
 export function bestMove(board: Board, color: Color, level: number): Move {
-  const depth = level >= 3 ? 4 : level === 2 ? 2 : 1
-  const noise = level === 1 ? 0.15 : 0 // 简单档加入随机性，让 AI 偶尔“走歪”
+  const depth = level >= 3 ? 6 : level === 2 ? 4 : 2
+  const noise = level === 1 ? 0.2 : 0 // 简单档加入随机性，让 AI 偶尔“走歪”
   const opp: Color = color === 'black' ? 'white' : 'black'
   const cands = candidates(board)
 
@@ -62,10 +76,10 @@ export function bestMove(board: Board, color: Color, level: number): Move {
     if (checkWin(nb, c.x, c.y)) return { x: c.x, y: c.y, color }
   }
 
-  // 3. 常规搜索：对每个候选点做负极大值 + α-β 搜索取最优。
+  // 3. 常规搜索：对（排序后的）候选点做负极大值 + α-β 搜索取最优。
   let best = -Infinity
   let choice = cands[0] ?? { x: 7, y: 7 }
-  for (const c of cands) {
+  for (const c of orderedCandidates(board, color, CAP)) {
     const nb = applyMove(board, { x: c.x, y: c.y, color })
     let score = -negamax(nb, opp, depth - 1, -Infinity, Infinity, c.x, c.y)
     if (noise) score += (Math.random() - 0.5) * Math.abs(score || 1) * noise

@@ -47,6 +47,13 @@ export async function ensureGuest(): Promise<User> {
   return user
 }
 
+// 拉取当前用户最新信息（刷新经验/等级），并更新缓存。
+export async function me(): Promise<User> {
+  const u = (await req('/api/me', 'GET')) as User
+  currentUser = u
+  return u
+}
+
 // 绑定账号（游客升级为正式账号）。
 export const bind = (username: string, password: string) => req('/api/bind', 'POST', { username, password })
 

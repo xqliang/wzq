@@ -31,6 +31,18 @@ export function Game() {
   const [previewSteps, setPreviewSteps] = useState<Overlay[] | null>(null)
   // 好友对战等待剩余秒数（最多 5 分钟）。
   const [waitLeft, setWaitLeft] = useState(300)
+  // 防止重复结算（例如落子与动画/事件竞态）。
+  const settledRef = useRef(false)
+
+  // 人机结算：播放音效、上报结果并跳转结果页。只结算一次。
+  const settleAi = (win: boolean) => {
+    if (settledRef.current) return
+    settledRef.current = true
+    playSfx(win ? 'win' : 'lose')
+    reportAiResult(st.level ?? 1, win).then((r) =>
+      nav('/result', { state: { win, expDelta: r.expDelta, mode: 'ai', level: st.level } }),
+    )
+  }
 
   // 预演双方各再走 3 步（共 6 手）的分步配色（绿/蓝/紫，深浅区分先后）。
   const PREVIEW_COLORS = ['#2ecc71', '#3498db', '#9b59b6', '#27ae60', '#2980b9', '#8e44ad']
@@ -111,6 +123,8 @@ export function Game() {
       workerRef.current.onmessage = (e: MessageEvent<{ x: number; y: number; color: Color }>) => {
         useGame.getState().place(e.data.x, e.data.y, 'white')
         playSfx('place')
+        const w = useGame.getState().winner
+        if (w) settleAi(w === useGame.getState().myColor) // AI 落子后若分出胜负立即结算
       }
     } else if (st.roomId) {
       g.reset('black') // 占位，start 消息到达后会按指派颜色再次重置
@@ -130,18 +144,7 @@ export function Game() {
     }
   }, [g.turn, g.winner, g.board, st.mode, st.level])
 
-  // 胜负结算：播放音效；人机模式上报结果并跳转（真人由 game_over 跳转）。
-  useEffect(() => {
-    if (!g.winner) return
-    const win = g.winner === g.myColor
-    playSfx(win ? 'win' : 'lose')
-    if (st.mode === 'ai') {
-      reportAiResult(st.level ?? 1, win).then((r) =>
-        nav('/result', { state: { win, expDelta: r.expDelta, mode: 'ai', level: st.level } }),
-      )
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [g.winner])
+  // 胜负音效由 settleAi/服务端 game_over 负责，这里不再用响应式 effect（避免残留 winner 触发跳转）。
 
   // 人机模式：轮到我方时开启 60s 倒计时；AI 思考时不计时。
   useEffect(() => {
@@ -163,11 +166,7 @@ export function Game() {
         setDeadline(null)
         if (st.mode === 'ai' && !useGame.getState().winner) {
           playSfx('timeout')
-          reportAiResult(st.level ?? 1, false).then((r) =>
-            nav('/result', {
-              state: { win: false, expDelta: r.expDelta, reason: 'timeout', mode: 'ai', level: st.level },
-            }),
-          )
+          settleAi(false) // 人机超时判负
         }
       }
     }, 250)
@@ -182,7 +181,13 @@ export function Game() {
     g.confirm()
     setHint(null)
     playSfx('place')
-    if (st.mode === 'pvp' && wsRef.current) sendMove(wsRef.current, p.x, p.y)
+    if (st.mode === 'pvp' && wsRef.current) {
+      sendMove(wsRef.current, p.x, p.y)
+      return // 真人对局由服务端 game_over 结算
+    }
+    // 人机：我方落子后若已连五立即结算取胜。
+    const w = useGame.getState().winner
+    if (w) settleAi(w === useGame.getState().myColor)
   }
 
   // 认输/退出：真人模式上报服务端认输；人机模式判我方负并结算。

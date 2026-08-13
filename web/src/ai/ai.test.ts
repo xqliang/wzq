@@ -37,3 +37,22 @@ describe('bestMove', () => {
     expect(Math.abs(mv.y - 7)).toBeLessThanOrEqual(2)
   })
 })
+
+describe('bestMove 防守', () => {
+  it('Lv1(浅搜索)也应封堵对方活三', () => {
+    let b = emptyBoard()
+    // 黑活三 (5,7)(6,7)(7,7)，两端 (4,7)(8,7) 空
+    for (let x = 5; x <= 7; x++) b = applyMove(b, { x, y: 7, color: 'black' })
+    const mv = bestMove(b, 'white', 1)
+    const blocks = (mv.x === 4 && mv.y === 7) || (mv.x === 8 && mv.y === 7)
+    expect(blocks).toBe(true)
+  })
+  it('Lv3 计时在合理范围内(<2.5s/步)', () => {
+    let b = emptyBoard()
+    for (const [x, y] of [[7, 7], [8, 8], [7, 8], [8, 7], [6, 6]] as const)
+      b = applyMove(b, { x, y, color: (x + y) % 2 ? 'black' : 'white' })
+    const t0 = performance.now()
+    bestMove(b, 'white', 3)
+    expect(performance.now() - t0).toBeLessThan(2500)
+  })
+})

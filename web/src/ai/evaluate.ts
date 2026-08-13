@@ -3,8 +3,8 @@ import { SIZE } from '../core/types'
 
 // 四个基本方向：水平、垂直、正斜、反斜
 const DIRS: [number, number][] = [[1, 0], [0, 1], [1, 1], [1, -1]]
-// 不同连子长度对应的基础分值，长度越大分值越高
-const SCORE: Record<number, number> = { 1: 10, 2: 100, 3: 1000, 4: 10000, 5: 1000000 }
+// 不同连子长度对应的基础分值。四(接近取胜)与五给到压倒性权重，确保防守/进攻要点优先。
+const SCORE: Record<number, number> = { 1: 10, 2: 100, 3: 1000, 4: 100000, 5: 10000000 }
 
 // 计算以 (x,y) 为起点、沿 (dx,dy) 方向的一条连线的得分。
 // 为避免同一条线被重复统计，只有当该方向的“前一格”不是同色时，才把当前点视为线段起点。
@@ -24,8 +24,8 @@ function lineScore(board: Board, x: number, y: number, dx: number, dy: number, c
   if (bx >= 0 && by >= 0 && bx < SIZE && by < SIZE && board[by][bx] === null) open++
   if (cx >= 0 && cy >= 0 && cx < SIZE && cy < SIZE && board[cy][cx] === null) open++
   const base = SCORE[Math.min(count, 5)] ?? 0
-  // 两端均被堵死（死棋）且未成五：分值大幅衰减；两端皆空（活）：略加权
-  return open === 0 && count < 5 ? base * 0.1 : base * (open === 2 ? 1.2 : 1)
+  // 两端皆堵死（死棋）且未成五：几乎无价值；两端皆空（活）：大幅加权（活三/活四威胁极大）。
+  return open === 0 && count < 5 ? base * 0.05 : base * (open === 2 ? 5 : 1)
 }
 
 // 站在 color 的视角评估整个棋盘：己方得分 - 对方得分（对方略微加权以偏向防守）

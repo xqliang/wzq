@@ -65,6 +65,48 @@ var Levels = []Level{
 			{5, 7, gomoku.Black}, {6, 7, gomoku.Black}, {8, 7, gomoku.Black}, {9, 7, gomoku.Black},
 		},
 	},
+	// —— 追加关卡 ——
+	// 第一章续：更多一步连五（不同方向/位置）。
+	{
+		ID: "1-4", Chapter: 1, Name: "入门·连五", Difficulty: 1, Kind: "win1", ToMove: gomoku.Black,
+		Stones: []Stone{
+			{2, 2, gomoku.Black}, {2, 3, gomoku.Black}, {2, 4, gomoku.Black}, {2, 5, gomoku.Black},
+		},
+	},
+	{
+		ID: "1-5", Chapter: 1, Name: "入门·连五", Difficulty: 1, Kind: "win1", ToMove: gomoku.Black,
+		Stones: []Stone{
+			{9, 9, gomoku.Black}, {10, 9, gomoku.Black}, {11, 9, gomoku.Black}, {12, 9, gomoku.Black},
+		},
+	},
+	// 第二章续：白成四一端已堵，唯一挡点。
+	{
+		ID: "2-3", Chapter: 2, Name: "进阶·挡杀", Difficulty: 3, Kind: "block1", ToMove: gomoku.Black,
+		Stones: []Stone{
+			{5, 5, gomoku.White}, {6, 6, gomoku.White}, {7, 7, gomoku.White}, {8, 8, gomoku.White},
+			{4, 4, gomoku.Black},
+		},
+	},
+	{
+		ID: "2-4", Chapter: 2, Name: "进阶·挡杀", Difficulty: 3, Kind: "block1", ToMove: gomoku.Black,
+		Stones: []Stone{
+			{2, 10, gomoku.White}, {3, 10, gomoku.White}, {4, 10, gomoku.White}, {5, 10, gomoku.White},
+			{6, 10, gomoku.Black},
+		},
+	},
+	// 第三章续：跳四/断点，唯一补点成五。
+	{
+		ID: "3-2", Chapter: 3, Name: "高手·连五", Difficulty: 5, Kind: "win1", ToMove: gomoku.Black,
+		Stones: []Stone{
+			{5, 3, gomoku.Black}, {6, 3, gomoku.Black}, {7, 3, gomoku.Black}, {9, 3, gomoku.Black},
+		},
+	},
+	{
+		ID: "3-3", Chapter: 3, Name: "高手·连五", Difficulty: 6, Kind: "win1", ToMove: gomoku.Black,
+		Stones: []Stone{
+			{3, 5, gomoku.Black}, {4, 6, gomoku.Black}, {6, 8, gomoku.Black}, {7, 9, gomoku.Black},
+		},
+	},
 }
 
 // other 返回对手方颜色。

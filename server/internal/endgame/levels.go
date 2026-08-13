@@ -5,8 +5,9 @@ import "github.com/wzq/gomoku/internal/gomoku"
 
 // Stone 表示关卡初始局面中的一枚棋子。
 type Stone struct {
-	X, Y  int
-	Color gomoku.Color
+	X     int          `json:"x"`
+	Y     int          `json:"y"`
+	Color gomoku.Color `json:"color"`
 }
 
 // Level 描述一个残局关卡。

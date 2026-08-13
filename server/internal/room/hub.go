@@ -1,0 +1,221 @@
+// Package room 的 hub.go：内存房间管理 + WebSocket 传输 + 每步计时。
+package room
+
+import (
+	"errors"
+	"net/http"
+	"sync"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
+)
+
+// turnSeconds 是每一步的思考时限（秒），超时判负。
+const turnSeconds = 60
+
+// client 表示一个已连接玩家：uid + 连接 + 发送队列。
+type client struct {
+	uid  int64
+	conn *websocket.Conn
+	send chan ServerMsg
+}
+
+// Room 表示一个内存房间：最多两名玩家，持有对局状态机与回合计时器。
+type Room struct {
+	ID      string
+	mu      sync.Mutex
+	players []int64
+	clients map[int64]*client
+	game    *Game
+	timer   *time.Timer
+	onOver  func(r *Room, res *Result)
+}
+
+// addPlayer 将玩家加入房间；已在房则幂等返回，满员返回错误。
+func (r *Room) addPlayer(uid int64) error {
+	for _, p := range r.players {
+		if p == uid {
+			return nil
+		}
+	}
+	if len(r.players) >= 2 {
+		return errors.New("room full")
+	}
+	r.players = append(r.players, uid)
+	return nil
+}
+
+// Hub 管理全部内存房间与 WebSocket 升级器。
+type Hub struct {
+	mu    sync.Mutex
+	rooms map[string]*Room
+	up    websocket.Upgrader
+}
+
+// NewHub 构造 Hub，允许任意来源的跨域升级（前端与后端可能不同源）。
+func NewHub() *Hub {
+	return &Hub{rooms: map[string]*Room{}, up: websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }}}
+}
+
+// Create 创建一个新房间并返回 8 位房间号。
+func (h *Hub) Create(owner int64) string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	id := uuid.NewString()[:8]
+	h.rooms[id] = &Room{ID: id, clients: map[int64]*client{}}
+	return id
+}
+
+// Get 按房间号查询房间。
+func (h *Hub) Get(id string) (*Room, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	r, ok := h.rooms[id]
+	return r, ok
+}
+
+// broadcast 向房间所有客户端投递消息（发送队列满则丢弃，避免阻塞）。
+func (r *Room) broadcast(m ServerMsg) {
+	for _, c := range r.clients {
+		select {
+		case c.send <- m:
+		default:
+		}
+	}
+}
+
+// sendTo 向指定玩家投递消息。
+func (r *Room) sendTo(uid int64, m ServerMsg) {
+	if c, ok := r.clients[uid]; ok {
+		select {
+		case c.send <- m:
+		default:
+		}
+	}
+}
+
+// startTurnTimer 广播当前回合与截止时间，并启动超时判负计时。
+func (r *Room) startTurnTimer() {
+	if r.timer != nil {
+		r.timer.Stop()
+	}
+	deadline := time.Now().Add(turnSeconds * time.Second)
+	r.broadcast(ServerMsg{Type: "turn", UID: r.game.Turn(), Deadline: deadline.UnixMilli()})
+	r.timer = time.AfterFunc(turnSeconds*time.Second, func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		if r.game == nil || r.game.over {
+			return
+		}
+		r.finish(r.game.Timeout())
+	})
+}
+
+// finish 结束对局：停表、广播结果、触发 onOver 回调（若有）。
+func (r *Room) finish(res *Result) {
+	if r.timer != nil {
+		r.timer.Stop()
+	}
+	r.broadcast(ServerMsg{Type: "game_over", Winner: res.Winner, Reason: res.Reason})
+	if r.onOver != nil {
+		r.onOver(r, res)
+	}
+}
+
+// ServeWS 升级连接、加入房间、满两人开局，并驱动读写循环。
+func (h *Hub) ServeWS(w http.ResponseWriter, req *http.Request, roomID string, uid int64) {
+	r, ok := h.Get(roomID)
+	if !ok {
+		http.Error(w, "room not found", http.StatusNotFound)
+		return
+	}
+	conn, err := h.up.Upgrade(w, req, nil)
+	if err != nil {
+		return
+	}
+	c := &client{uid: uid, conn: conn, send: make(chan ServerMsg, 16)}
+	r.mu.Lock()
+	if err := r.addPlayer(uid); err != nil {
+		r.mu.Unlock()
+		conn.Close()
+		return
+	}
+	r.clients[uid] = c
+	players := len(r.players)
+	r.mu.Unlock()
+	go c.writeLoop()
+	c.send <- ServerMsg{Type: "room_state", Players: players}
+	r.mu.Lock()
+	if len(r.players) == 2 && r.game == nil {
+		r.game = NewGame(r.players[0], r.players[1])
+		r.sendTo(r.players[0], ServerMsg{Type: "start", Color: "black"})
+		r.sendTo(r.players[1], ServerMsg{Type: "start", Color: "white"})
+		r.startTurnTimer()
+	}
+	r.mu.Unlock()
+	c.readLoop(r)
+}
+
+// writeLoop 从发送队列取出消息并写到连接。
+func (c *client) writeLoop() {
+	for m := range c.send {
+		if err := c.conn.WriteJSON(m); err != nil {
+			return
+		}
+	}
+}
+
+// readLoop 循环读取客户端消息并派发；断线则清理并按需判离场负。
+func (c *client) readLoop(r *Room) {
+	defer func() {
+		c.conn.Close()
+		r.mu.Lock()
+		delete(r.clients, c.uid)
+		if r.game != nil && !r.game.over {
+			r.finish(r.game.Leave(c.uid))
+		}
+		r.mu.Unlock()
+	}()
+	for {
+		var msg ClientMsg
+		if err := c.conn.ReadJSON(&msg); err != nil {
+			return
+		}
+		r.handle(c.uid, msg)
+	}
+}
+
+// handle 处理单条客户端消息：落子/悔棋请求/悔棋应答/认输。
+func (r *Room) handle(uid int64, msg ClientMsg) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.game == nil {
+		return
+	}
+	switch msg.Type {
+	case "move":
+		res, err := r.game.Move(uid, msg.X, msg.Y)
+		if err != nil {
+			return
+		}
+		r.broadcast(ServerMsg{Type: "move", UID: uid, X: msg.X, Y: msg.Y, Seq: r.game.MovesCount()})
+		if res != nil {
+			r.finish(res)
+		} else {
+			r.startTurnTimer()
+		}
+	case "undo_req":
+		if r.game.RequestUndo(uid) {
+			r.broadcast(ServerMsg{Type: "undo_req", UID: uid})
+		}
+	case "undo_reply":
+		agreed := r.game.ReplyUndo(msg.Agree)
+		r.broadcast(ServerMsg{Type: "undo_result", Agree: agreed})
+		if agreed {
+			r.startTurnTimer()
+		}
+	case "resign":
+		r.finish(r.game.Resign(uid))
+	}
+}

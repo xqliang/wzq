@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BoardCanvas } from '../board/BoardCanvas'
+import { BoardCanvas, type Overlay } from '../board/BoardCanvas'
 import { useGame } from '../store/game'
 import { playSfx } from '../audio/audio'
 import { reportAiResult, getCurrentUser } from '../net/rest'
 import { connectRoom, sendMove, sendUndoReq, sendUndoReply, sendResign } from '../net/ws'
 import type { ServerMsg } from '../net/ws'
 import type { Color } from '../core/types'
+import { applyMove } from '../core/board'
+import { checkWin } from '../core/win'
+import { bestMove } from '../ai/search'
 
 // 对局页：人机模式驱动 AI Web Worker；真人模式持有唯一的 WebSocket 连接。
 export function Game() {
@@ -22,6 +25,42 @@ export function Game() {
   const [remain, setRemain] = useState(60)
   // 真人模式在收到服务端 start 前处于等待态。
   const [started, setStarted] = useState(st.mode === 'ai')
+  // AI 提示高亮点（仅人机模式）。
+  const [hint, setHint] = useState<{ x: number; y: number } | null>(null)
+  // 三步预演的标记；非空即处于预演态（禁用落子，仅展示）。
+  const [previewSteps, setPreviewSteps] = useState<Overlay[] | null>(null)
+
+  // 三步预演的分步配色：绿(第1步)/蓝(第2步)/紫(第3步)。
+  const PREVIEW_COLORS = ['#2ecc71', '#3498db', '#9b59b6']
+
+  // 💡提示：用 AI 为我方算一手推荐并高亮。
+  const onHint = () => {
+    const store = useGame.getState()
+    if (store.winner || store.turn !== store.myColor) return
+    const mv = bestMove(store.board, store.myColor, 3)
+    setHint({ x: mv.x, y: mv.y })
+    playSfx('button')
+  }
+
+  // 预演：从当前局面起，AI 交替走 3 步，仅展示不落子。
+  const onPreview = () => {
+    const store = useGame.getState()
+    if (store.winner) return
+    let board = store.board
+    let color: Color = store.turn
+    const steps: Overlay[] = []
+    for (let i = 0; i < 3; i++) {
+      const mv = bestMove(board, color, 2)
+      steps.push({ x: mv.x, y: mv.y, color: PREVIEW_COLORS[i], label: String(i + 1) })
+      board = applyMove(board, { x: mv.x, y: mv.y, color })
+      if (checkWin(board, mv.x, mv.y)) break // 提前分出胜负则停止预演
+      color = color === 'black' ? 'white' : 'black'
+    }
+    setPreviewSteps(steps)
+    playSfx('button')
+  }
+
+  const endPreview = () => setPreviewSteps(null)
 
   // 处理服务端消息。内部一律用 useGame.getState() 读取最新状态，避免闭包过期。
   function handleServer(m: ServerMsg) {
@@ -111,11 +150,12 @@ export function Game() {
     return () => clearInterval(t)
   }, [deadline])
 
-  // 确认落子：本地落子 + 音效；真人模式同时上报服务端。
+  // 确认落子：本地落子 + 音效；真人模式同时上报服务端。落子后清除提示高亮。
   const onConfirm = () => {
     const p = g.pending
     if (!p) return
     g.confirm()
+    setHint(null)
     playSfx('place')
     if (st.mode === 'pvp' && wsRef.current) sendMove(wsRef.current, p.x, p.y)
   }
@@ -129,15 +169,28 @@ export function Game() {
     )
   }
 
+  const overlays: Overlay[] | undefined = previewSteps
+    ? previewSteps
+    : hint
+      ? [{ x: hint.x, y: hint.y, color: '#f1c40f', label: '★' }]
+      : undefined
+
   return (
     <div className="game screen">
       <div className="player opponent">对手 {st.mode === 'ai' ? 'AI大师 ⚪' : '⚪'}</div>
-      <BoardCanvas onConfirm={onConfirm} />
+      <BoardCanvas onConfirm={onConfirm} overlays={overlays} interactive={!previewSteps} />
       <div className="hud">
         {g.turn === g.myColor ? <span className="tip">轮到你落子</span> : <span>对方思考中…</span>}
         {st.mode === 'pvp' && <span className={remain <= 10 ? 'warn' : ''}>{remain}s</span>}
         {g.pending && <button onClick={onConfirm}>✓ 确认</button>}
         {g.pending && <button onClick={() => g.cancel()}>取消</button>}
+        {st.mode === 'ai' && !previewSteps && (
+          <>
+            <button onClick={onHint}>💡 提示</button>
+            <button onClick={onPreview}>预演</button>
+          </>
+        )}
+        {previewSteps && <button onClick={endPreview}>结束预演</button>}
         {st.mode === 'pvp' && wsRef.current && (
           <>
             <button onClick={() => sendUndoReq(wsRef.current!)}>悔棋</button>

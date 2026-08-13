@@ -16,9 +16,26 @@ const pieceImgs: Record<'black' | 'white', HTMLImageElement> = {
 pieceImgs.black.src = '/assets/img/piece_black.png'
 pieceImgs.white.src = '/assets/img/piece_white.png'
 
+// 棋盘覆盖标记：提示/预演用。color 为 CSS 颜色，label 可选（如预演步序号）。
+export interface Overlay {
+  x: number
+  y: number
+  color: string
+  label?: string
+}
+
 // Canvas 棋盘：绘制木色底 + 网格 + 棋子；预落子半透明；最近一手呼吸灯动画。
 // 点击就近取交叉点：若点在已预落子处则确认，否则设为新的预落子。
-export function BoardCanvas({ onConfirm }: { onConfirm: () => void }) {
+// overlays：额外标记（AI 提示 / 三步预演）。interactive=false 时禁用点击（预演中）。
+export function BoardCanvas({
+  onConfirm,
+  overlays,
+  interactive = true,
+}: {
+  onConfirm: () => void
+  overlays?: Overlay[]
+  interactive?: boolean
+}) {
   const ref = useRef<HTMLCanvasElement>(null)
   const board = useGame((s) => s.board)
   const pending = useGame((s) => s.pending)
@@ -68,13 +85,33 @@ export function BoardCanvas({ onConfirm }: { onConfirm: () => void }) {
         ctx.lineWidth = 2
         ctx.stroke()
       }
+      // 覆盖标记（提示光圈 / 预演步序）
+      if (overlays) {
+        for (const o of overlays) {
+          const cx = PAD + o.x * CELL
+          const cy = PAD + o.y * CELL
+          ctx.beginPath()
+          ctx.arc(cx, cy, CELL * 0.4, 0, Math.PI * 2)
+          ctx.strokeStyle = o.color
+          ctx.lineWidth = 3
+          ctx.stroke()
+          if (o.label) {
+            ctx.fillStyle = o.color
+            ctx.font = `bold ${CELL * 0.5}px sans-serif`
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(o.label, cx, cy)
+          }
+        }
+      }
       raf = requestAnimationFrame(draw)
     }
     raf = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(raf)
-  }, [board, pending, last, myColor])
+  }, [board, pending, last, myColor, overlays])
 
   const onClick = (e: ReactMouseEvent) => {
+    if (!interactive) return
     if (turn !== myColor) return
     const rect = ref.current!.getBoundingClientRect()
     const x = Math.round((e.clientX - rect.left - PAD) / CELL)

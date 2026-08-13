@@ -1,0 +1,67 @@
+// REST 客户端：封装与 Go 服务端的 HTTP 交互（游客注册、登录、绑定、人机结果上报、建房）。
+// 通过 Vite 环境变量 VITE_API_BASE 指向后端地址。
+const BASE = import.meta.env.VITE_API_BASE ?? ''
+
+// 从 localStorage 读取 JWT（游客/登录后写入），无则返回空串。
+function token(): string {
+  return localStorage.getItem('wzq_token') ?? ''
+}
+
+// 统一的请求封装：带上 JSON header 与 Bearer token，非 2xx 抛错。
+async function req(path: string, method: string, body?: unknown) {
+  const res = await fetch(BASE + path, {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) throw new Error(`${path} ${res.status}`)
+  return res.json()
+}
+
+// 用户信息结构，与服务端 user JSON 对齐。
+export interface User {
+  id: number
+  nickname: string
+  avatar: string
+  exp: number
+  level: number
+  username?: string
+}
+
+// 缓存当前登录用户：供 Game 页判断“我是谁”（区分自己/对手的落子广播）。
+let currentUser: User | null = null
+export function getCurrentUser(): User | null {
+  return currentUser
+}
+
+// 确保拥有身份：已有 token 则拉取 /api/me；否则注册游客并落地 token。
+export async function ensureGuest(): Promise<User> {
+  if (token()) {
+    const u = (await req('/api/me', 'GET')) as User
+    currentUser = u
+    return u
+  }
+  const { token: t, user } = await req('/api/guest', 'POST')
+  localStorage.setItem('wzq_token', t)
+  currentUser = user
+  return user
+}
+
+// 绑定账号（游客升级为正式账号）。
+export const bind = (username: string, password: string) => req('/api/bind', 'POST', { username, password })
+
+// 账号密码登录，成功后覆盖本地 token。
+export async function login(username: string, password: string): Promise<User> {
+  const { token: t, user } = await req('/api/login', 'POST', { username, password })
+  localStorage.setItem('wzq_token', t)
+  currentUser = user
+  return user
+}
+
+// 上报人机对局结果，服务端返回本局经验增量与最新用户信息。
+export const reportAiResult = (level: number, win: boolean) => req('/api/ai/result', 'POST', { level, win })
+
+// 创建真人对战房间，返回房间 id。
+export const createRoom = () => req('/api/room', 'POST') as Promise<{ roomId: string }>
+
+export { token }

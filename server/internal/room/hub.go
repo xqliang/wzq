@@ -168,7 +168,10 @@ func (h *Hub) ServeWS(w http.ResponseWriter, req *http.Request, roomID string, u
 	go c.writeLoop()
 	c.send <- ServerMsg{Type: "room_state", Players: players}
 	r.mu.Lock()
-	if len(r.players) == 2 && r.game == nil {
+	// 双方当前都在线且尚无对局（或上一局已结束）时开新局。
+	// 支持「再来一局」：对局结束后双方重连同一房间即自动开新局，无需新建房间。
+	bothConnected := len(r.players) == 2 && r.clients[r.players[0]] != nil && r.clients[r.players[1]] != nil
+	if bothConnected && (r.game == nil || r.game.over) {
 		r.game = NewGame(r.players[0], r.players[1])
 		r.sendTo(r.players[0], ServerMsg{Type: "start", Color: "black"})
 		r.sendTo(r.players[1], ServerMsg{Type: "start", Color: "white"})

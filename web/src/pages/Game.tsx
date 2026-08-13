@@ -30,8 +30,8 @@ export function Game() {
   // 三步预演的标记；非空即处于预演态（禁用落子，仅展示）。
   const [previewSteps, setPreviewSteps] = useState<Overlay[] | null>(null)
 
-  // 三步预演的分步配色：绿(第1步)/蓝(第2步)/紫(第3步)。
-  const PREVIEW_COLORS = ['#2ecc71', '#3498db', '#9b59b6']
+  // 预演双方各再走 3 步（共 6 手）的分步配色（绿/蓝/紫，深浅区分先后）。
+  const PREVIEW_COLORS = ['#2ecc71', '#3498db', '#9b59b6', '#27ae60', '#2980b9', '#8e44ad']
 
   // 💡提示：用 AI 为我方算一手推荐并高亮。
   const onHint = () => {
@@ -42,18 +42,18 @@ export function Game() {
     playSfx('button')
   }
 
-  // 预演：从当前局面起，AI 交替走 3 步，仅展示不落子。
+  // 预演：从当前局面起，AI 交替推演双方各 3 步（共 6 手），仅展示不落子。
   const onPreview = () => {
     const store = useGame.getState()
     if (store.winner) return
     let board = store.board
     let color: Color = store.turn
     const steps: Overlay[] = []
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 6; i++) {
       const mv = bestMove(board, color, 2)
       steps.push({ x: mv.x, y: mv.y, color: PREVIEW_COLORS[i], label: String(i + 1) })
       board = applyMove(board, { x: mv.x, y: mv.y, color })
-      if (checkWin(board, mv.x, mv.y)) break // 提前分出胜负则停止预演
+      if (checkWin(board, mv.x, mv.y)) break // 若中途已连五则停止
       color = color === 'black' ? 'white' : 'black'
     }
     setPreviewSteps(steps)
@@ -93,7 +93,9 @@ export function Game() {
         break
       }
       case 'game_over': {
-        nav('/result', { state: { win: m.winner === myUid ? 1 : 0, reason: m.reason } })
+        nav('/result', {
+          state: { win: m.winner === myUid ? 1 : 0, reason: m.reason, mode: 'pvp', roomId: st.roomId },
+        })
         break
       }
     }
@@ -133,21 +135,42 @@ export function Game() {
     playSfx(win ? 'win' : 'lose')
     if (st.mode === 'ai') {
       reportAiResult(st.level ?? 1, win).then((r) =>
-        nav('/result', { state: { win, expDelta: r.expDelta } }),
+        nav('/result', { state: { win, expDelta: r.expDelta, mode: 'ai', level: st.level } }),
       )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [g.winner])
 
-  // 真人回合倒计时：每 250ms 计算剩余秒数，≤5s 播放滴答提示。
+  // 人机模式：轮到我方时开启 60s 倒计时；AI 思考时不计时。
+  useEffect(() => {
+    if (st.mode !== 'ai' || !started) return
+    if (!g.winner && g.turn === g.myColor) setDeadline(Date.now() + 60000)
+    else setDeadline(null)
+  }, [g.turn, g.winner, started, st.mode, g.myColor])
+
+  // 回合倒计时：每 250ms 计算剩余秒；≤5s 滴答提示；归零处理超时
+  // （人机模式判我方负；真人模式由服务端裁决，客户端仅展示）。
   useEffect(() => {
     if (deadline == null) return
     const t = setInterval(() => {
       const s = Math.max(0, Math.round((deadline - Date.now()) / 1000))
       setRemain(s)
       if (s <= 5 && s > 0) playSfx('tick')
+      if (s <= 0) {
+        clearInterval(t)
+        setDeadline(null)
+        if (st.mode === 'ai' && !useGame.getState().winner) {
+          playSfx('timeout')
+          reportAiResult(st.level ?? 1, false).then((r) =>
+            nav('/result', {
+              state: { win: false, expDelta: r.expDelta, reason: 'timeout', mode: 'ai', level: st.level },
+            }),
+          )
+        }
+      }
     }, 250)
     return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deadline])
 
   // 确认落子：本地落子 + 音效；真人模式同时上报服务端。落子后清除提示高亮。
@@ -181,7 +204,11 @@ export function Game() {
       <BoardCanvas onConfirm={onConfirm} overlays={overlays} interactive={!previewSteps} />
       <div className="hud">
         {g.turn === g.myColor ? <span className="tip">轮到你落子</span> : <span>对方思考中…</span>}
-        {st.mode === 'pvp' && <span className={remain <= 10 ? 'warn' : ''}>{remain}s</span>}
+        {deadline != null && (
+          <span className={remain <= 5 ? 'countdown danger' : remain <= 10 ? 'countdown warn' : 'countdown'}>
+            ⏱ {remain}s
+          </span>
+        )}
         {st.mode === 'ai' && !previewSteps && (
           <>
             <button onClick={onHint}>💡 提示</button>

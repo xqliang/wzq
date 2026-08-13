@@ -495,3 +495,26 @@ button:disabled {
 .admin-table td {
   color: var(--ink-soft);
 }
+
+/* 回合倒计时。≤5s 时放大变红并脉冲，强化紧迫感。 */
+.hud .countdown {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--ink);
+}
+.hud .countdown.warn {
+  color: #d97706;
+}
+.hud .countdown.danger {
+  color: #c0392b;
+  font-size: 26px;
+  animation: cd-pulse 0.5s ease-in-out infinite alternate;
+}
+@keyframes cd-pulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.25);
+  }
+}

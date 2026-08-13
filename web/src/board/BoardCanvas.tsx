@@ -45,7 +45,6 @@ export function BoardCanvas({
   const turn = useGame((s) => s.turn)
   const myColor = useGame((s) => s.myColor)
   const preview = useGame((s) => s.preview)
-  const cancel = useGame((s) => s.cancel)
 
   // 按容器宽度决定显示尺寸（上限 PX，避免桌面端过大）。监听窗口变化。
   useEffect(() => {
@@ -66,6 +65,7 @@ export function BoardCanvas({
     cv.style.width = `${disp}px` // 显示尺寸随容器缩放
     cv.style.height = `${disp}px`
     const ctx = cv.getContext('2d')!
+    const dropStart = performance.now() // 本次 last 变化即视为一次落子，做“落下”动画
     let raf = 0
     const draw = (t: number) => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -96,19 +96,37 @@ export function BoardCanvas({
         ctx.arc(PAD + sx * CELL, PAD + sy * CELL, 3.5, 0, Math.PI * 2)
         ctx.fill()
       }
-      // 棋子
+      // 棋子（最近一手最后画，带“落下”动画）
       for (let y = 0; y < SIZE; y++)
-        for (let x = 0; x < SIZE; x++) if (board[y][x]) drawStone(ctx, x, y, board[y][x]!, 1)
+        for (let x = 0; x < SIZE; x++) {
+          if (!board[y][x]) continue
+          if (last && x === last.x && y === last.y) continue
+          drawStone(ctx, x, y, board[y][x]!, 1, 1)
+        }
       // 预落子半透明
-      if (pending) drawStone(ctx, pending.x, pending.y, myColor, 0.45)
-      // 最新子呼吸灯
+      if (pending) drawStone(ctx, pending.x, pending.y, myColor, 0.45, 1)
+      // 最新子：落下动画（起始略大→收拢，有分量）+ 触地冲击环 / 稳定后呼吸灯
       if (last && board[last.y][last.x]) {
-        const pulse = 0.5 + 0.5 * Math.sin(t / 300)
-        ctx.beginPath()
-        ctx.arc(PAD + last.x * CELL, PAD + last.y * CELL, CELL * 0.45 + pulse * 4, 0, Math.PI * 2)
-        ctx.strokeStyle = `rgba(200,40,40,${0.4 + pulse * 0.4})`
-        ctx.lineWidth = 2.5
-        ctx.stroke()
+        const elapsed = t - dropStart
+        const k = Math.max(0, 1 - elapsed / 200)
+        drawStone(ctx, last.x, last.y, board[last.y][last.x]!, 1, 1 + 0.45 * k * k)
+        const cx = PAD + last.x * CELL
+        const cy = PAD + last.y * CELL
+        if (elapsed < 260) {
+          const p = elapsed / 260
+          ctx.beginPath()
+          ctx.arc(cx, cy, CELL * (0.5 + p * 0.5), 0, Math.PI * 2)
+          ctx.strokeStyle = `rgba(80,50,20,${0.5 * (1 - p)})`
+          ctx.lineWidth = 3 * (1 - p)
+          ctx.stroke()
+        } else {
+          const pulse = 0.5 + 0.5 * Math.sin(t / 300)
+          ctx.beginPath()
+          ctx.arc(cx, cy, CELL * 0.5 + pulse * 4, 0, Math.PI * 2)
+          ctx.strokeStyle = `rgba(200,40,40,${0.35 + pulse * 0.35})`
+          ctx.lineWidth = 2.5
+          ctx.stroke()
+        }
       }
       // 覆盖标记（提示光圈 / 预演步序）
       if (overlays) {
@@ -145,52 +163,54 @@ export function BoardCanvas({
     const x = Math.round((lx - PAD) / CELL)
     const y = Math.round((ly - PAD) / CELL)
     if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) return
-    if (pending && pending.x === x && pending.y === y) onConfirm()
-    else preview(x, y)
+    // 只做“预选”，落子仅由 ✓ 按钮触发（点原位不再直接落子）。
+    preview(x, y)
   }
 
-  // 预落子旁的 ✓/✕ 浮动按钮位置（显示坐标）。靠右列则按钮放左侧，避免出界。
-  const scale = disp / PX
+  // 预落子旁的 ✓ 确认按钮位置（显示坐标）。靠右/顶边自动翻到另一侧，避免出界。
+  const s = disp / PX
   const stone = pending
-    ? { cx: (PAD + pending.x * CELL) * scale, cy: (PAD + pending.y * CELL) * scale }
+    ? { cx: (PAD + pending.x * CELL) * s, cy: (PAD + pending.y * CELL) * s }
     : null
-  const r = CELL * 0.45 * scale
-  const side = pending && pending.x >= 12 ? -1 : 1 // 靠右两列时按钮放左边
+  const r = CELL * 0.5 * s
+  const sideX = pending && pending.x >= 12 ? -1 : 1
+  const sideY = pending && pending.y <= 1 ? 1 : -1
 
   return (
     <div ref={wrapRef} className="board-wrap">
       <canvas ref={ref} onClick={onClick} className="board-canvas" />
       {interactive && pending && stone && (
-        <>
-          <button
-            className="board-btn confirm"
-            style={{ left: stone.cx + side * (r + 20), top: stone.cy - r - 8 }}
-            onClick={onConfirm}
-            aria-label="确认落子"
-          >
-            ✓
-          </button>
-          <button
-            className="board-btn cancel"
-            style={{ left: stone.cx + side * (r + 20), top: stone.cy + r + 8 }}
-            onClick={cancel}
-            aria-label="取消"
-          >
-            ✕
-          </button>
-        </>
+        <button
+          className="board-btn confirm"
+          style={{ left: stone.cx + sideX * (r + 22), top: stone.cy + sideY * (r + 22) }}
+          onClick={onConfirm}
+          aria-label="确认落子"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <path
+              d="M5 13l4 4L19 7"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
       )}
     </div>
   )
 }
 
-// 绘制单颗棋子；alpha 用于预落子半透明。贴图就绪用贴图，否则回退圆形。
+// 绘制单颗棋子；alpha 用于预落子半透明；scale 用于落下动画（以交叉点为中心缩放）。
+// 贴图就绪用玉石贴图（放大到约 1.06 格，贴合棋盘），否则回退圆形。
 function drawStone(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   color: 'black' | 'white',
   alpha: number,
+  scale: number,
 ) {
   ctx.save()
   ctx.globalAlpha = alpha
@@ -198,11 +218,11 @@ function drawStone(
   const cy = PAD + y * CELL
   const img = pieceImgs[color]
   if (img.complete && img.naturalWidth > 0) {
-    const size = CELL * 0.9
+    const size = CELL * 1.06 * scale
     ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size)
   } else {
     ctx.beginPath()
-    ctx.arc(cx, cy, CELL * 0.42, 0, Math.PI * 2)
+    ctx.arc(cx, cy, CELL * 0.46 * scale, 0, Math.PI * 2)
     ctx.fillStyle = color === 'black' ? '#1a1a1a' : '#f5f5f0'
     ctx.fill()
     ctx.strokeStyle = 'rgba(0,0,0,0.3)'

@@ -151,6 +151,48 @@ func (svc *Service) Submit(uid int64, id string, x, y int) (correct bool, err er
 	return correct, nil
 }
 
+// Complete 记录一次完整闯关结果：attempts+1；首次通关置 passed 并按难度奖励经验。
+// win 为本次「接着下」对局是否由玩家取胜。每次调用（无论胜负）都视为一次尝试。
+func (svc *Service) Complete(uid int64, id string, win bool) error {
+	l, ok := findLevel(id)
+	if !ok {
+		return sql.ErrNoRows
+	}
+	passed, attempts, hints, exists, err := svc.readProgress(uid, id)
+	if err != nil {
+		return err
+	}
+	firstPass := win && passed == 0 // 本次是否为首次通关。
+	newPassed := passed
+	if win {
+		newPassed = 1
+	}
+	if !exists {
+		initPassed := 0
+		if win {
+			initPassed = 1
+		}
+		_, err = svc.s.DB.Exec(
+			`INSERT INTO endgame_progress (uid, level_id, passed, attempts, hints) VALUES (?,?,?,?,?)`,
+			uid, id, initPassed, 1, 0)
+	} else {
+		_, err = svc.s.DB.Exec(
+			`UPDATE endgame_progress SET passed=?, attempts=? WHERE uid=? AND level_id=?`,
+			newPassed, attempts+1, uid, id)
+	}
+	if err != nil {
+		return err
+	}
+	_ = hints
+	// 首次通关按难度奖励经验：10 + 5*难度。
+	if firstPass {
+		if err = svc.users.AddExp(uid, 10+5*l.Difficulty); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Hint 返回一个可接受落子并累加该用户该关的 hints 计数；无可接受落子时返回 nil。
 func (svc *Service) Hint(uid int64, id string) (*[2]int, error) {
 	l, ok := findLevel(id)

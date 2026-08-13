@@ -81,6 +81,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/endgame/levels", s.handleEndgameLevels)
 	mux.HandleFunc("/api/endgame/level", s.handleEndgameLevel)
 	mux.HandleFunc("/api/endgame/submit", s.handleEndgameSubmit)
+	mux.HandleFunc("/api/endgame/complete", s.handleEndgameComplete)
 	mux.HandleFunc("/api/endgame/hint", s.handleEndgameHint)
 	mux.HandleFunc("/api/endgame/answer", s.handleEndgameAnswer)
 	mux.HandleFunc("/api/admin/login", s.handleAdminLogin)
@@ -371,6 +372,28 @@ func (s *Server) handleEndgameSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]bool{"correct": correct})
+}
+
+// handleEndgameComplete 记录一次完整「接着下」闯关结果（胜/负），并结算经验与进度。
+func (s *Server) handleEndgameComplete(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	var body struct {
+		ID  string `json:"id"`
+		Win bool   `json:"win"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad request"})
+		return
+	}
+	if err := s.Endgame.Complete(uid, body.ID, body.Win); err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
 // handleEndgameHint 返回一个可接受落子并累加提示计数。

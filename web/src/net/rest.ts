@@ -64,4 +64,45 @@ export const reportAiResult = (level: number, win: boolean) => req('/api/ai/resu
 // 创建真人对战房间，返回房间 id。
 export const createRoom = () => req('/api/room', 'POST') as Promise<{ roomId: string }>
 
+// ===== 残局闯关（endgame）相关接口 =====
+
+// 关卡元信息：用于列表页展示（章节、难度、是否通关、尝试次数）。
+export interface EndgameMeta {
+  id: string
+  chapter: number
+  name: string
+  difficulty: number
+  passed: boolean
+  attempts: number
+}
+
+// 单个关卡详情：预置棋子、轮到谁走、关卡类型（不含答案）。
+export interface EndgameDetail {
+  id: string
+  name: string
+  difficulty: number
+  stones: { x: number; y: number; color: 'black' | 'white' }[]
+  toMove: 'black' | 'white'
+  kind: string
+}
+
+// 拉取全部关卡列表。
+export const endgameLevels = () => req('/api/endgame/levels', 'GET') as Promise<EndgameMeta[]>
+
+// 拉取单个关卡详情（预置局面）。
+export const endgameLevel = (id: string) =>
+  req(`/api/endgame/level?id=${id}`, 'GET') as Promise<EndgameDetail>
+
+// 提交一手落子，服务端判定是否为正解。
+export const endgameSubmit = (id: string, x: number, y: number) =>
+  req('/api/endgame/submit', 'POST', { id, x, y }) as Promise<{ correct: boolean }>
+
+// 请求提示：返回推荐落子坐标。
+export const endgameHint = (id: string) =>
+  req('/api/endgame/hint', 'POST', { id }) as Promise<{ x: number; y: number }>
+
+// 查看答案：返回所有正解坐标。
+export const endgameAnswer = (id: string) =>
+  req(`/api/endgame/answer?id=${id}`, 'GET') as Promise<{ answers: [number, number][] }>
+
 export { token }

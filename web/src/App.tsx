@@ -7,6 +7,8 @@ import { AiConfig } from './pages/AiConfig'
 import { Game } from './pages/Game'
 import { Result } from './pages/Result'
 import { Room } from './pages/Room'
+import { Endgame } from './pages/Endgame'
+import { EndgamePlay } from './pages/EndgamePlay'
 
 // 应用根组件：挂载时确保拥有游客身份，再渲染路由。
 export default function App() {
@@ -23,6 +25,8 @@ export default function App() {
         <Route path="/game" element={<Game />} />
         <Route path="/result" element={<Result />} />
         <Route path="/room/:id?" element={<Room />} />
+        <Route path="/endgame" element={<Endgame />} />
+        <Route path="/endgame/play/:id" element={<EndgamePlay />} />
       </Routes>
     </BrowserRouter>
   )

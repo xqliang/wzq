@@ -27,3 +27,22 @@ body { margin: 0; font-family: 'Guqi', serif; color: var(--ink); }
 .hud .tip { color: var(--accent); font-weight: bold; }
 .hud .warn { color: #c0392b; font-size: 22px; }
 button { cursor: pointer; font-family: inherit; }
+
+/* 残局闯关：列表页与对局页样式 */
+.endgame { background-image: url('/assets/img/bg_home.jpg'); }
+.endgame-head { display: flex; align-items: center; gap: 12px; width: 100%; }
+.endgame-head h2 { margin: 0; }
+.endgame-chapter { width: 100%; max-width: 560px; }
+.endgame-chapter h3 { margin: 8px 0; color: var(--accent); }
+.endgame-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 10px; }
+.endgame-cell {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 6px; background: rgba(243,233,214,0.85); border: 2px solid var(--ink);
+  border-radius: 10px; font-family: inherit; color: var(--ink);
+}
+.endgame-cell.passed { border-color: #2ecc71; background: rgba(46,204,113,0.18); }
+.endgame-cell .lv-id { font-size: 16px; font-weight: bold; }
+.endgame-cell .lv-stars { color: #d4a017; font-size: 14px; }
+.endgame-cell .lv-check { position: absolute; top: 2px; right: 6px; color: #2ecc71; font-weight: bold; }
+.endgame-prompt { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.endgame-prompt .lv-stars { color: #d4a017; }

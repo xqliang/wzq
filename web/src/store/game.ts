@@ -17,6 +17,7 @@ interface GameState {
   cancel: () => void
   confirm: () => void
   place: (x: number, y: number, color: Color) => void // 用于对手落子/回放
+  setup: (board: Board, toMove: Color) => void // 用于残局：注入预置局面并指定轮次
 }
 
 export const useGame = create<GameState>((set, get) => ({
@@ -49,4 +50,7 @@ export const useGame = create<GameState>((set, get) => ({
     const winner = checkWin(board, x, y)
     set({ board, lastMove: { x, y }, winner, turn: color === 'black' ? 'white' : 'black' })
   },
+  // 残局：直接注入预置棋盘并指定轮到谁走（我方=待解方），清空 pending/胜负。
+  setup: (board, toMove) =>
+    set({ board, turn: toMove, myColor: toMove, pending: null, lastMove: null, winner: null }),
 }))

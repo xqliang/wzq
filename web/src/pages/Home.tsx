@@ -25,8 +25,8 @@ export function Home({ user }: { user: User }) {
         <button className="entry" onClick={() => nav('/room')}>
           好友对战
         </button>
-        <button className="entry disabled" disabled>
-          残局闯关（即将开放）
+        <button className="entry" onClick={() => nav('/endgame')}>
+          残局闯关
         </button>
       </main>
     </div>

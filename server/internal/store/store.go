@@ -69,6 +69,11 @@ func (s *Store) Migrate() error {
 		`CREATE TABLE IF NOT EXISTS exp_daily (
 			uid BIGINT, day VARCHAR(10), ai_wins INT NOT NULL DEFAULT 0, PRIMARY KEY (uid, day)
 		)`,
+		`CREATE TABLE IF NOT EXISTS endgame_progress (
+			uid BIGINT, level_id VARCHAR(16), passed INT NOT NULL DEFAULT 0,
+			attempts INT NOT NULL DEFAULT 0, hints INT NOT NULL DEFAULT 0,
+			PRIMARY KEY (uid, level_id)
+		)`,
 	}
 	for _, q := range stmts {
 		if _, err := s.DB.Exec(q); err != nil {

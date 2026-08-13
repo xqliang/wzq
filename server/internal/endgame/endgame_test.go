@@ -35,132 +35,158 @@ func contains(ans [][2]int, x, y int) bool {
 	return false
 }
 
-func TestWin1Accepts(t *testing.T) {
+// TestSubmitAcceptedAnswer 校验 Submit 对「可接受首着」返回 correct=true，对非解返回 false。
+func TestSubmitAcceptedAnswer(t *testing.T) {
 	svc, _, uid := newSvc(t)
-	l, ok := findLevel("1-1")
-	if !ok {
-		t.Fatal("level 1-1 not found")
-	}
+	l := Levels[0]
 	ans := l.AcceptedAnswers()
-	if !contains(ans, 2, 7) || !contains(ans, 7, 7) {
-		t.Fatalf("1-1 answers should contain [2,7] and [7,7], got %v", ans)
+	if len(ans) == 0 {
+		t.Fatalf("level %s 无可接受首着", l.ID)
 	}
-	correct, err := svc.Submit(uid, "1-1", 7, 7)
+	correct, err := svc.Submit(uid, l.ID, ans[0][0], ans[0][1])
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !correct {
-		t.Fatal("submit (7,7) should be correct")
+		t.Fatalf("提交可接受首着 %v 应为正解", ans[0])
 	}
-	wrong, err := svc.Submit(uid, "1-1", 0, 0)
+	// 找一个不在答案集合内的空点作为错误提交。
+	wx, wy := -1, -1
+	g := gridFromStones(l.Stones)
+	for y := 0; y < size && wx < 0; y++ {
+		for x := 0; x < size; x++ {
+			if g[y][x] == "" && !contains(ans, x, y) {
+				wx, wy = x, y
+				break
+			}
+		}
+	}
+	wrong, err := svc.Submit(uid, l.ID, wx, wy)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if wrong {
-		t.Fatal("submit (0,0) should be wrong")
+		t.Fatalf("提交非解 (%d,%d) 应为错误", wx, wy)
 	}
 }
 
-func TestMate2OpenThree(t *testing.T) {
-	svc, _, uid := newSvc(t)
-	l, ok := findLevel("2-1")
-	if !ok {
-		t.Fatal("level 2-1 not found")
-	}
-	if l.MinSteps() != 2 {
-		t.Fatalf("2-1 should be mate in 2, got %d", l.MinSteps())
-	}
-	ans := l.AcceptedAnswers()
-	// 活三 (6,7)(7,7)(8,7)：成活四的两点 (5,7)/(9,7) 均可导向必胜。
-	if !contains(ans, 5, 7) || !contains(ans, 9, 7) {
-		t.Fatalf("2-1 answers should contain [5,7] and [9,7], got %v", ans)
-	}
-	correct, err := svc.Submit(uid, "2-1", 5, 7)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !correct {
-		t.Fatal("submit (5,7) should be correct")
-	}
-	wrong, err := svc.Submit(uid, "2-1", 0, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if wrong {
-		t.Fatal("submit (0,0) should be wrong")
-	}
-}
-
-func TestJumpFour(t *testing.T) {
-	svc, _, uid := newSvc(t)
-	l, ok := findLevel("3-1")
-	if !ok {
-		t.Fatal("level 3-1 not found")
-	}
-	ans := l.AcceptedAnswers()
-	if !contains(ans, 7, 7) {
-		t.Fatalf("3-1 answers should contain [7,7], got %v", ans)
-	}
-	correct, err := svc.Submit(uid, "3-1", 7, 7)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !correct {
-		t.Fatal("submit (7,7) should be correct")
-	}
-}
-
-func TestProgressAndExp(t *testing.T) {
+// TestCompleteAwardsExp 校验 Complete 的通关结算：首次胜利按难度奖励经验、置 passed、
+// 累加 attempts；再次胜利不重复奖励；失败仅累加 attempts、不奖励、不置 passed。
+func TestCompleteAwardsExp(t *testing.T) {
 	svc, users, uid := newSvc(t)
+	l := Levels[0]
 	before, err := users.Get(uid)
 	if err != nil {
 		t.Fatal(err)
 	}
-	correct, err := svc.Submit(uid, "1-1", 7, 7)
-	if err != nil || !correct {
-		t.Fatalf("first submit correct: correct=%v err=%v", correct, err)
+	// 首次胜利：+ (10 + 5*Difficulty)。
+	if err := svc.Complete(uid, l.ID, true); err != nil {
+		t.Fatal(err)
 	}
-	// 列表应显示已通关且尝试次数 >=1。
+	want := before.Exp + 10 + 5*l.Difficulty
+	after, _ := users.Get(uid)
+	if after.Exp != want {
+		t.Fatalf("首次通关经验应为 %d，实际 %d", want, after.Exp)
+	}
+	// 列表应显示已通关、attempts>=1。
+	passed, attempts := false, 0
+	for _, m := range svc.List(uid) {
+		if m.ID == l.ID {
+			passed, attempts = m.Passed, m.Attempts
+		}
+	}
+	if !passed {
+		t.Fatal("首次胜利后应标记为已通关")
+	}
+	if attempts < 1 {
+		t.Fatalf("attempts 应 >=1，实际 %d", attempts)
+	}
+	// 再次胜利：不重复奖励，attempts 再 +1。
+	if err := svc.Complete(uid, l.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	again, _ := users.Get(uid)
+	if again.Exp != want {
+		t.Fatalf("重复通关不应再奖励经验：%d vs %d", again.Exp, want)
+	}
+	// 失败一次：attempts 再 +1，不奖励、不改变 passed。
+	if err := svc.Complete(uid, l.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	lose, _ := users.Get(uid)
+	if lose.Exp != want {
+		t.Fatalf("失败不应奖励经验：%d vs %d", lose.Exp, want)
+	}
+	for _, m := range svc.List(uid) {
+		if m.ID == l.ID {
+			if !m.Passed {
+				t.Fatal("已通关状态不应被失败覆盖")
+			}
+			if m.Attempts < 3 {
+				t.Fatalf("三次结算后 attempts 应 >=3，实际 %d", m.Attempts)
+			}
+		}
+	}
+}
+
+// TestProgressAndExp 校验 Submit 首次正解奖励 +10 且不重复奖励（Submit 保留用于提示/答案流）。
+func TestProgressAndExp(t *testing.T) {
+	svc, users, uid := newSvc(t)
+	l := Levels[0]
+	ans := l.AcceptedAnswers()
+	if len(ans) == 0 {
+		t.Fatalf("level %s 无可接受首着", l.ID)
+	}
+	before, err := users.Get(uid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	correct, err := svc.Submit(uid, l.ID, ans[0][0], ans[0][1])
+	if err != nil || !correct {
+		t.Fatalf("首次提交应为正解: correct=%v err=%v", correct, err)
+	}
 	found := false
 	for _, m := range svc.List(uid) {
-		if m.ID == "1-1" {
+		if m.ID == l.ID {
 			found = true
 			if !m.Passed {
-				t.Fatal("1-1 should be passed")
+				t.Fatalf("%s 应已通关", l.ID)
 			}
 			if m.Attempts < 1 {
-				t.Fatalf("attempts should be >=1, got %d", m.Attempts)
+				t.Fatalf("attempts 应 >=1，实际 %d", m.Attempts)
 			}
 		}
 	}
 	if !found {
-		t.Fatal("1-1 not in list")
+		t.Fatalf("%s 不在列表中", l.ID)
 	}
 	after, _ := users.Get(uid)
 	if after.Exp != before.Exp+10 {
-		t.Fatalf("exp should increase by 10: before=%d after=%d", before.Exp, after.Exp)
+		t.Fatalf("经验应 +10：before=%d after=%d", before.Exp, after.Exp)
 	}
-	// 再次通关不应重复奖励经验。
-	if _, err := svc.Submit(uid, "1-1", 7, 7); err != nil {
+	// 再次正解不应重复奖励。
+	if _, err := svc.Submit(uid, l.ID, ans[0][0], ans[0][1]); err != nil {
 		t.Fatal(err)
 	}
 	again, _ := users.Get(uid)
 	if again.Exp != after.Exp {
-		t.Fatalf("second pass should not award exp again: %d vs %d", again.Exp, after.Exp)
+		t.Fatalf("重复通关不应再奖励经验：%d vs %d", again.Exp, after.Exp)
 	}
 }
 
+// TestHintCounts 校验 Hint 返回一个属于可接受答案集合的落子。
 func TestHintCounts(t *testing.T) {
 	svc, _, uid := newSvc(t)
-	cell, err := svc.Hint(uid, "1-1")
+	id := Levels[0].ID
+	cell, err := svc.Hint(uid, id)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cell == nil {
-		t.Fatal("hint should return a non-nil cell")
+		t.Fatal("hint 应返回非空落子")
 	}
-	l, _ := findLevel("1-1")
+	l, _ := findLevel(id)
 	if !contains(l.AcceptedAnswers(), cell[0], cell[1]) {
-		t.Fatalf("hint cell %v not in accepted answers", *cell)
+		t.Fatalf("hint 落子 %v 不在可接受答案集合内", *cell)
 	}
 }

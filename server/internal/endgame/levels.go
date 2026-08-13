@@ -41,62 +41,106 @@ func (l Level) MinSteps() int {
 	return minMateDepth(&g, l.ToMove, 5)
 }
 
-// Levels 是全部预置关卡。均为执黑必胜残局，通过守卫测试验证「6-12 子、无既成五连、
-// 存在 1-5 步必胜」。每关由核心杀型 + 远角孤立点缀子构成，看起来像真实中局。
+// Levels 是全部预置关卡：均为「执黑走多步必胜」的真实中局残局，由生成器
+// （generate_test.go 的 TestGenerateLevels，GEN=1 时运行）模拟拟真短对局后，
+// 用解算器筛选出「黑方 2..5 步连续冲四(VCF)必胜」的自然聚拢局面，去重后收录。
+// 每关均通过守卫测试（levels_test.go）：8..24 子、无既成五连、最小必胜步数 2..5。
+// 按难度（=必胜步数）升序排列，Chapter = 必胜步数-1，Difficulty = 必胜步数。
+// 关卡命名：2→活三杀，3→四三杀，4→连环杀，5→胜势残局。
 var Levels = []Level{
-	// 第一章「一步致胜」：已有活四/跳四，一手连五。
+	// —— 第一章 · 活三杀（黑方 2 步必胜）——
 	{
-		ID: "1-1", Chapter: 1, Name: "一步致胜", Difficulty: 1, ToMove: gomoku.Black,
+		ID: "1-1", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
 		Stones: []Stone{
-			{3, 7, gomoku.Black}, {4, 7, gomoku.Black}, {5, 7, gomoku.Black}, {6, 7, gomoku.Black},
-			{0, 13, gomoku.Black},
-			{0, 0, gomoku.White}, {14, 0, gomoku.White}, {13, 13, gomoku.White},
+			{7, 7, gomoku.Black}, {6, 5, gomoku.Black}, {5, 6, gomoku.Black}, {4, 7, gomoku.Black},
+			{6, 6, gomoku.White}, {7, 6, gomoku.White}, {5, 7, gomoku.White}, {4, 5, gomoku.White},
 		},
 	},
 	{
-		ID: "1-2", Chapter: 1, Name: "一步致胜", Difficulty: 1, ToMove: gomoku.Black,
+		ID: "1-2", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
 		Stones: []Stone{
-			{5, 3, gomoku.Black}, {6, 3, gomoku.Black}, {7, 3, gomoku.Black}, {9, 3, gomoku.Black},
-			{1, 12, gomoku.Black},
-			{0, 0, gomoku.White}, {14, 1, gomoku.White}, {12, 13, gomoku.White},
-		},
-	},
-	// 第二章「两步杀」：活三，一手成活四，对手只能堵一端，另一端连五。
-	{
-		ID: "2-1", Chapter: 2, Name: "两步杀", Difficulty: 3, ToMove: gomoku.Black,
-		Stones: []Stone{
-			{6, 7, gomoku.Black}, {7, 7, gomoku.Black}, {8, 7, gomoku.Black},
-			{1, 1, gomoku.Black}, {13, 12, gomoku.Black},
-			{0, 13, gomoku.White}, {14, 0, gomoku.White}, {2, 12, gomoku.White}, {12, 2, gomoku.White},
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {6, 7, gomoku.Black}, {7, 5, gomoku.Black},
+			{6, 6, gomoku.White}, {6, 8, gomoku.White}, {5, 7, gomoku.White}, {7, 9, gomoku.White},
 		},
 	},
 	{
-		ID: "2-2", Chapter: 2, Name: "两步杀", Difficulty: 3, ToMove: gomoku.Black,
+		ID: "1-3", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
 		Stones: []Stone{
-			{7, 5, gomoku.Black}, {7, 6, gomoku.Black}, {7, 7, gomoku.Black},
-			{1, 12, gomoku.Black}, {13, 1, gomoku.Black},
-			{0, 0, gomoku.White}, {14, 14, gomoku.White}, {2, 2, gomoku.White}, {12, 12, gomoku.White},
-		},
-	},
-	// 第三章「四三杀」：一手同时成冲四 + 活三，对手堵四后活三再成活四取胜（三步）。
-	{
-		ID: "3-1", Chapter: 3, Name: "四三杀", Difficulty: 5, ToMove: gomoku.Black,
-		Stones: []Stone{
-			{4, 7, gomoku.Black}, {5, 7, gomoku.Black}, {6, 7, gomoku.Black}, // 横三，左端被堵
-			{7, 8, gomoku.Black}, {7, 9, gomoku.Black}, // 竖二
-			{3, 7, gomoku.White}, // 堵住横三左端
-			{0, 0, gomoku.White}, {14, 14, gomoku.White},
-			{0, 14, gomoku.Black},
+			{7, 7, gomoku.Black}, {6, 6, gomoku.Black}, {8, 6, gomoku.Black}, {7, 6, gomoku.Black},
+			{8, 7, gomoku.White}, {8, 8, gomoku.White}, {8, 9, gomoku.White}, {6, 8, gomoku.White},
 		},
 	},
 	{
-		ID: "3-2", Chapter: 3, Name: "四三杀", Difficulty: 5, ToMove: gomoku.Black,
+		ID: "1-4", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
 		Stones: []Stone{
-			{5, 5, gomoku.Black}, {6, 6, gomoku.Black}, {7, 7, gomoku.Black}, // 主对角三，右下端被堵
-			{5, 4, gomoku.Black}, {6, 4, gomoku.Black}, // 横二（y=4）
-			{8, 8, gomoku.White}, // 堵住对角右下端
-			{0, 0, gomoku.White}, {14, 0, gomoku.White},
-			{0, 14, gomoku.Black},
+			{7, 7, gomoku.Black}, {5, 5, gomoku.Black}, {6, 4, gomoku.Black}, {4, 6, gomoku.Black},
+			{6, 6, gomoku.White}, {6, 5, gomoku.White}, {5, 6, gomoku.White}, {8, 7, gomoku.White},
+		},
+	},
+	// —— 第二章 · 四三杀（黑方 3 步必胜）——
+	{
+		ID: "2-1", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 8, gomoku.Black}, {6, 8, gomoku.Black}, {5, 7, gomoku.Black},
+			{6, 6, gomoku.White}, {7, 5, gomoku.White}, {6, 7, gomoku.White}, {5, 6, gomoku.White}, {8, 8, gomoku.White},
+		},
+	},
+	{
+		ID: "2-2", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 5, gomoku.Black}, {6, 7, gomoku.Black}, {5, 6, gomoku.Black},
+			{6, 6, gomoku.White}, {5, 7, gomoku.White}, {7, 4, gomoku.White}, {6, 3, gomoku.White}, {5, 2, gomoku.White},
+		},
+	},
+	{
+		ID: "2-3", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 5, gomoku.Black}, {6, 5, gomoku.Black}, {8, 7, gomoku.Black}, {9, 6, gomoku.Black},
+			{6, 6, gomoku.White}, {5, 7, gomoku.White}, {7, 4, gomoku.White}, {8, 5, gomoku.White}, {5, 4, gomoku.White}, {9, 4, gomoku.White},
+		},
+	},
+	{
+		ID: "2-4", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 5, gomoku.Black}, {6, 7, gomoku.Black}, {5, 6, gomoku.Black}, {8, 5, gomoku.Black},
+			{6, 6, gomoku.White}, {5, 7, gomoku.White}, {7, 4, gomoku.White}, {6, 3, gomoku.White}, {5, 2, gomoku.White}, {9, 4, gomoku.White},
+		},
+	},
+	// —— 第三章 · 连环杀（黑方 4 步必胜）——
+	{
+		ID: "3-1", Chapter: 3, Name: "连环杀", Difficulty: 4, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {5, 6, gomoku.Black}, {5, 7, gomoku.Black}, {5, 8, gomoku.Black}, {6, 7, gomoku.Black},
+			{6, 6, gomoku.White}, {7, 5, gomoku.White}, {4, 7, gomoku.White}, {8, 6, gomoku.White}, {5, 9, gomoku.White}, {8, 5, gomoku.White},
+		},
+	},
+	{
+		ID: "3-2", Chapter: 3, Name: "连环杀", Difficulty: 4, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 5, gomoku.Black}, {6, 7, gomoku.Black}, {8, 9, gomoku.Black}, {8, 7, gomoku.Black}, {6, 5, gomoku.Black},
+			{6, 6, gomoku.White}, {8, 8, gomoku.White}, {7, 8, gomoku.White}, {8, 4, gomoku.White}, {8, 5, gomoku.White}, {9, 8, gomoku.White}, {9, 7, gomoku.White},
+		},
+	},
+	{
+		ID: "3-3", Chapter: 3, Name: "连环杀", Difficulty: 4, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {6, 7, gomoku.Black}, {5, 7, gomoku.Black}, {5, 8, gomoku.Black}, {8, 4, gomoku.Black}, {9, 5, gomoku.Black}, {7, 8, gomoku.Black},
+			{6, 6, gomoku.White}, {7, 5, gomoku.White}, {6, 8, gomoku.White}, {8, 7, gomoku.White}, {8, 5, gomoku.White}, {5, 9, gomoku.White}, {9, 6, gomoku.White}, {7, 4, gomoku.White},
+		},
+	},
+	// —— 第四章 · 胜势残局（黑方 5 步必胜）——
+	{
+		ID: "4-1", Chapter: 4, Name: "胜势残局", Difficulty: 5, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {8, 4, gomoku.Black}, {8, 5, gomoku.Black}, {9, 4, gomoku.Black}, {8, 3, gomoku.Black}, {7, 4, gomoku.Black},
+			{6, 6, gomoku.White}, {7, 5, gomoku.White}, {9, 5, gomoku.White}, {5, 7, gomoku.White}, {6, 7, gomoku.White}, {8, 6, gomoku.White}, {6, 4, gomoku.White},
+		},
+	},
+	{
+		ID: "4-2", Chapter: 4, Name: "胜势残局", Difficulty: 5, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {6, 7, gomoku.Black}, {9, 8, gomoku.Black}, {6, 8, gomoku.Black}, {5, 8, gomoku.Black}, {4, 8, gomoku.Black}, {9, 7, gomoku.Black}, {6, 9, gomoku.Black},
+			{6, 6, gomoku.White}, {7, 5, gomoku.White}, {8, 7, gomoku.White}, {5, 7, gomoku.White}, {10, 8, gomoku.White}, {8, 5, gomoku.White}, {7, 8, gomoku.White}, {9, 6, gomoku.White}, {8, 9, gomoku.White},
 		},
 	},
 }

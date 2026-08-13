@@ -403,3 +403,95 @@ button:disabled {
   font-size: 15px;
   color: var(--ink-soft);
 }
+
+/* 运营后台：登录框、概览卡片与数据表格（仪表盘风，保留古风底色）。 */
+.admin {
+  align-items: stretch;
+  padding: 16px 12px 40px;
+}
+.admin-login {
+  gap: 12px;
+}
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.admin-title {
+  margin: 4px 0;
+  color: var(--accent);
+}
+.admin-subtitle {
+  margin: 18px 0 6px;
+  color: var(--ink);
+}
+.admin-input {
+  width: 100%;
+  max-width: 260px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--panel);
+  font-family: inherit;
+  font-size: 16px;
+}
+.admin-logout {
+  padding: 6px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+}
+.admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+.admin-card {
+  background: var(--panel);
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.admin-card-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.admin-card-label {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+/* 表格外层允许横向滚动，窄屏也能看全列。 */
+.admin-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  font-size: 14px;
+}
+.admin-table th,
+.admin-table td {
+  border: 1px solid var(--ink);
+  padding: 6px 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+.admin-table th {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+.admin-table td {
+  color: var(--ink-soft);
+}

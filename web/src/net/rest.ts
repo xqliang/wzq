@@ -135,3 +135,70 @@ export const endgameAnswer = (id: string) =>
   req(`/api/endgame/answer?id=${id}`, 'GET') as Promise<{ answers: [number, number][] }>
 
 export { token }
+
+// ===== 运营后台（admin）相关接口 =====
+// 后台使用独立于用户 token 的令牌，存于 localStorage 'wzq_admin'，不复用 req（避免误带用户令牌）。
+
+// 后台概览指标。
+export interface AdminOverview {
+  users: number
+  todayNewUsers: number
+  gamesAI: number
+  gamesPvP: number
+  endgamePasses: number
+}
+
+// 后台用户列表项（对齐服务端 user JSON）。
+export interface AdminUser {
+  id: number
+  nickname: string
+  level: number
+  exp: number
+  username?: string
+}
+
+// 后台对局列表项（对齐服务端 record.AdminGame JSON）。
+export interface AdminGame {
+  id: number
+  mode: string
+  aiLevel: number
+  blackUid: number
+  whiteUid: number
+  winner: string
+  moves: number
+  endReason: string
+  createdAt: string
+}
+
+// 专用请求封装：带上后台令牌，非 2xx 抛出状态码错误（供页面识别 401）。
+async function adminReq(path: string, method: string, body?: unknown) {
+  const t = localStorage.getItem('wzq_admin') ?? ''
+  const res = await fetch(BASE + path, {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) throw new Error(String(res.status))
+  return res.json()
+}
+
+// 后台登录：口令正确则落地后台令牌。
+export async function adminLogin(password: string): Promise<void> {
+  const { token } = await adminReq('/api/admin/login', 'POST', { password })
+  localStorage.setItem('wzq_admin', token)
+}
+
+// 拉取概览指标。
+export const adminOverview = () => adminReq('/api/admin/overview', 'GET') as Promise<AdminOverview>
+
+// 拉取最近用户列表。
+export const adminUsers = () => adminReq('/api/admin/users?limit=50', 'GET') as Promise<AdminUser[]>
+
+// 拉取最近对局列表。
+export const adminGames = () => adminReq('/api/admin/games?limit=50', 'GET') as Promise<AdminGame[]>
+
+// 是否已持有后台令牌。
+export const adminLoggedIn = () => !!localStorage.getItem('wzq_admin')
+
+// 退出后台：清除本地令牌。
+export const adminLogout = () => localStorage.removeItem('wzq_admin')

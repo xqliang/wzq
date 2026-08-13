@@ -1,0 +1,6 @@
+addr: ":8080"
+db:
+  driver: sqlite
+  dsn: data/app.db
+auth:
+  authTtlMinutes: 43200

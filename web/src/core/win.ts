@@ -1,4 +1,5 @@
-import { Board, Color, SIZE } from './types'
+import type { Board, Color } from './types'
+import { SIZE } from './types'
 const DIRS: [number, number][] = [[1, 0], [0, 1], [1, 1], [1, -1]]
 export function checkWin(board: Board, x: number, y: number): Color | null {
   const color = board[y][x]

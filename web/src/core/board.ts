@@ -1,4 +1,5 @@
-import { Board, Move, SIZE } from './types'
+import type { Board, Move } from './types'
+import { SIZE } from './types'
 export function isLegal(board: Board, x: number, y: number): boolean {
   if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) return false
   return board[y][x] === null

@@ -4,6 +4,8 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -20,6 +22,7 @@ type Server struct {
 	Hub           *room.Hub
 	Records       *record.Service
 	DailyAiWinCap int
+	WebDir        string // 前端构建产物目录；为空则不托管前端（仅提供 API）。
 }
 
 // writeJSON 以 JSON 形式写出响应体。
@@ -70,7 +73,25 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/room", s.handleRoom)
 	mux.HandleFunc("/ws", s.handleWS)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
+	// 托管前端：静态文件命中则直出，未命中回退 index.html（支持前端路由 /room/:id 等）。
+	if s.WebDir != "" {
+		mux.Handle("/", spaHandler(s.WebDir))
+	}
 	return cors(mux)
+}
+
+// spaHandler 服务单页应用：存在的静态文件按原样返回，其余路径回退到 index.html。
+func spaHandler(dir string) http.Handler {
+	fs := http.FileServer(http.Dir(dir))
+	index := filepath.Join(dir, "index.html")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		p := filepath.Join(dir, filepath.Clean(r.URL.Path))
+		if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+			fs.ServeHTTP(w, r)
+			return
+		}
+		http.ServeFile(w, r, index)
+	})
 }
 
 // handleGuest 创建游客并签发令牌。

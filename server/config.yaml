@@ -1,6 +1,10 @@
-addr: ":8080"
+addr: ":8090"
 db:
   driver: sqlite
   dsn: data/app.db
 auth:
   authTtlMinutes: 43200
+# web.dir 指向前端构建产物目录时，服务端一并托管前端（同源，无需 Nginx）。
+# 本地开发通常用 vite dev，不设 web.dir；线上由 deploy.sh 生成的 config.yaml 指定。
+web:
+  dir: ""

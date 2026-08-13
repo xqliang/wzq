@@ -37,6 +37,7 @@ func main() {
 		Hub:           room.NewHub(),
 		Records:       record.New(st),
 		DailyAiWinCap: 20,
+		WebDir:        cfg.Web.Dir,
 	}
 	log.Printf("listening %s", cfg.Addr)
 	log.Fatal(http.ListenAndServe(cfg.Addr, srv.Routes()))

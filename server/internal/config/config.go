@@ -17,15 +17,21 @@ type Auth struct {
 	AuthTTLMinutes int    `yaml:"authTtlMinutes"`
 }
 
+// Web 前端静态资源配置：WebDir 为构建产物目录，空则不托管前端（仅 API）。
+type Web struct {
+	Dir string `yaml:"dir"`
+}
+
 type Config struct {
 	Addr string `yaml:"addr"`
 	DB   DB     `yaml:"db"`
 	Auth Auth   `yaml:"auth"`
+	Web  Web    `yaml:"web"`
 }
 
 func Load(path string) (*Config, error) {
 	cfg := &Config{
-		Addr: ":8080",
+		Addr: ":8090",
 		DB:   DB{Driver: "sqlite", DSN: "data/app.db"},
 		Auth: Auth{AuthTTLMinutes: 43200},
 	}
@@ -45,6 +51,9 @@ func Load(path string) (*Config, error) {
 	}
 	if v := os.Getenv("WZQ_DB_DRIVER"); v != "" {
 		cfg.DB.Driver = v
+	}
+	if v := os.Getenv("WZQ_WEB_DIR"); v != "" {
+		cfg.Web.Dir = v
 	}
 	return cfg, nil
 }

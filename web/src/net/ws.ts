@@ -17,8 +17,10 @@ export type ServerMsg = {
 }
 
 // 连接房间：把 http(s) 基址替换为 ws(s)，带上 room 与 token 查询参数。
+// VITE_API_BASE 为空（同源部署，前端由服务端一起托管）时，回退到当前页面 origin。
 export function connectRoom(roomId: string, onMsg: (m: ServerMsg) => void): WebSocket {
-  const base = (import.meta.env.VITE_API_BASE ?? '').replace(/^http/, 'ws')
+  const origin = (import.meta.env.VITE_API_BASE ?? '') || window.location.origin
+  const base = origin.replace(/^http/, 'ws')
   const ws = new WebSocket(`${base}/ws?room=${roomId}&token=${token()}`)
   ws.onmessage = (e) => onMsg(JSON.parse(e.data))
   return ws

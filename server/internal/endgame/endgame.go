@@ -28,14 +28,14 @@ type LevelMeta struct {
 	Attempts   int    `json:"attempts"`
 }
 
-// LevelDetail 是单关的可展示详情（含初始局面，但不含答案）。
+// LevelDetail 是单关的可展示详情（含初始局面与最小必胜步数，但不含答案）。
 type LevelDetail struct {
 	ID         string  `json:"id"`
 	Name       string  `json:"name"`
 	Difficulty int     `json:"difficulty"`
 	Stones     []Stone `json:"stones"`
 	ToMove     string  `json:"toMove"`
-	Kind       string  `json:"kind"`
+	Steps      int     `json:"steps"` // 最小必胜步数（若干步内可胜）
 }
 
 // findLevel 按 ID 线性查找关卡。
@@ -79,7 +79,7 @@ func (svc *Service) Detail(id string) (*LevelDetail, bool) {
 		Difficulty: l.Difficulty,
 		Stones:     l.Stones,
 		ToMove:     string(l.ToMove),
-		Kind:       l.Kind,
+		Steps:      l.MinSteps(),
 	}, true
 }
 

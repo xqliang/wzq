@@ -61,22 +61,26 @@ func TestWin1Accepts(t *testing.T) {
 	}
 }
 
-func TestBlock1SingleAnswer(t *testing.T) {
+func TestMate2OpenThree(t *testing.T) {
 	svc, _, uid := newSvc(t)
 	l, ok := findLevel("2-1")
 	if !ok {
 		t.Fatal("level 2-1 not found")
 	}
-	ans := l.AcceptedAnswers()
-	if len(ans) != 1 || ans[0] != [2]int{8, 7} {
-		t.Fatalf("2-1 answers should be exactly [[8,7]], got %v", ans)
+	if l.MinSteps() != 2 {
+		t.Fatalf("2-1 should be mate in 2, got %d", l.MinSteps())
 	}
-	correct, err := svc.Submit(uid, "2-1", 8, 7)
+	ans := l.AcceptedAnswers()
+	// 活三 (6,7)(7,7)(8,7)：成活四的两点 (5,7)/(9,7) 均可导向必胜。
+	if !contains(ans, 5, 7) || !contains(ans, 9, 7) {
+		t.Fatalf("2-1 answers should contain [5,7] and [9,7], got %v", ans)
+	}
+	correct, err := svc.Submit(uid, "2-1", 5, 7)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !correct {
-		t.Fatal("submit (8,7) should be correct")
+		t.Fatal("submit (5,7) should be correct")
 	}
 	wrong, err := svc.Submit(uid, "2-1", 0, 0)
 	if err != nil {

@@ -105,14 +105,14 @@ export interface EndgameMeta {
   attempts: number
 }
 
-// 单个关卡详情：预置棋子、轮到谁走、关卡类型（不含答案）。
+// 单个关卡详情：预置棋子、轮到谁走、最小必胜步数（不含答案）。
 export interface EndgameDetail {
   id: string
   name: string
   difficulty: number
   stones: { x: number; y: number; color: 'black' | 'white' }[]
   toMove: 'black' | 'white'
-  kind: string
+  steps: number
 }
 
 // 拉取全部关卡列表。

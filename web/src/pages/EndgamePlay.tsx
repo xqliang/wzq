@@ -119,7 +119,7 @@ export function EndgamePlay() {
       <div className="endgame-prompt">
         <span className="lv-id">{detail.id}</span>
         <span className="lv-stars">{'★'.repeat(detail.difficulty)}</span>
-        <span className="tip">轮到{who}棋，找出最佳落子</span>
+        <span className="tip">轮到{who}棋，{detail.steps}步内可胜</span>
       </div>
       <BoardCanvas onConfirm={onConfirm} overlays={overlays} interactive={verdict !== 'correct'} />
       <div className="hud">

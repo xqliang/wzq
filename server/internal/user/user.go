@@ -3,12 +3,14 @@ package user
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"math/rand"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/wzq/gomoku/internal/store"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // User 表示一名用户（游客或已绑定账号）。
@@ -91,4 +93,47 @@ func (svc *Service) AddExp(id int64, delta int) error {
 	}
 	_, err = svc.s.DB.Exec(`UPDATE user SET exp=?, level=? WHERE id=?`, exp, LevelForExp(exp), id)
 	return err
+}
+
+// ErrAuth 表示登录鉴权失败（账号不存在或密码错误）。
+var ErrAuth = errors.New("auth failed")
+
+// Bind 为用户绑定用户名与密码（密码以 bcrypt 哈希存储），用于游客升级为正式账号。
+func (svc *Service) Bind(id int64, username, password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	_, err = svc.s.DB.Exec(`UPDATE user SET username=?, password_hash=? WHERE id=?`, username, string(hash), id)
+	return err
+}
+
+// Login 按用户名+密码登录，成功返回对应用户；任何失败均返回 ErrAuth（避免泄漏账号是否存在）。
+func (svc *Service) Login(username, password string) (*User, error) {
+	var id int64
+	var hash string
+	err := svc.s.DB.QueryRow(`SELECT id, password_hash FROM user WHERE username=?`, username).Scan(&id, &hash)
+	if err != nil {
+		return nil, ErrAuth
+	}
+	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) != nil {
+		return nil, ErrAuth
+	}
+	return svc.Get(id)
+}
+
+// AllowAiWinExp 判断当日 AI 胜场经验是否仍在配额内（防刷）。
+// 每次调用在未超额时计数 +1 并返回 true，超额返回 false。
+func (svc *Service) AllowAiWinExp(id int64, dailyCap int) bool {
+	day := time.Now().Format("2006-01-02")
+	svc.s.DB.Exec(`INSERT INTO exp_daily (uid, day, ai_wins) VALUES (?,?,0) ON CONFLICT(uid, day) DO NOTHING`, id, day)
+	var wins int
+	if err := svc.s.DB.QueryRow(`SELECT ai_wins FROM exp_daily WHERE uid=? AND day=?`, id, day).Scan(&wins); err != nil {
+		return false
+	}
+	if wins >= dailyCap {
+		return false
+	}
+	svc.s.DB.Exec(`UPDATE exp_daily SET ai_wins=ai_wins+1 WHERE uid=? AND day=?`, id, day)
+	return true
 }

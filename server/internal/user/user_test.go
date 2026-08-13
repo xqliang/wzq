@@ -58,3 +58,36 @@ func TestAddExpUpdatesLevel(t *testing.T) {
 		t.Fatalf("exp/level not updated: %+v", got)
 	}
 }
+
+func TestBindAndLogin(t *testing.T) {
+	svc := newSvc(t)
+	u, _ := svc.CreateGuest()
+	if err := svc.Bind(u.ID, "alice", "pw123456"); err != nil {
+		t.Fatal(err)
+	}
+	got, err := svc.Login("alice", "pw123456")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != u.ID {
+		t.Fatal("login returned wrong user")
+	}
+	if _, err := svc.Login("alice", "wrong"); err == nil {
+		t.Fatal("expected auth failure")
+	}
+}
+
+func TestAiWinDailyCap(t *testing.T) {
+	svc := newSvc(t)
+	u, _ := svc.CreateGuest()
+	cap := 3
+	granted := 0
+	for i := 0; i < 5; i++ {
+		if svc.AllowAiWinExp(u.ID, cap) {
+			granted++
+		}
+	}
+	if granted != cap {
+		t.Fatalf("granted=%d want %d", granted, cap)
+	}
+}

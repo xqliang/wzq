@@ -27,6 +27,7 @@ type Server struct {
 	Endgame       *endgame.Service
 	DailyAiWinCap int
 	WebDir        string // 前端构建产物目录；为空则不托管前端（仅提供 API）。
+	AdminPassword string // 运营后台登录口令。
 }
 
 // writeJSON 以 JSON 形式写出响应体。
@@ -82,6 +83,10 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/endgame/submit", s.handleEndgameSubmit)
 	mux.HandleFunc("/api/endgame/hint", s.handleEndgameHint)
 	mux.HandleFunc("/api/endgame/answer", s.handleEndgameAnswer)
+	mux.HandleFunc("/api/admin/login", s.handleAdminLogin)
+	mux.HandleFunc("/api/admin/overview", s.handleAdminOverview)
+	mux.HandleFunc("/api/admin/users", s.handleAdminUsers)
+	mux.HandleFunc("/api/admin/games", s.handleAdminGames)
 	mux.HandleFunc("/ws", s.handleWS)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
 	// 托管前端：静态文件命中则直出，未命中回退 index.html（支持前端路由 /room/:id 等）。
@@ -401,4 +406,97 @@ func (s *Server) handleEndgameAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"answers": s.Endgame.Answer(r.URL.Query().Get("id"))})
+}
+
+// isAdmin 判断请求是否携带有效的后台令牌（subject=="admin"）。
+// 令牌复用 s.Auth，与用户令牌区分仅靠 subject。优先 Bearer，其次 ?token=。
+func (s *Server) isAdmin(r *http.Request) bool {
+	tok := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if tok == "" {
+		tok = r.URL.Query().Get("token")
+	}
+	sub, err := s.Auth.Verify(tok)
+	return err == nil && sub == "admin"
+}
+
+// handleAdminLogin 校验后台口令并签发 subject=="admin" 的令牌。
+func (s *Server) handleAdminLogin(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad request"})
+		return
+	}
+	if body.Password == "" || body.Password != s.AdminPassword {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	tok, err := s.Auth.Issue("admin")
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"token": tok})
+}
+
+// handleAdminOverview 返回后台概览指标；单项查询失败按 0 处理（尽力而为，不整体 500）。
+func (s *Server) handleAdminOverview(w http.ResponseWriter, r *http.Request) {
+	if !s.isAdmin(r) {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	users, _ := s.Users.Count()
+	// 今日新增：以本地当日 00:00:00 为界。
+	todayStart := time.Now().Format("2006-01-02") + " 00:00:00"
+	todayNew, _ := s.Users.CountSince(todayStart)
+	gamesAI, gamesPvP, _ := s.Records.TotalGames()
+	passes, _ := s.Records.EndgamePasses()
+	writeJSON(w, http.StatusOK, map[string]any{
+		"users":         users,
+		"todayNewUsers": todayNew,
+		"gamesAI":       gamesAI,
+		"gamesPvP":      gamesPvP,
+		"endgamePasses": passes,
+	})
+}
+
+// adminLimit 解析 ?limit= 查询参数，缺省 50，范围 [1,500]。
+func adminLimit(r *http.Request) int {
+	limit := 50
+	if v, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && v > 0 {
+		limit = v
+	}
+	if limit > 500 {
+		limit = 500
+	}
+	return limit
+}
+
+// handleAdminUsers 返回最近注册的用户列表（需后台令牌）。
+func (s *Server) handleAdminUsers(w http.ResponseWriter, r *http.Request) {
+	if !s.isAdmin(r) {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	users, err := s.Users.Recent(adminLimit(r))
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, users)
+}
+
+// handleAdminGames 返回最近的对局记录（需后台令牌）。
+func (s *Server) handleAdminGames(w http.ResponseWriter, r *http.Request) {
+	if !s.isAdmin(r) {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	games, err := s.Records.RecentGames(adminLimit(r))
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, games)
 }

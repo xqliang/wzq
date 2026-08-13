@@ -91,3 +91,42 @@ func TestAiWinDailyCap(t *testing.T) {
 		t.Fatalf("granted=%d want %d", granted, cap)
 	}
 }
+
+func TestAdminUserQueries(t *testing.T) {
+	svc := newSvc(t)
+	a, _ := svc.CreateGuest()
+	b, _ := svc.CreateGuest()
+	n, err := svc.Count()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 2 {
+		t.Fatalf("Count=%d want 2", n)
+	}
+	// 今日新增：以远久之前为界应涵盖全部；以未来为界应为 0。
+	past, err := svc.CountSince("2000-01-01 00:00:00")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if past != 2 {
+		t.Fatalf("CountSince(past)=%d want 2", past)
+	}
+	future, err := svc.CountSince("2999-01-01 00:00:00")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if future != 0 {
+		t.Fatalf("CountSince(future)=%d want 0", future)
+	}
+	recent, err := svc.Recent(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(recent) != 2 {
+		t.Fatalf("Recent len=%d want 2", len(recent))
+	}
+	// 倒序：后创建的 b 应排在最前。
+	if recent[0].ID != b.ID || recent[1].ID != a.ID {
+		t.Fatalf("Recent order wrong: %+v", recent)
+	}
+}

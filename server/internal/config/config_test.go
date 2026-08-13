@@ -32,3 +32,23 @@ func TestEnvOverridesSecret(t *testing.T) {
 		t.Fatalf("secret=%q", cfg.Auth.Secret)
 	}
 }
+
+func TestAdminPasswordDefaultAndEnv(t *testing.T) {
+	// 默认口令：无配置无环境变量时应用内置默认值。
+	cfg, err := Load(filepath.Join(t.TempDir(), "missing.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Admin.Password != "wzq-admin-888" {
+		t.Fatalf("default admin password=%q", cfg.Admin.Password)
+	}
+	// 环境变量覆盖。
+	t.Setenv("WZQ_ADMIN_PASSWORD", "override-pw")
+	cfg2, err := Load(filepath.Join(t.TempDir(), "missing.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg2.Admin.Password != "override-pw" {
+		t.Fatalf("env admin password=%q", cfg2.Admin.Password)
+	}
+}

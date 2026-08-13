@@ -137,3 +137,40 @@ func (svc *Service) AllowAiWinExp(id int64, dailyCap int) bool {
 	svc.s.DB.Exec(`UPDATE exp_daily SET ai_wins=ai_wins+1 WHERE uid=? AND day=?`, id, day)
 	return true
 }
+
+// Count 返回用户总数（运营后台概览用）。
+func (svc *Service) Count() (int, error) {
+	var n int
+	err := svc.s.DB.QueryRow(`SELECT COUNT(*) FROM user`).Scan(&n)
+	return n, err
+}
+
+// CountSince 返回 created_at >= sinceRFC 的用户数（如今日新增）。
+// sinceRFC 为可被数据库比较的时间字符串（RFC3339 或 "YYYY-MM-DD HH:MM:SS"）。
+func (svc *Service) CountSince(sinceRFC string) (int, error) {
+	var n int
+	err := svc.s.DB.QueryRow(`SELECT COUNT(*) FROM user WHERE created_at >= ?`, sinceRFC).Scan(&n)
+	return n, err
+}
+
+// Recent 返回最近注册的用户（按 id 倒序），供运营后台列表展示。
+func (svc *Service) Recent(limit int) ([]User, error) {
+	rows, err := svc.s.DB.Query(
+		`SELECT id, guest_id, username, nickname, avatar, exp, level FROM user ORDER BY id DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// 预分配为空切片，保证 JSON 序列化为 [] 而非 null。
+	users := []User{}
+	for rows.Next() {
+		var u User
+		var username sql.NullString
+		if err := rows.Scan(&u.ID, &u.GuestID, &username, &u.Nickname, &u.Avatar, &u.Exp, &u.Level); err != nil {
+			return nil, err
+		}
+		u.Username = username.String
+		users = append(users, u)
+	}
+	return users, rows.Err()
+}

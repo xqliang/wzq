@@ -22,11 +22,17 @@ type Web struct {
 	Dir string `yaml:"dir"`
 }
 
+// Admin 运营后台配置：Password 为后台登录口令。
+type Admin struct {
+	Password string `yaml:"password"`
+}
+
 type Config struct {
-	Addr string `yaml:"addr"`
-	DB   DB     `yaml:"db"`
-	Auth Auth   `yaml:"auth"`
-	Web  Web    `yaml:"web"`
+	Addr  string `yaml:"addr"`
+	DB    DB     `yaml:"db"`
+	Auth  Auth   `yaml:"auth"`
+	Web   Web    `yaml:"web"`
+	Admin Admin  `yaml:"admin"`
 }
 
 func Load(path string) (*Config, error) {
@@ -54,6 +60,13 @@ func Load(path string) (*Config, error) {
 	}
 	if v := os.Getenv("WZQ_WEB_DIR"); v != "" {
 		cfg.Web.Dir = v
+	}
+	// 运营后台口令：默认值兼容既有线上无需改配置；可用环境变量覆盖。
+	if cfg.Admin.Password == "" {
+		cfg.Admin.Password = "wzq-admin-888"
+	}
+	if v := os.Getenv("WZQ_ADMIN_PASSWORD"); v != "" {
+		cfg.Admin.Password = v
 	}
 	return cfg, nil
 }

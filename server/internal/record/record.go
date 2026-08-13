@@ -2,6 +2,7 @@
 package record
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/wzq/gomoku/internal/store"
@@ -111,4 +112,74 @@ func (svc *Service) StatsFor(uid int64) (Stats, error) {
 		st.Streak++
 	}
 	return st, nil
+}
+
+// AdminGame 表示运营后台展示用的对局概要（不含逐手棋谱）。
+type AdminGame struct {
+	ID        int64  `json:"id"`
+	Mode      string `json:"mode"`
+	AILevel   int    `json:"aiLevel"`
+	BlackUID  int64  `json:"blackUid"`
+	WhiteUID  int64  `json:"whiteUid"`
+	Winner    string `json:"winner"`
+	Moves     int    `json:"moves"`
+	EndReason string `json:"endReason"`
+	CreatedAt string `json:"createdAt"`
+}
+
+// TotalGames 统计人机（ai）与真人（pvp）对局总数。
+func (svc *Service) TotalGames() (ai int, pvp int, err error) {
+	rows, err := svc.s.DB.Query(`SELECT mode, COUNT(*) FROM game_record GROUP BY mode`)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var mode string
+		var n int
+		if err := rows.Scan(&mode, &n); err != nil {
+			return 0, 0, err
+		}
+		switch mode {
+		case "ai":
+			ai = n
+		case "pvp":
+			pvp = n
+		}
+	}
+	return ai, pvp, rows.Err()
+}
+
+// RecentGames 返回最近的对局记录（按 id 倒序），供运营后台列表展示。
+// 兼容可空字段：ai_level 与 white_uid 用 NullInt64，created_at 直接扫描为字符串。
+func (svc *Service) RecentGames(limit int) ([]AdminGame, error) {
+	rows, err := svc.s.DB.Query(
+		`SELECT id, mode, ai_level, black_uid, white_uid, winner, moves, end_reason, created_at
+		 FROM game_record ORDER BY id DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// 预分配为空切片，保证 JSON 序列化为 [] 而非 null。
+	games := []AdminGame{}
+	for rows.Next() {
+		var g AdminGame
+		var aiLevel, whiteUID sql.NullInt64
+		var createdAt sql.NullString
+		if err := rows.Scan(&g.ID, &g.Mode, &aiLevel, &g.BlackUID, &whiteUID, &g.Winner, &g.Moves, &g.EndReason, &createdAt); err != nil {
+			return nil, err
+		}
+		g.AILevel = int(aiLevel.Int64)
+		g.WhiteUID = whiteUID.Int64
+		g.CreatedAt = createdAt.String
+		games = append(games, g)
+	}
+	return games, rows.Err()
+}
+
+// EndgamePasses 返回已通关的残局进度条数（passed=1）。
+func (svc *Service) EndgamePasses() (int, error) {
+	var n int
+	err := svc.s.DB.QueryRow(`SELECT COUNT(*) FROM endgame_progress WHERE passed=1`).Scan(&n)
+	return n, err
 }

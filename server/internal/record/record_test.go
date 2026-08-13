@@ -84,3 +84,51 @@ func TestStatsFor(t *testing.T) {
 		t.Fatalf("empty stats not zero: %+v", empty)
 	}
 }
+
+func TestAdminQueries(t *testing.T) {
+	s, _ := store.Open("sqlite", ":memory:")
+	s.Migrate()
+	svc := New(s)
+	// 造两条 ai、一条 pvp 对局记录。
+	games := []Game{
+		{Mode: "ai", AILevel: 3, BlackUID: 1, WhiteUID: 0, Winner: "black", Moves: 10, EndReason: "ai", CreatedAt: time.Now()},
+		{Mode: "ai", AILevel: 5, BlackUID: 2, WhiteUID: 0, Winner: "white", Moves: 20, EndReason: "ai", CreatedAt: time.Now()},
+		{Mode: "pvp", BlackUID: 1, WhiteUID: 2, Winner: "black", Moves: 30, EndReason: "five", CreatedAt: time.Now()},
+	}
+	for _, g := range games {
+		if _, err := svc.Save(g); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ai, pvp, err := svc.TotalGames()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ai != 2 || pvp != 1 {
+		t.Fatalf("TotalGames ai=%d pvp=%d want 2/1", ai, pvp)
+	}
+	recent, err := svc.RecentGames(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(recent) != 3 {
+		t.Fatalf("RecentGames len=%d want 3", len(recent))
+	}
+	// 倒序：最近插入的 pvp 局应排在最前。
+	if recent[0].Mode != "pvp" || recent[0].Moves != 30 {
+		t.Fatalf("RecentGames[0]=%+v want pvp/30", recent[0])
+	}
+	if recent[0].CreatedAt == "" {
+		t.Fatalf("RecentGames[0].CreatedAt empty")
+	}
+	// 造两条残局进度：一条已通关、一条未通关。
+	s.DB.Exec(`INSERT INTO endgame_progress (uid, level_id, passed, attempts, hints) VALUES (?,?,?,?,?)`, 1, "L1", 1, 3, 0)
+	s.DB.Exec(`INSERT INTO endgame_progress (uid, level_id, passed, attempts, hints) VALUES (?,?,?,?,?)`, 1, "L2", 0, 1, 1)
+	passes, err := svc.EndgamePasses()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if passes != 1 {
+		t.Fatalf("EndgamePasses=%d want 1", passes)
+	}
+}

@@ -138,6 +138,21 @@ uv run scripts/make-avatars.py         # 头像（蓝底抠图→透明 PNG）
 
 线上为一台 Debian 云服务器（SSH 别名 `ecs`），同机可共存 **prod（:8090）** 与 **stage（:8091）** 两套隔离实例，数据库为同实例不同库 `wzq_prod` / `wzq_stage`。
 
+### 前端打包（同源部署）
+
+前端与后端**同源部署**——Go 二进制直接托管前端静态资源，无需 Nginx、无跨域。手动打包步骤：
+
+```bash
+cd web
+VITE_API_BASE= npm run build      # 关键：空 VITE_API_BASE → 走相对 /api 与同源 ws，适配任意域名/端口
+# 产物在 web/dist；让后端托管它（二选一）：
+#   a) server/config.yaml 的 web.dir 指向该 dist 目录
+#   b) 环境变量 WZQ_WEB_DIR=/abs/path/to/web/dist（优先级高于 config）
+cd ../server && WZQ_WEB_DIR=$(cd ../web/dist && pwd) go run ./cmd/server   # 本地同源预览 :8090
+```
+
+说明：dev 模式（`npm run dev` :5173 直连 :8090）才涉及跨域；生产为同源，天然无此问题。**下面的一键脚本已自动完成上述打包 + 上传**，日常部署无需手动执行本节。
+
 ### 一键部署
 ```bash
 # 部署 prod（默认）

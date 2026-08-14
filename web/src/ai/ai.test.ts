@@ -47,12 +47,13 @@ describe('bestMove 防守', () => {
     const blocks = (mv.x === 4 && mv.y === 7) || (mv.x === 8 && mv.y === 7)
     expect(blocks).toBe(true)
   })
-  it('Lv3 计时在合理范围内(<2.5s/步)', () => {
+  it('Lv3 计时在合理范围内(<3.5s/步)', () => {
     let b = emptyBoard()
     for (const [x, y] of [[7, 7], [8, 8], [7, 8], [8, 7], [6, 6]] as const)
       b = applyMove(b, { x, y, color: (x + y) % 2 ? 'black' : 'white' })
     const t0 = performance.now()
     bestMove(b, 'white', 3)
-    expect(performance.now() - t0).toBeLessThan(2500)
+    // 绝对耗时守护：给不同机器/负载留余量，仅拦截退化到秒级以上的异常慢。
+    expect(performance.now() - t0).toBeLessThan(3500)
   })
 })

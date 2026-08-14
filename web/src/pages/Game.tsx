@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BoardCanvas, type Overlay } from '../board/BoardCanvas'
-import { ResultModal } from '../components/ResultModal'
+import { ResultOverlay } from '../components/ResultOverlay'
 import { StartCountdown } from '../components/StartCountdown'
 import { GameMenu } from '../components/GameMenu'
 import { useGame } from '../store/game'
@@ -68,16 +68,6 @@ export function Game() {
   const rematch = () => {
     if (st.mode === 'pvp' && st.roomId) nav('/game', { state: { mode: 'pvp', roomId: st.roomId } })
     else nav('/game', { state: { mode: 'ai', level: st.level ?? 1 } })
-  }
-
-  // 依据结算结果拼装弹窗说明行。
-  const modalLines = (r: { win: boolean; reason?: string; expDelta?: number }): string[] => {
-    const lines: string[] = []
-    if (r.reason === 'timeout') lines.push('超时判负')
-    else if (r.reason === 'resign') lines.push('认输判负')
-    lines.push(r.win ? `+${r.expDelta ?? 20} 经验` : '+5 经验，再接再厉！')
-    if (st.mode === 'pvp') lines.push('双方都点「再来一局」即在原房间开新局')
-    return lines
   }
 
   // 预演双方各再走 3 步（共 6 手）的分步配色（绿/蓝/紫，深浅区分先后）。
@@ -334,14 +324,15 @@ export function Game() {
         />
       </div>
       {showModal && result && (
-        <ResultModal
+        <ResultOverlay
           win={result.win}
-          title={result.win ? '🎉 胜利' : '本局失败'}
-          lines={modalLines(result)}
-          actions={[
-            { label: '再来一局', onClick: rematch, primary: true },
-            { label: '返回首页', onClick: () => nav('/') },
-          ]}
+          coins={result.win ? 120 : 0}
+          me={{ nickname: '我', avatar: 'avatar_01', rankLabel: rankLabel(1), points: 10, threshold: 30, delta: result.win ? 10 : -10 }}
+          opp={{ nickname: st.mode === 'ai' ? 'AI大师' : '对手', avatar: 'avatar_02', rankLabel: rankLabel(3), points: 20, threshold: 30, delta: result.win ? -10 : 10 }}
+          onRematch={rematch}
+          onHome={() => nav('/')}
+          onShare={() => alert('分享（后续接入）')}
+          onDouble={() => alert('看广告双倍（阶段C）')}
         />
       )}
     </div>

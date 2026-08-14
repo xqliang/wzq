@@ -154,19 +154,23 @@ button:disabled {
   max-width: 340px;
   margin-top: 8px;
 }
+/* 首页入口：古风木牌质感，与对局页木牌按钮/结算按钮统一。 */
 .entry {
   width: 100%;
-  padding: 18px;
+  padding: 16px;
   font-size: 21px;
-  letter-spacing: 2px;
-  background: linear-gradient(180deg, rgba(246, 236, 216, 0.95), rgba(233, 216, 180, 0.95));
-  border: 2px solid var(--ink);
-  border-radius: 14px;
-  box-shadow: var(--shadow);
+  letter-spacing: 3px;
+  font-weight: 700;
+  color: #3a240f;
+  background: radial-gradient(circle at 50% 28%, #e9c88f, #c8975a 55%, #a86b32);
+  border: 2px solid #5c3a17;
+  border-radius: 16px;
+  box-shadow: 0 3px 0 #7c4a1e, var(--shadow);
 }
 .entry.primary {
-  border-color: var(--accent);
-  color: var(--accent);
+  color: #5c360f;
+  background: radial-gradient(circle at 50% 28%, #ffe08a, #e0a52f 55%, #a86b32);
+  border-color: #7c4a1e;
 }
 .entry.disabled {
   opacity: 0.5;
@@ -735,9 +739,14 @@ button:disabled {
   margin-top: 4px;
 }
 .op-btn {
-  padding: 10px 20px;
+  padding: 10px 22px;
   font-size: 17px;
-  border-radius: 12px;
+  font-weight: 700;
+  color: #3a240f;
+  background: radial-gradient(circle at 50% 30%, #e9c88f, #c8975a 60%, #a86b32);
+  border: 2px solid #5c3a17;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
 }
 
 .player-bar {

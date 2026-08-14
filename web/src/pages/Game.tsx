@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { BoardCanvas, type Overlay } from '../board/BoardCanvas'
 import { ResultModal } from '../components/ResultModal'
 import { StartCountdown } from '../components/StartCountdown'
+import { GameMenu } from '../components/GameMenu'
 import { useGame } from '../store/game'
 import { playSfx } from '../audio/audio'
 import { reportAiResult, getCurrentUser } from '../net/rest'
@@ -303,17 +304,19 @@ export function Game() {
             ⏱ {remain}s
           </span>
         )}
-        {st.mode === 'ai' && !previewSteps && (
-          <>
-            <button onClick={onHint}>💡 提示</button>
-            <button onClick={onPreview}>预演</button>
-          </>
-        )}
-        {previewSteps && <button onClick={endPreview}>结束预演</button>}
-        {st.mode === 'pvp' && wsRef.current && !previewSteps && (
-          <button onClick={() => sendUndoReq(wsRef.current!)}>悔棋</button>
-        )}
-        {!previewSteps && <button onClick={onResign}>认输</button>}
+        <GameMenu
+          onSettings={() => nav('/settings')}
+          actions={[
+            ...(st.mode === 'ai' && !previewSteps
+              ? [{ label: '提示', onClick: onHint }, { label: '预演', onClick: onPreview }]
+              : []),
+            ...(previewSteps ? [{ label: '结束预演', onClick: endPreview }] : []),
+            ...(st.mode === 'pvp' && wsRef.current && !previewSteps
+              ? [{ label: '悔棋', onClick: () => sendUndoReq(wsRef.current!) }]
+              : []),
+            ...(!previewSteps ? [{ label: '认输', onClick: onResign }] : []),
+          ]}
+        />
       </div>
       {showModal && result && (
         <ResultModal

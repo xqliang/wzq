@@ -801,3 +801,38 @@ button:disabled {
   30% { transform: scale(1.1); opacity: 1; }
   100% { transform: scale(1); opacity: 0.85; }
 }
+.game-menu {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+}
+.wood-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #d9a86a, #a86b32 70%, #7c4a1e);
+  border: 2px solid #5c3a17;
+  color: #3a240f;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+.game-menu-pop {
+  position: absolute;
+  bottom: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  background: var(--panel);
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: var(--shadow);
+  width: max-content;
+  max-width: 90vw;
+}

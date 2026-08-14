@@ -137,7 +137,6 @@ button:disabled {
   font-size: 14px;
 }
 .profile .settings-btn {
-  margin-left: auto;
   padding: 8px 12px;
 }
 .home .title {
@@ -701,4 +700,42 @@ button:disabled {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+.home-logo {
+  width: min(60vw, 240px);
+  height: auto;
+  margin: 8px auto 0;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
+}
+.profile .rank-tag {
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 700;
+}
+.profile .currency {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.profile .currency span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  color: var(--ink);
+}
+.profile .currency img {
+  width: 20px;
+  height: 20px;
+}
+.ops-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+.op-btn {
+  padding: 10px 20px;
+  font-size: 17px;
+  border-radius: 12px;
 }

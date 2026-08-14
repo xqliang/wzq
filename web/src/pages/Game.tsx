@@ -15,7 +15,8 @@ import { checkWin } from '../core/win'
 import { bestMove } from '../ai/search'
 import { countdownState } from '../lib/countdown'
 import { PlayerBar, type PlayerInfo } from '../components/PlayerBar'
-import { rankLabel } from '../theme/ranks'
+import { RankUpOverlay } from '../components/RankUpOverlay'
+import { rankLabel, rankGroup } from '../theme/ranks'
 
 // 对局页：人机模式驱动 AI Web Worker；真人模式持有唯一的 WebSocket 连接。
 export function Game() {
@@ -48,6 +49,9 @@ export function Game() {
   const [showModal, setShowModal] = useState(false)
   // 记录本次请求 AI 的起始时刻，用于把"思考"总时长控制在 1~2s（含真实运算耗时）。
   const aiStartRef = useRef(0)
+
+  // 阶段A 占位开关：恒 false，段位进阶界面不实际渲染；阶段B 改为结算返回的真实 promoted。
+  const RANKUP_ENABLED = false
 
   // 统一结算：只结算一次；播放音效、（人机）上报结果得到经验增量；不再直接跳转。
   // 若当前存在获胜连线（winLine），交由 BoardCanvas 的 onWinAnimationEnd 在动画结束后展示弹窗；
@@ -333,6 +337,16 @@ export function Game() {
           onHome={() => nav('/')}
           onShare={() => alert('分享（后续接入）')}
           onDouble={() => alert('看广告双倍（阶段C）')}
+        />
+      )}
+      {/* 阶段A 占位：RANKUP_ENABLED 恒 false，不弹出；阶段B 用结算返回的 promoted 触发。 */}
+      {RANKUP_ENABLED && (
+        <RankUpOverlay
+          fromLabel={rankLabel(1)}
+          toLabel={rankLabel(2)}
+          group={rankGroup(2)}
+          coins={120}
+          onContinue={() => undefined}
         />
       )}
     </div>

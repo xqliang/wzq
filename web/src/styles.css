@@ -739,3 +739,39 @@ button:disabled {
   font-size: 17px;
   border-radius: 12px;
 }
+
+.player-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  max-width: min(94vw, 560px);
+}
+.player-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  background: var(--panel);
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  padding: 6px 10px;
+  box-shadow: var(--shadow);
+}
+.player-side.right {
+  flex-direction: row-reverse;
+}
+.player-side.active {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(200, 145, 47, 0.5), var(--shadow);
+}
+.player-meta { min-width: 0; }
+.player-nick { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px; }
+.player-rank { font-size: 12px; color: var(--accent); }
+.stone-chip { width: 16px; height: 16px; border-radius: 50%; flex: none; }
+.stone-chip.black { background: radial-gradient(circle at 35% 35%, #555, #111); }
+.stone-chip.white { background: radial-gradient(circle at 35% 35%, #fff, #cfc7b5); border: 1px solid #b3ada1; }
+.player-bar-center { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: none; }
+.turn-arrow { font-size: 14px; color: var(--gold); }
+.compass-idle { width: 64px; height: 64px; }

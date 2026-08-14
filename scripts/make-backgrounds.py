@@ -9,8 +9,8 @@ from _seedream import generate, save_scaled, crop_center_ratio
 
 OUT = "web/public/assets/img"
 scenes = {
-  "bg_game": "中国古风棋室，木质棋桌、屏风、茶具、灯笼、山水画，水墨淡彩，低饱和暖木色调，画面中央大面积留白",
-  "bg_home": "中国古风书房庭院，竹影、宣纸质感，水墨淡彩，低饱和，顶部底部有意象中间留白",
+  "bg_home": "中国古风水墨山水，青绿色调，远山云雾、江面小舟、飞鸟，宣纸质感，顶部与底部有山水意象，画面中央大面积留白供标题与按钮，低饱和淡彩",
+  "bg_game": "中国古风水墨背景，青蓝色调，淡云与远山，宣纸质感，低饱和，画面中央大面积留白供棋盘",
 }
 for name, prompt in scenes.items():
     img = crop_center_ratio(generate(prompt), 375 / 667)

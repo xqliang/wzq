@@ -2,14 +2,26 @@
 // 素材位于 /assets/audio/<name>.mp3（后续里程碑补充），缺失时静默失败。
 type Sfx = 'place' | 'win' | 'lose' | 'button' | 'undo' | 'tick' | 'timeout'
 
+// 落子特效类型：无 / 水波纹 / 灰尘。
+export type Effect = 'none' | 'ripple' | 'dust'
+
 interface Settings {
   bgm: boolean
   sfx: boolean
   bgmVol: number
   sfxVol: number
+  effect: Effect // 落子视觉特效
+  theme: string // 棋盘主题 id（见 board/themes.ts）
 }
 
-const DEFAULTS: Settings = { bgm: true, sfx: true, bgmVol: 0.5, sfxVol: 0.8 }
+const DEFAULTS: Settings = {
+  bgm: true,
+  sfx: true,
+  bgmVol: 0.5,
+  sfxVol: 0.8,
+  effect: 'ripple',
+  theme: 'wood',
+}
 
 // 从 localStorage 读取设置并与默认值合并，异常时回退默认。
 function load(): Settings {

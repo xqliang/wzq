@@ -173,44 +173,22 @@ button:disabled {
   opacity: 0.5;
 }
 
-/* 棋盘容器：宽度自适应（手机满宽、桌面封顶），保持正方形，浮动确认按钮相对定位。 */
+/* 棋盘容器：宽度自适应（手机满宽、桌面封顶），保持正方形。
+   立体化：底部柔和落地阴影 + 多层投影，营造棋盘悬浮/厚重的纵深感。 */
 .board-wrap {
   position: relative;
   width: min(94vw, 560px);
   aspect-ratio: 1 / 1;
-  border-radius: 12px;
-  box-shadow: var(--shadow);
+  border-radius: 16px;
+  box-shadow:
+    0 2px 4px rgba(58, 44, 26, 0.25),
+    0 10px 20px rgba(58, 44, 26, 0.3),
+    0 26px 40px rgba(30, 20, 8, 0.35);
 }
 .board-canvas {
   display: block;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
-}
-.board-btn {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  width: 52px;
-  height: 52px;
-  min-height: 0;
-  padding: 0;
-  border-radius: 50%;
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-  z-index: 3;
-}
-.board-btn.confirm {
-  background: linear-gradient(180deg, #2ecc71, #27ae60);
-  color: #fff;
-  border-color: #1e7a45;
-}
-.board-btn.cancel {
-  background: linear-gradient(180deg, #f0f0f0, #d9d2c4);
-  color: var(--ink);
 }
 
 /* 对局信息与操作条。 */
@@ -546,6 +524,40 @@ button:disabled {
 .setting-row input[type='range'] {
   flex: 1;
   max-width: 200px;
+}
+/* 设置分组小标题（如“棋盘”）。 */
+.settings-section {
+  margin: 6px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(58, 44, 26, 0.2);
+  color: var(--ink-soft);
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+/* 设置页下拉选择：古风纸底，与按钮风格统一。 */
+.setting-row select {
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--paper), var(--paper-2));
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  padding: 6px 10px;
+  min-height: 36px;
+  cursor: pointer;
+}
+/* 主题选择：色板 + 下拉。 */
+.theme-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.theme-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid var(--ink);
+  flex: none;
 }
 
 /* 好友对战等待页的邀请链接。 */

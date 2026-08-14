@@ -11,6 +11,7 @@ import type { Color } from '../core/types'
 import { applyMove } from '../core/board'
 import { checkWin } from '../core/win'
 import { bestMove } from '../ai/search'
+import { countdownState } from '../lib/countdown'
 
 // 对局页：人机模式驱动 AI Web Worker；真人模式持有唯一的 WebSocket 连接。
 export function Game() {
@@ -192,7 +193,7 @@ export function Game() {
   useEffect(() => {
     if (deadline == null) return
     const t = setInterval(() => {
-      const s = Math.max(0, Math.round((deadline - Date.now()) / 1000))
+      const { remain: s } = countdownState(deadline, Date.now(), 30)
       setRemain(s)
       if (s <= 5 && s > 0) playSfx('tick')
       if (s <= 0) {

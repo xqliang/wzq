@@ -14,6 +14,8 @@ import { applyMove } from '../core/board'
 import { checkWin } from '../core/win'
 import { bestMove } from '../ai/search'
 import { countdownState } from '../lib/countdown'
+import { PlayerBar, type PlayerInfo } from '../components/PlayerBar'
+import { rankLabel } from '../theme/ranks'
 
 // 对局页：人机模式驱动 AI Web Worker；真人模式持有唯一的 WebSocket 连接。
 export function Game() {
@@ -289,7 +291,25 @@ export function Game() {
 
   return (
     <div className="game screen">
-      <div className="player opponent">对手 {st.mode === 'ai' ? 'AI大师 ⚪' : '⚪'}</div>
+      <PlayerBar
+        me={{ nickname: '我', avatar: 'avatar_01', rankLabel: rankLabel(1), color: g.myColor } as PlayerInfo}
+        opp={{
+          nickname: st.mode === 'ai' ? 'AI大师' : '对手',
+          avatar: 'avatar_02',
+          rankLabel: rankLabel(3),
+          color: g.myColor === 'black' ? 'white' : 'black',
+        } as PlayerInfo}
+        turn={g.turn}
+        timer={
+          deadline != null
+            ? {
+                remain,
+                progress: remain / 30,
+                level: remain <= 5 ? 'danger' : remain <= 10 ? 'warn' : 'normal',
+              }
+            : null
+        }
+      />
       <BoardCanvas
         onConfirm={onConfirm}
         overlays={overlays}
@@ -299,11 +319,6 @@ export function Game() {
       {started && !introDone && <StartCountdown onDone={() => setIntroDone(true)} />}
       <div className="hud">
         {g.turn === g.myColor ? <span className="tip">轮到你落子</span> : <span>对方思考中…</span>}
-        {deadline != null && (
-          <span className={remain <= 5 ? 'countdown danger' : remain <= 10 ? 'countdown warn' : 'countdown'}>
-            ⏱ {remain}s
-          </span>
-        )}
         <GameMenu
           onSettings={() => nav('/settings')}
           actions={[

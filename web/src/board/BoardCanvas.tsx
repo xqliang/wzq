@@ -287,6 +287,16 @@ function drawFrame(ctx: CanvasRenderingContext2D, theme: Theme) {
   ctx.lineTo(inner.r, inner.b)
   ctx.lineTo(inner.l, inner.b)
   ctx.stroke()
+  // 底部立体底座：在棋盘下沿外侧压一条更深的厚度带，增强“坐在桌面上”的立体感。
+  const baseColor = theme.baseShadow ?? theme.frameDark
+  ctx.fillStyle = baseColor
+  ctx.beginPath()
+  ctx.moveTo(0, PX)
+  ctx.lineTo(PX, PX)
+  ctx.lineTo(PX - 6, PX - 6)
+  ctx.lineTo(6, PX - 6)
+  ctx.closePath()
+  ctx.fill()
 }
 
 // 四角准心：围绕交叉点的四个 L 形转角括号（相机对焦框风格），带轻微呼吸。
@@ -436,6 +446,19 @@ function drawStone(
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, PI2)
   ctx.fill()
+
+  // specular 主题（玉石/流金）追加一处细锐高光点，增强光泽。
+  if ((color === 'black' ? theme.black : theme.white).specular) {
+    const sx = cx - r * 0.42
+    const sy = cy - r * 0.46
+    const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, r * 0.3)
+    sg.addColorStop(0, 'rgba(255,255,255,0.9)')
+    sg.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.fillStyle = sg
+    ctx.beginPath()
+    ctx.arc(cx, cy, r, 0, PI2)
+    ctx.fill()
+  }
   ctx.restore()
 }
 

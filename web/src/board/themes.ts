@@ -21,6 +21,7 @@ export interface Theme {
   line: string // 网格线颜色
   star: string // 星位点颜色
   accent: string // 准心/预落子准星强调色
+  baseShadow?: string // 棋盘底部立体底座色（缺省用 frameDark）
   useImage: boolean // true=玉石 PNG（仅 wood）；false=程序化渐变棋子
   black: StoneSpec
   white: StoneSpec
@@ -87,6 +88,22 @@ export const THEMES: Record<string, Theme> = {
     useImage: false,
     black: { hi: '#4c4c52', body: '#1a1a20', edge: '#000004', rim: 'rgba(230,194,101,0.35)', specular: true },
     white: { hi: '#ffffff', body: '#dff2e4', edge: '#8fc7a6', rim: 'rgba(20,60,45,0.4)', specular: true },
+  },
+  // 流金岁月（高阶皮肤）：深蓝棋盘面 + 金色立体框，金光泽圆子（含细锐高光点）。
+  gold: {
+    id: 'gold',
+    name: '流金岁月',
+    boardFace: '#2b3a5c',
+    frameBase: '#b8791b',
+    frameLight: '#f5c542',
+    frameDark: '#7c4a1e',
+    line: '#d9b56a',
+    star: '#f5e2a0',
+    accent: '#f5c542',
+    baseShadow: '#5c360f',
+    useImage: false,
+    black: { hi: '#5a5a62', body: '#1a1a22', edge: '#000006', rim: 'rgba(245,197,66,0.4)', specular: true },
+    white: { hi: '#ffffff', body: '#f0e6c8', edge: '#c8b483', rim: 'rgba(120,74,30,0.4)', specular: true },
   },
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { ensureGuest } from './net/rest'
 import type { User } from './net/rest'
 import { Home } from './pages/Home'
@@ -14,6 +14,14 @@ import { Share } from './pages/Share'
 import { Admin } from './pages/Admin'
 import { Settings } from './pages/Settings'
 
+// 用 location.key 作为 key 强制重挂载 Game：
+// “再来一局”会从 /game 导航到 /game，路由匹配不变不会自动重挂载，
+// 借助每次导航生成的新 location.key 触发重挂载，从而干净地重开一局。
+function GameRoute() {
+  const loc = useLocation()
+  return <Game key={loc.key} />
+}
+
 // 应用根组件：挂载时确保拥有游客身份，再渲染路由。
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -26,7 +34,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home user={user} />} />
         <Route path="/ai" element={<AiConfig user={user} />} />
-        <Route path="/game" element={<Game />} />
+        <Route path="/game" element={<GameRoute />} />
         <Route path="/result" element={<Result />} />
         <Route path="/room/:id?" element={<Room />} />
         <Route path="/endgame" element={<Endgame />} />

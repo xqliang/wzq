@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { BoardCanvas } from '../board/BoardCanvas'
 import type { Overlay } from '../board/BoardCanvas'
+import { ResultModal } from '../components/ResultModal'
 import { useGame } from '../store/game'
 import { playSfx } from '../audio/audio'
 import { endgameLevel, endgameLevels, endgameHint, endgameComplete } from '../net/rest'
@@ -34,6 +35,8 @@ export function EndgamePlay() {
   const workerRef = useRef<Worker | null>(null)
   // 记录请求 AI 的起始时刻，用于把"思考"总时长控制在 1~2s。
   const aiStartRef = useRef(0)
+  // 待展示的结算结果：先算出但不立刻置 done，等获胜连线动画播放完再置（无连线则立即置）。
+  const pendingDoneRef = useRef<Done>(null)
 
   // 订阅轮次与胜负，驱动 AI 落子与结算。
   const turn = useGame((s) => s.turn)
@@ -62,6 +65,7 @@ export function EndgamePlay() {
     setDetail(null)
     setErr(null)
     setDone(null)
+    pendingDoneRef.current = null
     setOverlays(undefined)
     endgameLevel(id)
       .then((d) => {
@@ -87,23 +91,21 @@ export function EndgamePlay() {
     workerRef.current?.postMessage({ board, color: defender, level: 3 })
   }, [turn, winner, done, detail])
 
-  // 胜负结算：任一落子后 winner 变化即判定，并上报服务端（首胜奖励经验）。
+  // 胜负结算：任一落子后 winner 变化即判定并上报服务端；
+  // 若存在获胜连线，先让 BoardCanvas 播放高亮动画，动画结束回调再置 done（展示弹窗）；
+  // 无连线则立即置 done。
   useEffect(() => {
-    if (!winner || done || !detail) return
-    if (winner === detail.toMove) {
-      playSfx('win')
-      setDone('win')
-      endgameComplete(id, true).catch(() => {})
-    } else {
-      playSfx('lose')
-      setDone('lose')
-      endgameComplete(id, false).catch(() => {})
-    }
+    if (!winner || done || pendingDoneRef.current || !detail) return
+    const outcome: Done = winner === detail.toMove ? 'win' : 'lose'
+    pendingDoneRef.current = outcome
+    playSfx(outcome === 'win' ? 'win' : 'lose')
+    endgameComplete(id, outcome === 'win').catch(() => {})
+    if (!useGame.getState().winLine) setDone(outcome)
   }, [winner, done, detail, id])
 
   // 确认落子：按当前轮次（此时为玩家）落子。
   const onConfirm = () => {
-    if (done) return
+    if (done || useGame.getState().winner) return
     useGame.getState().confirm()
     playSfx('place')
   }
@@ -122,6 +124,7 @@ export function EndgamePlay() {
     playSfx('button')
     useGame.getState().setup(buildBoard(detail.stones), detail.toMove)
     setDone(null)
+    pendingDoneRef.current = null
     setOverlays(undefined)
   }
 
@@ -148,7 +151,12 @@ export function EndgamePlay() {
           {done ? '对局结束' : myTurn ? `轮到你(${who})` : 'AI 思考中…'}
         </span>
       </div>
-      <BoardCanvas onConfirm={onConfirm} overlays={overlays} interactive={!done} />
+      <BoardCanvas
+        onConfirm={onConfirm}
+        overlays={overlays}
+        interactive={!done}
+        onWinAnimationEnd={() => setDone(pendingDoneRef.current)}
+      />
       <div className="hud">
         {done === null && (
           <>
@@ -157,30 +165,36 @@ export function EndgamePlay() {
             <button onClick={() => nav('/endgame')}>返回列表</button>
           </>
         )}
-        {done === 'win' && (
-          <>
-            <span className="tip">🎉 挑战成功！</span>
-            {nextId && (
-              <button
-                onClick={() => {
-                  playSfx('button')
-                  nav(`/endgame/play/${nextId}`)
-                }}
-              >
-                下一关
-              </button>
-            )}
-            <button onClick={() => nav('/endgame')}>返回列表</button>
-          </>
-        )}
-        {done === 'lose' && (
-          <>
-            <span className="tip">❌ 被翻盘了，再试一次</span>
-            <button onClick={retry}>重试</button>
-            <button onClick={() => nav('/endgame')}>返回列表</button>
-          </>
-        )}
       </div>
+      {done && (
+        <ResultModal
+          win={done === 'win'}
+          title={done === 'win' ? '🎉 挑战成功' : '本局失败'}
+          lines={done === 'win' ? ['成功通关本局残局'] : ['被翻盘了，再试一次']}
+          actions={
+            done === 'win'
+              ? [
+                  ...(nextId
+                    ? [
+                        {
+                          label: '下一关',
+                          primary: true,
+                          onClick: () => {
+                            playSfx('button')
+                            nav(`/endgame/play/${nextId}`)
+                          },
+                        },
+                      ]
+                    : []),
+                  { label: '返回列表', onClick: () => nav('/endgame') },
+                ]
+              : [
+                  { label: '重试', primary: true, onClick: retry },
+                  { label: '返回列表', onClick: () => nav('/endgame') },
+                ]
+          }
+        />
+      )}
     </div>
   )
 }

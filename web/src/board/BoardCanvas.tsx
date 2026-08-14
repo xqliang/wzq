@@ -12,6 +12,10 @@ const PAD = 30 // 网格到棋盘面边缘的内边距（逻辑坐标）
 const PX = CELL * (SIZE - 1) + PAD * 2 // 画布逻辑边长（绘制用，固定）
 const FRAME = 14 // 立体外框厚度（逻辑坐标），营造“厚度/边框”
 const PI2 = Math.PI * 2
+// 胜利连线动画节拍：逐子点亮步进、齐闪时长。
+const WIN_STEP = 240 // 每颗棋子依次点亮的间隔（ms）
+const WIN_FLASH = 1000 // 齐闪阶段总时长（ms）
+const WIN_GOLD = '#ffd24a'
 
 // 棋盘覆盖标记：提示/预演用。color 为 CSS 颜色，label 可选（如预演步序号）。
 export interface Overlay {
@@ -47,10 +51,12 @@ export function BoardCanvas({
   onConfirm,
   overlays,
   interactive = true,
+  onWinAnimationEnd,
 }: {
   onConfirm: () => void
   overlays?: Overlay[]
   interactive?: boolean
+  onWinAnimationEnd?: () => void
 }) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const ref = useRef<HTMLCanvasElement>(null)
@@ -61,6 +67,12 @@ export function BoardCanvas({
   const turn = useGame((s) => s.turn)
   const myColor = useGame((s) => s.myColor)
   const preview = useGame((s) => s.preview)
+  const winLine = useGame((s) => s.winLine)
+  // 保证胜利动画结束回调只触发一次。
+  const firedRef = useRef(false)
+  // 用 ref 持有最新回调，避免其变化导致绘制 effect 重启（打断动画计时）。
+  const onWinEndRef = useRef(onWinAnimationEnd)
+  onWinEndRef.current = onWinAnimationEnd
 
   // 按容器宽度决定显示尺寸（上限 PX，避免桌面端过大）。监听窗口变化。
   useEffect(() => {
@@ -82,6 +94,9 @@ export function BoardCanvas({
     cv.style.height = `${disp}px`
     const ctx = cv.getContext('2d')!
     const dropStart = performance.now() // 本次 last 变化即视为一次落子，做“落下”动画
+    // 胜利连线动画起点：winLine 存在即开始计时；无连线时复位一次触发标记。
+    const winStart = winLine ? performance.now() : 0
+    if (!winLine) firedRef.current = false
     // 落子特效在“落子那一刻”捕获，避免中途切设置影响本次动画。
     const effect: Effect = getSettings().effect
     const dust: Dust[] =
@@ -179,11 +194,19 @@ export function BoardCanvas({
           }
         }
       }
+      // 胜利连线：逐子高亮 -> 齐闪 -> 结束回调。画在棋子之上。
+      if (winLine && winLine.length) {
+        drawWinLine(ctx, winLine, t - winStart)
+        if (t - winStart >= winLine.length * WIN_STEP + WIN_FLASH && !firedRef.current) {
+          firedRef.current = true
+          onWinEndRef.current?.()
+        }
+      }
       raf = requestAnimationFrame(draw)
     }
     raf = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(raf)
-  }, [board, pending, last, myColor, overlays, disp])
+  }, [board, pending, last, myColor, overlays, disp, winLine])
 
   const onClick = (e: ReactMouseEvent) => {
     if (!interactive) return
@@ -397,5 +420,75 @@ function drawStone(
   } else {
     drawProgStone(ctx, cx, cy, CELL * 0.46 * scale, color === 'black' ? theme.black : theme.white)
   }
+  ctx.restore()
+}
+
+// 胜利连线高亮：e 为距动画起点的毫秒数。
+// 阶段一（顺序点亮）：从连线一端到另一端，逐子亮起金色光环，当前激活子带扩张脉冲。
+// 阶段二（齐闪）：全部棋子随 sin 同步闪烁（约 3 次）。
+function drawWinLine(
+  ctx: CanvasRenderingContext2D,
+  line: { x: number; y: number }[],
+  e: number,
+) {
+  const n = line.length
+  const SEQ = n * WIN_STEP // 顺序点亮阶段总时长
+  ctx.save()
+  ctx.lineCap = 'round'
+  if (e < SEQ) {
+    // 顺序点亮：已到时的棋子常亮，最新激活的一颗额外画扩张脉冲环。
+    for (let i = 0; i < n; i++) {
+      const on = e - i * WIN_STEP
+      if (on < 0) continue
+      const cx = PAD + line[i].x * CELL
+      const cy = PAD + line[i].y * CELL
+      drawGlowRing(ctx, cx, cy, CELL * 0.55, 1)
+      // 当前激活子（进入 WIN_STEP 内）追加一圈扩张脉冲。
+      if (on < WIN_STEP) {
+        const p = on / WIN_STEP
+        ctx.globalAlpha = 1 - p
+        ctx.strokeStyle = WIN_GOLD
+        ctx.lineWidth = 3 * (1 - p) + 1
+        ctx.beginPath()
+        ctx.arc(cx, cy, CELL * (0.55 + p * 0.6), 0, PI2)
+        ctx.stroke()
+        ctx.globalAlpha = 1
+      }
+    }
+  } else {
+    // 齐闪：3 次脉冲覆盖 WIN_FLASH。
+    const fp = Math.min(1, (e - SEQ) / WIN_FLASH)
+    const pulse = 0.5 + 0.5 * Math.sin(fp * Math.PI * 6)
+    for (const c of line) {
+      const cx = PAD + c.x * CELL
+      const cy = PAD + c.y * CELL
+      drawGlowRing(ctx, cx, cy, CELL * 0.55, 0.6 + pulse * 0.4)
+    }
+  }
+  ctx.restore()
+}
+
+// 单颗棋子上的金色光环（亮环 + 柔和外晕）。alpha 控制整体强度。
+function drawGlowRing(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+  alpha: number,
+) {
+  ctx.save()
+  // 外晕：宽而淡。
+  ctx.globalAlpha = alpha * 0.4
+  ctx.strokeStyle = WIN_GOLD
+  ctx.lineWidth = 10
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, 0, PI2)
+  ctx.stroke()
+  // 亮环：细而明。
+  ctx.globalAlpha = alpha
+  ctx.lineWidth = 4
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, 0, PI2)
+  ctx.stroke()
   ctx.restore()
 }

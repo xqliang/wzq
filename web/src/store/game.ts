@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { emptyBoard } from '../core/types'
 import type { Board, Color } from '../core/types'
 import { applyMove } from '../core/board'
-import { checkWin } from '../core/win'
+import { checkWin, winningLine } from '../core/win'
 
 // 对局状态：棋盘、当前轮次、我方执子、预落子、最近一手、胜方。
 interface GameState {
@@ -12,6 +12,7 @@ interface GameState {
   pending: { x: number; y: number } | null
   lastMove: { x: number; y: number } | null
   winner: Color | null
+  winLine: { x: number; y: number }[] | null
   reset: (myColor: Color) => void
   preview: (x: number, y: number) => void
   cancel: () => void
@@ -27,9 +28,10 @@ export const useGame = create<GameState>((set, get) => ({
   pending: null,
   lastMove: null,
   winner: null,
+  winLine: null,
   // 重置整局，指定我方执子颜色（黑先）。
   reset: (myColor) =>
-    set({ board: emptyBoard(), turn: 'black', myColor, pending: null, lastMove: null, winner: null }),
+    set({ board: emptyBoard(), turn: 'black', myColor, pending: null, lastMove: null, winner: null, winLine: null }),
   // 预落子：仅当目标点为空时记录待确认坐标。
   preview: (x, y) => {
     const { board } = get()
@@ -48,9 +50,15 @@ export const useGame = create<GameState>((set, get) => ({
   place: (x, y, color) => {
     const board = applyMove(get().board, { x, y, color })
     const winner = checkWin(board, x, y)
-    set({ board, lastMove: { x, y }, winner, turn: color === 'black' ? 'white' : 'black' })
+    set({
+      board,
+      lastMove: { x, y },
+      winner,
+      winLine: winner ? winningLine(board, x, y) : null,
+      turn: color === 'black' ? 'white' : 'black',
+    })
   },
   // 残局：直接注入预置棋盘并指定轮到谁走（我方=待解方），清空 pending/胜负。
   setup: (board, toMove) =>
-    set({ board, turn: toMove, myColor: toMove, pending: null, lastMove: null, winner: null }),
+    set({ board, turn: toMove, myColor: toMove, pending: null, lastMove: null, winner: null, winLine: null }),
 }))

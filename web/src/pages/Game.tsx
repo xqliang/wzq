@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BoardCanvas, type Overlay } from '../board/BoardCanvas'
+import { ResultModal } from '../components/ResultModal'
 import { useGame } from '../store/game'
 import { playSfx } from '../audio/audio'
 import { reportAiResult, getCurrentUser } from '../net/rest'
@@ -33,17 +34,43 @@ export function Game() {
   const [waitLeft, setWaitLeft] = useState(300)
   // 防止重复结算（例如落子与动画/事件竞态）。
   const settledRef = useRef(false)
+  // 结算结果与弹窗显隐。result 记录胜负/原因/经验；showModal 控制何时展示（等连线动画播放完）。
+  const [result, setResult] = useState<{ win: boolean; reason?: string; expDelta?: number } | null>(
+    null,
+  )
+  const [showModal, setShowModal] = useState(false)
   // 记录本次请求 AI 的起始时刻，用于把"思考"总时长控制在 1~2s（含真实运算耗时）。
   const aiStartRef = useRef(0)
 
-  // 人机结算：播放音效、上报结果并跳转结果页。只结算一次。
-  const settleAi = (win: boolean) => {
+  // 统一结算：只结算一次；播放音效、（人机）上报结果得到经验增量；不再直接跳转。
+  // 若当前存在获胜连线（winLine），交由 BoardCanvas 的 onWinAnimationEnd 在动画结束后展示弹窗；
+  // 否则（超时/认输，无连线）立即展示弹窗。棋盘始终留在弹窗之后可见。
+  const finish = (win: boolean, reason?: string) => {
     if (settledRef.current) return
     settledRef.current = true
     playSfx(win ? 'win' : 'lose')
-    reportAiResult(st.level ?? 1, win).then((r) =>
-      nav('/result', { state: { win, expDelta: r.expDelta, mode: 'ai', level: st.level } }),
-    )
+    if (st.mode === 'ai') {
+      reportAiResult(st.level ?? 1, win).then((r) => setResult({ win, reason, expDelta: r.expDelta }))
+    } else {
+      setResult({ win, reason })
+    }
+    if (!useGame.getState().winLine) setShowModal(true)
+  }
+
+  // 再来一局：按模式重开（导航到 /game，借 location.key 触发重挂载得到全新对局）。
+  const rematch = () => {
+    if (st.mode === 'pvp' && st.roomId) nav('/game', { state: { mode: 'pvp', roomId: st.roomId } })
+    else nav('/game', { state: { mode: 'ai', level: st.level ?? 1 } })
+  }
+
+  // 依据结算结果拼装弹窗说明行。
+  const modalLines = (r: { win: boolean; reason?: string; expDelta?: number }): string[] => {
+    const lines: string[] = []
+    if (r.reason === 'timeout') lines.push('超时判负')
+    else if (r.reason === 'resign') lines.push('认输判负')
+    lines.push(r.win ? `+${r.expDelta ?? 20} 经验` : '+5 经验，再接再厉！')
+    if (st.mode === 'pvp') lines.push('双方都点「再来一局」即在原房间开新局')
+    return lines
   }
 
   // 预演双方各再走 3 步（共 6 手）的分步配色（绿/蓝/紫，深浅区分先后）。
@@ -109,9 +136,8 @@ export function Game() {
         break
       }
       case 'game_over': {
-        nav('/result', {
-          state: { win: m.winner === myUid ? 1 : 0, reason: m.reason, mode: 'pvp', roomId: st.roomId },
-        })
+        // 服务端裁决：播放连线动画（若有）后展示结果弹窗，不再跳转结果页。
+        finish(m.winner === myUid, m.reason)
         break
       }
     }
@@ -130,7 +156,7 @@ export function Game() {
           useGame.getState().place(e.data.x, e.data.y, 'white')
           playSfx('place')
           const w = useGame.getState().winner
-          if (w) settleAi(w === useGame.getState().myColor) // AI 落子后若分出胜负立即结算
+          if (w) finish(w === useGame.getState().myColor) // AI 落子后若分出胜负立即结算
         }, wait)
       }
     } else if (st.roomId) {
@@ -174,7 +200,7 @@ export function Game() {
         setDeadline(null)
         if (st.mode === 'ai' && !useGame.getState().winner) {
           playSfx('timeout')
-          settleAi(false) // 人机超时判负
+          finish(false, 'timeout') // 人机超时判负
         }
       }
     }, 250)
@@ -185,7 +211,7 @@ export function Game() {
   // 确认落子：本地落子 + 音效；真人模式同时上报服务端。落子后清除提示高亮。
   const onConfirm = () => {
     const p = g.pending
-    if (!p) return
+    if (!p || useGame.getState().winner) return
     g.confirm()
     setHint(null)
     playSfx('place')
@@ -193,24 +219,19 @@ export function Game() {
       sendMove(wsRef.current, p.x, p.y)
       return // 真人对局由服务端 game_over 结算
     }
-    // 人机：我方落子后若已连五立即结算取胜。
+    // 人机：我方落子后若已连五立即结算取胜（连线动画结束后再弹窗）。
     const w = useGame.getState().winner
-    if (w) settleAi(w === useGame.getState().myColor)
+    if (w) finish(w === useGame.getState().myColor)
   }
 
-  // 认输/退出：真人模式上报服务端认输；人机模式判我方负并结算。
+  // 认输/退出：真人模式上报服务端认输（由服务端 game_over 驱动结算）；人机模式判我方负并结算。
   const onResign = () => {
     if (!window.confirm('确定认输并结束本局？')) return
     if (st.mode === 'pvp' && wsRef.current) {
       sendResign(wsRef.current)
       return
     }
-    playSfx('lose')
-    reportAiResult(st.level ?? 1, false).then((r) =>
-      nav('/result', {
-        state: { win: false, expDelta: r.expDelta, reason: 'resign', mode: 'ai', level: st.level },
-      }),
-    )
+    finish(false, 'resign')
   }
 
   // 好友对战等待超时（5 分钟）：关闭连接、弹窗提示后返回首页。
@@ -264,7 +285,12 @@ export function Game() {
   return (
     <div className="game screen">
       <div className="player opponent">对手 {st.mode === 'ai' ? 'AI大师 ⚪' : '⚪'}</div>
-      <BoardCanvas onConfirm={onConfirm} overlays={overlays} interactive={!previewSteps} />
+      <BoardCanvas
+        onConfirm={onConfirm}
+        overlays={overlays}
+        interactive={!previewSteps}
+        onWinAnimationEnd={() => setShowModal(true)}
+      />
       <div className="hud">
         {g.turn === g.myColor ? <span className="tip">轮到你落子</span> : <span>对方思考中…</span>}
         {deadline != null && (
@@ -284,6 +310,17 @@ export function Game() {
         )}
         {!previewSteps && <button onClick={onResign}>认输</button>}
       </div>
+      {showModal && result && (
+        <ResultModal
+          win={result.win}
+          title={result.win ? '🎉 胜利' : '本局失败'}
+          lines={modalLines(result)}
+          actions={[
+            { label: '再来一局', onClick: rematch, primary: true },
+            { label: '返回首页', onClick: () => nav('/') },
+          ]}
+        />
+      )}
     </div>
   )
 }

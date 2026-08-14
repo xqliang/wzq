@@ -153,7 +153,7 @@ import { describe, it, expect } from 'vitest'
 import { countdownState } from './countdown'
 
 describe('countdownState', () => {
-  it('剩余秒向上取整到 0..total', () => {
+  it('剩余秒四舍五入到 0..total', () => {
     const now = 1_000_000
     expect(countdownState(now + 30_000, now, 30).remain).toBe(30)
     expect(countdownState(now + 4_400, now, 30).remain).toBe(4)
@@ -195,7 +195,7 @@ export interface CountdownState {
 }
 
 export function countdownState(deadlineMs: number, nowMs: number, total = 30): CountdownState {
-  const remain = Math.max(0, Math.min(total, Math.ceil((deadlineMs - nowMs) / 1000)))
+  const remain = Math.max(0, Math.min(total, Math.round((deadlineMs - nowMs) / 1000)))
   const level: CountdownLevel = remain > 10 ? 'normal' : remain > 5 ? 'warn' : 'danger'
   const progress = total > 0 ? remain / total : 0
   return { remain, level, progress }

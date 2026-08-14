@@ -387,19 +387,11 @@ function drawProgStone(
     ctx.lineWidth = 1.2
     ctx.stroke()
   }
-  if (spec.specular) {
-    // 玻璃光泽：左上偏一点的椭圆高光。
-    ctx.save()
-    ctx.beginPath()
-    ctx.ellipse(cx - r * 0.3, cy - r * 0.32, r * 0.3, r * 0.18, -0.6, 0, PI2)
-    ctx.fillStyle = 'rgba(255,255,255,0.5)'
-    ctx.fill()
-    ctx.restore()
-  }
 }
 
 // 绘制单颗棋子；alpha 用于预落子半透明；scale 用于落下动画（以交叉点为中心缩放）。
-// wood 主题用玉石贴图（就绪时）；其余主题一律用程序化径向渐变圆子。
+// 所有主题统一叠加「接触阴影 + 左上玻璃高光」，增强棋子的立体感与光泽。
+// wood 主题用玉石贴图（就绪时）；其余主题用程序化径向渐变圆子。
 function drawStone(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -413,13 +405,37 @@ function drawStone(
   ctx.globalAlpha = alpha
   const cx = PAD + x * CELL
   const cy = PAD + y * CELL
+  const r = CELL * 0.46 * scale // 视觉半径（阴影/高光定位）
+
+  // 1) 接触阴影：棋子下方偏移的柔和暗影，营造“坐在棋盘上”的立体感。
+  const sh = ctx.createRadialGradient(cx, cy + r * 0.5, r * 0.2, cx, cy + r * 0.5, r * 1.25)
+  sh.addColorStop(0, 'rgba(0,0,0,0.30)')
+  sh.addColorStop(1, 'rgba(0,0,0,0)')
+  ctx.fillStyle = sh
+  ctx.beginPath()
+  ctx.ellipse(cx, cy + r * 0.5, r * 1.08, r * 0.55, 0, 0, PI2)
+  ctx.fill()
+
+  // 2) 棋子本体。
   const img = pieceImgs[color]
   if (theme.useImage && img.complete && img.naturalWidth > 0) {
     const size = CELL * STONE_FACTOR[color] * scale
     ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size)
   } else {
-    drawProgStone(ctx, cx, cy, CELL * 0.46 * scale, color === 'black' ? theme.black : theme.white)
+    drawProgStone(ctx, cx, cy, r, color === 'black' ? theme.black : theme.white)
   }
+
+  // 3) 统一玻璃高光：左上一处亮斑（黑子更明显、白子稍弱），限制在棋子圆内。
+  const hiA = color === 'black' ? 0.5 : 0.4
+  const hx = cx - r * 0.32
+  const hy = cy - r * 0.38
+  const gh = ctx.createRadialGradient(hx, hy, 0, hx, hy, r * 0.72)
+  gh.addColorStop(0, `rgba(255,255,255,${hiA})`)
+  gh.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = gh
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, 0, PI2)
+  ctx.fill()
   ctx.restore()
 }
 

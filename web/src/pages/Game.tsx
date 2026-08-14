@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BoardCanvas, type Overlay } from '../board/BoardCanvas'
 import { ResultModal } from '../components/ResultModal'
+import { StartCountdown } from '../components/StartCountdown'
 import { useGame } from '../store/game'
 import { playSfx } from '../audio/audio'
 import { reportAiResult, getCurrentUser } from '../net/rest'
@@ -27,6 +28,8 @@ export function Game() {
   const [remain, setRemain] = useState(30)
   // 真人模式在收到服务端 start 前处于等待态。
   const [started, setStarted] = useState(st.mode === 'ai')
+  // 开局 3-2-1 倒计时进行中禁止落子（started 后才开始）。
+  const [introDone, setIntroDone] = useState(false)
   // AI 提示高亮点（仅人机模式）。
   const [hint, setHint] = useState<{ x: number; y: number } | null>(null)
   // 三步预演的标记；非空即处于预演态（禁用落子，仅展示）。
@@ -289,9 +292,10 @@ export function Game() {
       <BoardCanvas
         onConfirm={onConfirm}
         overlays={overlays}
-        interactive={!previewSteps}
+        interactive={!previewSteps && introDone}
         onWinAnimationEnd={() => setShowModal(true)}
       />
+      {started && !introDone && <StartCountdown onDone={() => setIntroDone(true)} />}
       <div className="hud">
         {g.turn === g.myColor ? <span className="tip">轮到你落子</span> : <span>对方思考中…</span>}
         {deadline != null && (

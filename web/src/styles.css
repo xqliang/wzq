@@ -775,3 +775,29 @@ button:disabled {
 .player-bar-center { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: none; }
 .turn-arrow { font-size: 14px; color: var(--gold); }
 .compass-idle { width: 64px; height: 64px; }
+.start-countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.start-num {
+  font-family: 'Guqi', 'STKaiti', serif;
+  font-size: 140px;
+  font-weight: 700;
+  background-image: linear-gradient(180deg, #fff2b0, #f5c542 45%, #b8791b);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(60, 40, 10, 0.5);
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.4));
+  animation: start-pop 1s ease;
+}
+@keyframes start-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  30% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.85; }
+}

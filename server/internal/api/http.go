@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/wzq/gomoku/internal/auth"
@@ -28,6 +29,11 @@ type Server struct {
 	DailyAiWinCap int
 	WebDir        string // 前端构建产物目录；为空则不托管前端（仅提供 API）。
 	AdminPassword string // 运营后台登录口令。
+
+	// 随机匹配：单个等待位。第一个玩家建房并等待，第二个玩家进入同一房间即配对成功。
+	matchMu   sync.Mutex
+	matchUID  int64
+	matchRoom string
 }
 
 // writeJSON 以 JSON 形式写出响应体。
@@ -78,6 +84,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/me/stats", s.handleMyStats)
 	mux.HandleFunc("/api/share", s.handleShare)
 	mux.HandleFunc("/api/room", s.handleRoom)
+	mux.HandleFunc("/api/match", s.handleMatch)
 	mux.HandleFunc("/api/endgame/levels", s.handleEndgameLevels)
 	mux.HandleFunc("/api/endgame/level", s.handleEndgameLevel)
 	mux.HandleFunc("/api/endgame/submit", s.handleEndgameSubmit)
@@ -314,6 +321,35 @@ func (s *Server) handleRoom(w http.ResponseWriter, r *http.Request) {
 	}
 	id := s.Hub.Create(uid)
 	writeJSON(w, http.StatusOK, map[string]string{"roomId": id})
+}
+
+// handleMatch 随机匹配：无人等待时建房并占据等待位（waiting=true，自己先进房等待）；
+// 已有他人等待时进入其房间并清空等待位（waiting=false，配对成功）。
+func (s *Server) handleMatch(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	s.matchMu.Lock()
+	defer s.matchMu.Unlock()
+	switch {
+	case s.matchUID == 0:
+		// 无人等待：建房并占据等待位。
+		rid := s.Hub.Create(uid)
+		s.matchUID = uid
+		s.matchRoom = rid
+		writeJSON(w, http.StatusOK, map[string]any{"roomId": rid, "waiting": true})
+	case s.matchUID == uid:
+		// 同一玩家重复请求：返回其等待中的房间。
+		writeJSON(w, http.StatusOK, map[string]any{"roomId": s.matchRoom, "waiting": true})
+	default:
+		// 有他人等待：配对成功，进入其房间并清空等待位。
+		rid := s.matchRoom
+		s.matchUID = 0
+		s.matchRoom = ""
+		writeJSON(w, http.StatusOK, map[string]any{"roomId": rid, "waiting": false})
+	}
 }
 
 // handleWS 升级为 WebSocket 并接入房间；令牌通过 ?token= 传入。

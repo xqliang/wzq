@@ -22,7 +22,7 @@ export function Game() {
   const workerRef = useRef<Worker | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
   const [deadline, setDeadline] = useState<number | null>(null)
-  const [remain, setRemain] = useState(60)
+  const [remain, setRemain] = useState(30)
   // 真人模式在收到服务端 start 前处于等待态。
   const [started, setStarted] = useState(st.mode === 'ai')
   // AI 提示高亮点（仅人机模式）。
@@ -157,7 +157,7 @@ export function Game() {
   // 人机模式：轮到我方时开启 60s 倒计时；AI 思考时不计时。
   useEffect(() => {
     if (st.mode !== 'ai' || !started) return
-    if (!g.winner && g.turn === g.myColor) setDeadline(Date.now() + 60000)
+    if (!g.winner && g.turn === g.myColor) setDeadline(Date.now() + 30000)
     else setDeadline(null)
   }, [g.turn, g.winner, started, st.mode, g.myColor])
 

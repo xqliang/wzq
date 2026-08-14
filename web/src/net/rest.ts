@@ -100,6 +100,9 @@ export const shareStats = (uid: number) =>
 // 创建真人对战房间，返回房间 id。
 export const createRoom = () => req('/api/room', 'POST') as Promise<{ roomId: string }>
 
+// 随机匹配：返回分配到的房间 id；waiting=true 表示你是先到的一方，需在房间内等待对手。
+export const matchJoin = () => req('/api/match', 'POST') as Promise<{ roomId: string; waiting: boolean }>
+
 // ===== 残局闯关（endgame）相关接口 =====
 
 // 关卡元信息：用于列表页展示（章节、难度、是否通关、尝试次数）。

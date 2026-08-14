@@ -12,7 +12,7 @@ import (
 )
 
 // turnSeconds 是每一步的思考时限（秒），超时判负。
-const turnSeconds = 60
+const turnSeconds = 30
 
 // client 表示一个已连接玩家：uid + 连接 + 发送队列。
 type client struct {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { countdownState } from './countdown'
 
 describe('countdownState', () => {
-  it('剩余秒向上取整到 0..total', () => {
+  it('剩余秒四舍五入到 0..total', () => {
     const now = 1_000_000
     expect(countdownState(now + 30_000, now, 30).remain).toBe(30)
     expect(countdownState(now + 4_400, now, 30).remain).toBe(4)

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { createRoom } from '../net/rest'
+import { Banner } from '../components/Banner'
 
 // 好友对战房间页：建房者创建房间号并展示邀请链接；点击进入对局。
 // 注意：本页不建立 WebSocket 连接，实际连线由 Game 页统一负责（避免双连接）。
@@ -26,20 +27,23 @@ export function Room() {
 
   return (
     <div className="room screen">
-      <h2>好友对战</h2>
+      <Banner text="好友对战" tone="gold" />
       {err && <p className="warn">创建房间失败：{err}</p>}
-      <p>房间号：{roomId || '创建中…'}</p>
-      {inviteUrl && <p className="invite">邀请链接：{inviteUrl}</p>}
-      <button disabled={!inviteUrl} onClick={() => navigator.clipboard?.writeText(inviteUrl)}>
-        复制邀请链接
-      </button>
+      <div className="room-invite">
+        <p className="room-id">房间号：{roomId || '创建中…'}</p>
+        {inviteUrl && <p className="invite-link">{inviteUrl}</p>}
+        <button className="op-btn" disabled={!inviteUrl} onClick={() => navigator.clipboard?.writeText(inviteUrl)}>
+          复制邀请链接
+        </button>
+      </div>
       <button
+        className="entry primary"
         disabled={!roomId}
         onClick={() => nav('/game', { state: { mode: 'pvp', roomId } })}
       >
         进入对局
       </button>
-      <button onClick={() => nav('/')}>退出</button>
+      <button className="op-btn" onClick={() => nav('/')}>退出</button>
     </div>
   )
 }

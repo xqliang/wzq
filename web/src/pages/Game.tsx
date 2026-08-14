@@ -15,6 +15,7 @@ import { checkWin } from '../core/win'
 import { bestMove } from '../ai/search'
 import { countdownState } from '../lib/countdown'
 import { PlayerBar, type PlayerInfo } from '../components/PlayerBar'
+import { Banner } from '../components/Banner'
 import { RankUpOverlay } from '../components/RankUpOverlay'
 import { rankLabel, rankGroup } from '../theme/ranks'
 
@@ -259,20 +260,20 @@ export function Game() {
     const ss = String(waitLeft % 60).padStart(2, '0')
     return (
       <div className="game screen">
-        <h2 className="tip">等待对手加入…</h2>
+        <Banner text="等待对手" tone="gold" />
         <p className="countdown warn">
           剩余等待 {mm}:{ss}
         </p>
         {st.roomId && (
           <div className="room-invite">
-            <p>房间号：{st.roomId}</p>
+            <p className="room-id">房间号：{st.roomId}</p>
             <p className="invite-link">{inviteUrl}</p>
-            <button onClick={() => navigator.clipboard?.writeText(inviteUrl).catch(() => {})}>
+            <button className="op-btn" onClick={() => navigator.clipboard?.writeText(inviteUrl).catch(() => {})}>
               复制邀请链接
             </button>
           </div>
         )}
-        <button onClick={() => nav('/')}>退出</button>
+        <button className="op-btn" onClick={() => nav('/')}>退出</button>
       </div>
     )
   }

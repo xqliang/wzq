@@ -245,7 +245,12 @@ func (r *Room) handle(uid int64, msg ClientMsg) {
 		}
 	case "undo_reply":
 		agreed := r.game.ReplyUndo(msg.Agree)
-		r.broadcast(ServerMsg{Type: "undo_result", Agree: agreed})
+		// 同意时撤销 1 手；广播撤销手数供两端回退同步。
+		n := 0
+		if agreed {
+			n = 1
+		}
+		r.broadcast(ServerMsg{Type: "undo_result", Agree: agreed, N: n})
 		if agreed {
 			r.startTurnTimer()
 		}

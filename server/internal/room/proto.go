@@ -20,5 +20,6 @@ type ServerMsg struct {
 	Winner   int64  `json:"winner,omitempty"`
 	Reason   string `json:"reason,omitempty"`
 	Agree    bool   `json:"agree,omitempty"`
+	N        int    `json:"n,omitempty"` // 悔棋撤销的手数（客户端据此回退同步）
 	Players  int    `json:"players,omitempty"`
 }

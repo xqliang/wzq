@@ -69,21 +69,21 @@ function tone(freq: number, dur: number, type: OscillatorType, gain: number, sli
   o.stop(t + dur + 0.02)
 }
 
-// 落子：低频“咚”下滑 + 短噪声“嗒”，模拟棋子敲在木盘上的分量感。
+// 落子：轻质木“嗒”——较高、较短、低增益，去掉沉重低鸣，听感更柔和。
 function clack() {
   const c = ctx()
   if (!c) return
   const t = c.currentTime
-  tone(240, 0.14, 'sine', 0.9, 90) // 木头低鸣
-  // 高频噪声敲击
-  const len = Math.floor(c.sampleRate * 0.03)
+  tone(320, 0.07, 'sine', 0.28, 200) // 轻木鸣（不再低沉）
+  // 轻短的高频敲击噪声
+  const len = Math.floor(c.sampleRate * 0.018)
   const buf = c.createBuffer(1, len, c.sampleRate)
   const d = buf.getChannelData(0)
   for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2)
   const n = c.createBufferSource()
   n.buffer = buf
   const ng = c.createGain()
-  ng.gain.value = 0.5 * settings.sfxVol
+  ng.gain.value = 0.18 * settings.sfxVol
   n.connect(ng).connect(c.destination)
   n.start(t)
 }

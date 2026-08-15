@@ -69,7 +69,7 @@ body {
   background-image: url('/assets/img/bg_home.jpg');
 }
 .game {
-  background-image: url('/assets/img/bg_game.jpg');
+  background-image: url('/assets/img/bg_home.jpg');
 }
 .endgame {
   background-image: url('/assets/img/bg_home.jpg');
@@ -200,12 +200,12 @@ button:disabled {
   opacity: 0.5;
 }
 
-/* 棋盘容器：宽度自适应（手机满宽、桌面封顶），保持正方形。
+/* 棋盘容器：宽度自适应（手机满宽、桌面封顶）。高度含底部立体厚度，故略高于宽（620:634）。
    立体化：底部柔和落地阴影 + 多层投影，营造棋盘悬浮/厚重的纵深感。 */
 .board-wrap {
   position: relative;
   width: min(94vw, 560px);
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 620 / 634;
   border-radius: 16px;
   box-shadow:
     0 2px 4px rgba(58, 44, 26, 0.25),
@@ -748,7 +748,7 @@ button:disabled {
 .avatar-box.frame-gold::after {
   content: '';
   position: absolute;
-  inset: -14%;
+  inset: -9%;
   background: url('/assets/img/frame_gold.png') center / 100% 100% no-repeat;
   pointer-events: none;
 }
@@ -764,6 +764,7 @@ button:disabled {
   padding: 1px 12px;
   font-size: 13px;
   font-weight: 700;
+  white-space: nowrap;
   color: #5c360f;
   background: linear-gradient(180deg, #ffe9a8, #e3b24e);
   border: 1px solid #b8791b;
@@ -896,19 +897,22 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   max-width: min(94vw, 560px);
+  box-sizing: border-box;
 }
 .player-side {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  box-sizing: border-box;
   background: var(--panel);
   border: 1.5px solid var(--ink);
   border-radius: 12px;
-  padding: 6px 10px;
+  padding: 6px 8px;
   box-shadow: var(--shadow);
 }
 .player-side.right {
@@ -919,7 +923,7 @@ button:disabled {
   box-shadow: 0 0 0 2px rgba(200, 145, 47, 0.5), var(--shadow);
 }
 .player-meta { min-width: 0; flex: 1; }
-.player-nick { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 96px; }
+.player-nick { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 72px; }
 .player-rank { font-size: 12px; color: var(--accent); white-space: nowrap; }
 .stone-chip { width: 16px; height: 16px; border-radius: 50%; flex: none; }
 .stone-chip.black { background: radial-gradient(circle at 35% 35%, #555, #111); }

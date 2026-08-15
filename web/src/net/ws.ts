@@ -13,6 +13,7 @@ export type ServerMsg = {
   winner?: number
   reason?: string
   agree?: boolean
+  n?: number
   players?: number
 }
 

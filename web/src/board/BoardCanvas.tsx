@@ -10,7 +10,8 @@ import type { StoneSpec, Theme } from './themes'
 const CELL = 40 // 相邻交叉点像素间距（逻辑坐标）
 const PAD = 30 // 网格到棋盘面边缘的内边距（逻辑坐标）
 const PX = CELL * (SIZE - 1) + PAD * 2 // 画布逻辑边长（绘制用，固定）
-const FRAME = 14 // 立体外框厚度（逻辑坐标），营造“厚度/边框”
+const LIP = 14 // 底部立体厚度（额外画在正方形盘面之下，不占用盘面，保证四边留白等宽）
+const PXH = PX + LIP // 画布逻辑高度 = 正方形盘面 + 底部厚度
 const PI2 = Math.PI * 2
 // 胜利连线动画节拍：逐子点亮步进、齐闪时长。
 const WIN_STEP = 240 // 每颗棋子依次点亮的间隔（ms）
@@ -82,6 +83,7 @@ export function BoardCanvas({
   const myColor = useGame((s) => s.myColor)
   const preview = useGame((s) => s.preview)
   const winLine = useGame((s) => s.winLine)
+  const undoMark = useGame((s) => s.undoMark)
   // 保证胜利动画结束回调只触发一次。
   const firedRef = useRef(false)
   // 用 ref 持有最新回调，避免其变化导致绘制 effect 重启（打断动画计时）。
@@ -103,9 +105,9 @@ export function BoardCanvas({
     const cv = ref.current!
     const dpr = window.devicePixelRatio || 1
     cv.width = PX * dpr // 背景位图固定按逻辑尺寸×dpr，清晰
-    cv.height = PX * dpr
+    cv.height = PXH * dpr // 高度含底部立体厚度
     cv.style.width = `${disp}px` // 显示尺寸随容器缩放
-    cv.style.height = `${disp}px`
+    cv.style.height = `${(disp * PXH) / PX}px`
     const ctx = cv.getContext('2d')!
     const dropStart = performance.now() // 本次 last 变化即视为一次落子，做“落下”动画
     // 胜利连线动画起点：winLine 存在即开始计时；无连线时复位一次触发标记。
@@ -127,11 +129,11 @@ export function BoardCanvas({
     const draw = (t: number) => {
       const theme = getTheme(getSettings().theme) // 每帧读取，支持实时切换主题
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctx.clearRect(0, 0, PX, PX)
-      drawFrame(ctx, theme) // 立体外框 + 棋盘面
+      ctx.clearRect(0, 0, PX, PXH)
+      drawFrame(ctx, theme) // 正方形盘面 + 底部立体厚度
       // 网格
       ctx.strokeStyle = theme.line
-      ctx.lineWidth = 1
+      ctx.lineWidth = 1.5
       for (let i = 0; i < SIZE; i++) {
         ctx.beginPath()
         ctx.moveTo(PAD, PAD + i * CELL)
@@ -150,7 +152,7 @@ export function BoardCanvas({
         [11, 11],
       ]) {
         ctx.beginPath()
-        ctx.arc(PAD + sx * CELL, PAD + sy * CELL, 3.5, 0, PI2)
+        ctx.arc(PAD + sx * CELL, PAD + sy * CELL, 4.5, 0, PI2)
         ctx.fill()
       }
       // 棋子（最近一手最后画，带“落下”动画）
@@ -163,6 +165,10 @@ export function BoardCanvas({
       // 预落子：只显示四角准心（相机对焦框），不再画半透明棋子。
       if (pending) {
         drawCrosshair(ctx, pending.x, pending.y, theme.accent, t)
+      }
+      // 悔棋位置标记：小圆圈 + 中心小黄点（下一手落子后由 store 清除）。
+      if (undoMark) {
+        drawUndoMark(ctx, PAD + undoMark.x * CELL, PAD + undoMark.y * CELL)
       }
       // 最新子：落下动画（起始略大→收拢，有分量）+ 触地冲击环；落定后用静态标记（不再呼吸闪烁）。
       if (last && board[last.y][last.x]) {
@@ -215,7 +221,7 @@ export function BoardCanvas({
     }
     raf = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(raf)
-  }, [board, pending, last, myColor, overlays, disp, winLine])
+  }, [board, pending, last, myColor, overlays, disp, winLine, undoMark])
 
   const onClick = (e: ReactMouseEvent) => {
     if (!interactive) return
@@ -243,42 +249,23 @@ export function BoardCanvas({
 // 3D 厚度只来自最底沿一条薄的深木“厚度条”+ 其上一道高光缝（四边浅木边框保持一致），
 // 配合 .board-wrap 的落地阴影，像厚木盘坐在桌面上（参考竞品默认盘）。
 function drawFrame(ctx: CanvasRenderingContext2D, theme: Theme) {
-  const F = FRAME // 四边边框厚度（同色浅木，四边一致）
-  const LIP = 6 // 底沿薄厚度条高度（3D），压在底边框最下沿，不破坏四边一致的浅木边框
-  // 平整浅木框（四边同色）。
-  ctx.fillStyle = theme.frameBase
-  ctx.fillRect(0, 0, PX, PX)
-  // 棋盘面（内凹）：四周留 F。
-  const inner = { l: F, t: F, r: PX - F, b: PX - F }
+  // 正方形盘面铺满上方 PX×PX（网格四边留白等宽，居中对称）。
   ctx.fillStyle = theme.boardFace
-  ctx.fillRect(inner.l, inner.t, inner.r - inner.l, inner.b - inner.t)
-  // 木纹贴图盘面（就绪时覆盖纯色）。
+  ctx.fillRect(0, 0, PX, PX)
   const face = faceImage(theme.faceImage)
-  if (face) ctx.drawImage(face, inner.l, inner.t, inner.r - inner.l, inner.b - inner.t)
-  // 盘面内凹：仅顶沿一道柔和内阴影 + 底沿一道提亮（自上而下的光），不做左右斜面。
-  ctx.lineWidth = 3
-  ctx.strokeStyle = 'rgba(0,0,0,0.16)'
-  ctx.beginPath()
-  ctx.moveTo(inner.l, inner.t + 1.5)
-  ctx.lineTo(inner.r, inner.t + 1.5)
-  ctx.stroke()
-  ctx.strokeStyle = 'rgba(255,255,255,0.10)'
-  ctx.beginPath()
-  ctx.moveTo(inner.l, inner.b - 1.5)
-  ctx.lineTo(inner.r, inner.b - 1.5)
-  ctx.stroke()
-  // 底部 3D：最底沿一条薄的深木厚度条 + 其上一道高光缝；四边浅木边框仍保持一致。
+  if (face) ctx.drawImage(face, 0, 0, PX, PX)
+  // 底部立体厚度：画在盘面之下的额外 LIP 高度里（不占盘面），深木渐变 + 顶沿高光缝。
   const baseColor = theme.baseShadow ?? theme.frameDark
-  const bg = ctx.createLinearGradient(0, PX - LIP, 0, PX)
+  const bg = ctx.createLinearGradient(0, PX, 0, PXH)
   bg.addColorStop(0, baseColor)
   bg.addColorStop(1, theme.frameDark)
   ctx.fillStyle = bg
-  ctx.fillRect(0, PX - LIP, PX, LIP)
+  ctx.fillRect(0, PX, PX, LIP)
   ctx.strokeStyle = theme.frameLight
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(0, PX - LIP + 0.5)
-  ctx.lineTo(PX, PX - LIP + 0.5)
+  ctx.moveTo(0, PX + 0.5)
+  ctx.lineTo(PX, PX + 0.5)
   ctx.stroke()
 }
 
@@ -312,6 +299,23 @@ function drawCrosshair(
     ctx.lineTo(px, py - dy * len) // 垂直段（朝内）
     ctx.stroke()
   }
+  ctx.restore()
+}
+
+// 悔棋位置标记：一个小圆圈 + 中心小黄点（下一手落子后清除）。参考竞品。
+function drawUndoMark(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
+  ctx.save()
+  ctx.strokeStyle = 'rgba(90,60,15,0.9)'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.arc(cx, cy, CELL * 0.34, 0, PI2)
+  ctx.stroke()
+  ctx.fillStyle = '#ffcf2e'
+  ctx.beginPath()
+  ctx.arc(cx, cy, 4, 0, PI2)
+  ctx.fill()
+  ctx.lineWidth = 1.2
+  ctx.stroke()
   ctx.restore()
 }
 

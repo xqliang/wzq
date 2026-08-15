@@ -141,6 +141,15 @@ export function Game() {
 
   const endPreview = () => setPreviewSteps(null)
 
+  // 人机悔棋：退回一整回合（撤 AI 白 + 我方黑），回到我方待落子。仅我方回合、未结束、有历史时可用。
+  const onUndoAi = () => {
+    const s = useGame.getState()
+    if (s.winner || s.turn !== s.myColor || s.history.length < 1) return
+    s.undo(Math.min(2, s.history.length))
+    setHint(null)
+    playSfx('undo')
+  }
+
   // 处理服务端消息。内部一律用 useGame.getState() 读取最新状态，避免闭包过期。
   function handleServer(m: ServerMsg) {
     const store = useGame.getState()
@@ -169,6 +178,14 @@ export function Game() {
         // 对手发起悔棋：本地弹窗询问，回应服务端。
         const agree = window.confirm('对方请求悔棋，是否同意？')
         if (wsRef.current) sendUndoReply(wsRef.current, agree)
+        break
+      }
+      case 'undo_result': {
+        // 悔棋被同意：按服务端撤销手数回退本地棋盘（两端同步），并标记悔棋位置。
+        if (m.agree) {
+          useGame.getState().undo(m.n ?? 1)
+          playSfx('undo')
+        }
         break
       }
       case 'game_over': {
@@ -384,7 +401,7 @@ export function Game() {
           onSettings={() => nav('/settings')}
           actions={[
             ...(st.mode === 'ai' && !previewSteps
-              ? [{ label: '提示', onClick: onHint }, { label: '预演', onClick: onPreview }]
+              ? [{ label: '提示', onClick: onHint }, { label: '预演', onClick: onPreview }, { label: '悔棋', onClick: onUndoAi }]
               : []),
             ...(previewSteps ? [{ label: '结束预演', onClick: endPreview }] : []),
             ...(st.mode === 'pvp' && wsRef.current && !previewSteps

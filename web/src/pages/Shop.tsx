@@ -84,17 +84,28 @@ export function Shop() {
   )
 }
 
-// 商品预览小样：棋盘=主题色迷你盘，头像框=套框头像，落子=动效色标签。
+// 商品预览小样：棋盘=主题色迷你棋盘(网格+交点落子)，头像框=套框头像，落子=动效色标签。
 function ItemPreview({ item }: { item: ShopItem }) {
   if (item.slot === 'board') {
     const t = getTheme(item.preview)
+    const size = 72
+    const n = 5 // 5x5 网格
+    const m = 10 // 四边留白
+    const step = (size - 2 * m) / (n - 1)
+    const at = (i: number) => m + i * step
+    const lines = Array.from({ length: n }, (_, i) => i)
     return (
-      <div className="board-swatch" style={{ background: t.boardFace, borderColor: t.frameBase }}>
-        <span className="sw-line h" style={{ background: t.line }} />
-        <span className="sw-line v" style={{ background: t.line }} />
-        <span className="sw-stone b" />
-        <span className="sw-stone w" />
-      </div>
+      <svg className="board-swatch" width={size} height={size} style={{ background: t.boardFace, borderColor: t.frameBase }}>
+        {lines.map((i) => (
+          <line key={`h${i}`} x1={m} y1={at(i)} x2={size - m} y2={at(i)} stroke={t.line} strokeWidth={1} />
+        ))}
+        {lines.map((i) => (
+          <line key={`v${i}`} x1={at(i)} y1={m} x2={at(i)} y2={size - m} stroke={t.line} strokeWidth={1} />
+        ))}
+        {/* 棋子落在交点上 */}
+        <circle cx={at(2)} cy={at(2)} r={step * 0.42} fill="#161616" />
+        <circle cx={at(3)} cy={at(1)} r={step * 0.42} fill="#f4f0e6" stroke="#c9bfa6" />
+      </svg>
     )
   }
   if (item.slot === 'frame') {

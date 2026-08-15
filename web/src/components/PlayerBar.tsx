@@ -36,7 +36,7 @@ export function PlayerBar({
 function PlayerSide({ p, active, side }: { p: PlayerInfo; active: boolean; side: 'left' | 'right' }) {
   return (
     <div className={`player-side ${side} ${active ? 'active' : ''}`}>
-      <Avatar src={`/assets/img/${p.avatar}.png`} size={48} />
+      <Avatar src={`/assets/img/${p.avatar}.png`} size={40} />
       <div className="player-meta">
         <div className="player-nick">{p.nickname}</div>
         <div className="player-rank">{p.rankLabel}</div>

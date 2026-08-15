@@ -11,19 +11,19 @@ export function CompassTimer({
   progress: number
   level: CountdownLevel
 }) {
-  const R = 26
+  const R = 21
   const C = 2 * Math.PI * R
   const color = level === 'danger' ? '#c0392b' : level === 'warn' ? '#d97706' : '#c8912f'
   return (
     <div className={`compass compass-${level}`}>
-      <svg width="64" height="64" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r={R} fill="rgba(58,44,26,0.85)" stroke="#c8912f" strokeWidth="3" />
+      <svg width="52" height="52" viewBox="0 0 52 52">
+        <circle cx="26" cy="26" r={R} fill="rgba(58,44,26,0.85)" stroke="#c8912f" strokeWidth="3" />
         <circle
-          cx="32" cy="32" r={R} fill="none" stroke={color} strokeWidth="4"
+          cx="26" cy="26" r={R} fill="none" stroke={color} strokeWidth="4"
           strokeDasharray={C} strokeDashoffset={C * (1 - progress)}
-          transform="rotate(-90 32 32)" strokeLinecap="round"
+          transform="rotate(-90 26 26)" strokeLinecap="round"
         />
-        <text x="32" y="38" textAnchor="middle" fontSize="22" fontWeight="700" fill="#f6ecd8">
+        <text x="26" y="26" textAnchor="middle" dominantBaseline="central" fontSize="19" fontWeight="700" fill="#f6ecd8">
           {remain}
         </text>
       </svg>

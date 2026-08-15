@@ -101,6 +101,12 @@ export function BoardCanvas({
     return () => window.removeEventListener('resize', measure)
   }, [])
 
+  // 落下动画/落子特效只在「最新一手真正变化」时重启：预落子、覆盖层、悔棋标记等变化
+  // 会让绘制 effect 重新运行，但不应让上一颗已落的子重播落下动效。用 ref 记住上一手。
+  const dropStartRef = useRef(0)
+  const lastKeyRef = useRef('')
+  const dustRef = useRef<Dust[]>([])
+
   useEffect(() => {
     const cv = ref.current!
     const dpr = window.devicePixelRatio || 1
@@ -109,21 +115,25 @@ export function BoardCanvas({
     cv.style.width = `${disp}px` // 显示尺寸随容器缩放
     cv.style.height = `${(disp * PXH) / PX}px`
     const ctx = cv.getContext('2d')!
-    const dropStart = performance.now() // 本次 last 变化即视为一次落子，做“落下”动画
+    // 仅当最新一手坐标变化时，重置落下动画起点并重新生成粒子（避免上一子重播）。
+    const lastKey = last ? `${last.x},${last.y}` : ''
+    const effect: Effect = getSettings().effect
+    if (lastKey && lastKey !== lastKeyRef.current) {
+      dropStartRef.current = performance.now()
+      dustRef.current =
+        effect === 'dust'
+          ? Array.from({ length: 16 }, () => ({
+              a: Math.random() * PI2,
+              sp: 0.8 + Math.random() * 2.2,
+              r0: 1.5 + Math.random() * 3,
+              col: ['#e9d3a5', '#c9a35b', '#fff2c0', '#a8763a'][Math.floor(Math.random() * 4)],
+            }))
+          : []
+    }
+    lastKeyRef.current = lastKey
     // 胜利连线动画起点：winLine 存在即开始计时；无连线时复位一次触发标记。
     const winStart = winLine ? performance.now() : 0
     if (!winLine) firedRef.current = false
-    // 落子特效在“落子那一刻”捕获，避免中途切设置影响本次动画。
-    const effect: Effect = getSettings().effect
-    const dust: Dust[] =
-      effect === 'dust'
-        ? Array.from({ length: 16 }, () => ({
-            a: Math.random() * PI2,
-            sp: 0.8 + Math.random() * 2.2,
-            r0: 1.5 + Math.random() * 3,
-            col: ['#e9d3a5', '#c9a35b', '#fff2c0', '#a8763a'][Math.floor(Math.random() * 4)],
-          }))
-        : []
 
     let raf = 0
     const draw = (t: number) => {
@@ -172,7 +182,7 @@ export function BoardCanvas({
       }
       // 最新子：落下动画（起始略大→收拢，有分量）+ 触地冲击环；落定后用静态标记（不再呼吸闪烁）。
       if (last && board[last.y][last.x]) {
-        const elapsed = t - dropStart
+        const elapsed = t - dropStartRef.current
         const cx = PAD + last.x * CELL
         const cy = PAD + last.y * CELL
         const k = Math.max(0, 1 - elapsed / 200)
@@ -186,7 +196,7 @@ export function BoardCanvas({
           ctx.stroke()
         }
         // 落子特效（叠加在落下动画之上）：水波纹 / 灰尘 / 无。
-        drawEffect(ctx, effect, dust, cx, cy, elapsed, theme.accent)
+        drawEffect(ctx, effect, dustRef.current, cx, cy, elapsed, theme.accent)
         // 最近一手静态标记：白子=描边黄点，黑子=靶心，清晰不刺眼（参考竞品）。
         drawLastMark(ctx, cx, cy, board[last.y][last.x]!)
       }

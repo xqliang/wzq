@@ -194,9 +194,9 @@ button:disabled {
   font-size: 21px;
   letter-spacing: 3px;
   font-weight: 700;
-  color: #33200d;
+  color: #f6e2ab;
   /* 凹刻感：字下缘亮高光 + 上缘暗影，像刻进木头。 */
-  text-shadow: 0 1px 0 rgba(255, 250, 236, 0.85), 0 -1px 1px rgba(74, 46, 18, 0.45);
+  text-shadow: 0 1px 0 #5a3410, 0 2px 3px rgba(0, 0, 0, 0.35);
   background: linear-gradient(180deg, rgba(255, 247, 225, 0.62), rgba(232, 198, 142, 0.42)), var(--wood-tex);
   background-size: cover;
   background-position: center;
@@ -205,7 +205,7 @@ button:disabled {
   box-shadow: 0 3px 0 #7c4a1e, var(--shadow);
 }
 .entry.primary {
-  color: #5c360f;
+  color: #fff0c0;
   background: linear-gradient(180deg, rgba(255, 236, 175, 0.68), rgba(216, 164, 86, 0.42)), var(--wood-tex);
   background-size: cover;
   background-position: center;
@@ -257,6 +257,13 @@ button:disabled {
 }
 .hud .tip {
   color: var(--accent);
+  font-weight: 700;
+}
+/* 回合提示固定宽度并居中，切换文字不再导致 hud 布局跳动/闪动。 */
+.turn-hint {
+  display: inline-block;
+  min-width: 110px;
+  text-align: center;
   font-weight: 700;
 }
 .hud .warn {
@@ -816,8 +823,8 @@ button:disabled {
   padding: 10px 22px;
   font-size: 17px;
   font-weight: 700;
-  color: #33200d;
-  text-shadow: 0 1px 0 rgba(255, 250, 236, 0.85), 0 -1px 1px rgba(74, 46, 18, 0.45);
+  color: #f6e2ab;
+  text-shadow: 0 1px 0 #5a3410, 0 2px 3px rgba(0, 0, 0, 0.35);
   background: linear-gradient(180deg, rgba(255, 247, 225, 0.62), rgba(232, 198, 142, 0.42)), var(--wood-tex);
   background-size: cover;
   background-position: center;
@@ -937,17 +944,20 @@ button:disabled {
   border-color: var(--gold);
   box-shadow: 0 0 0 2px rgba(200, 145, 47, 0.5), var(--shadow);
 }
-.player-meta { min-width: 0; flex: 1; }
-.player-nick { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 72px; }
-.player-rank { font-size: 12px; color: var(--accent); white-space: nowrap; }
-.stone-chip { width: 16px; height: 16px; border-radius: 50%; flex: none; }
+.player-meta { min-width: 0; flex: 1; overflow: hidden; }
+/* 左侧玩家文字右对齐、右侧玩家文字左对齐 —— 名字/段位都靠向中间，远离头像、不与执子色点重叠。 */
+.player-side.left .player-meta { text-align: right; }
+.player-side.right .player-meta { text-align: left; }
+.player-nick { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.player-rank { font-size: 12px; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stone-chip { width: 15px; height: 15px; border-radius: 50%; flex: none; }
 .stone-chip.black { background: radial-gradient(circle at 35% 35%, #555, #111); }
 .stone-chip.white { background: radial-gradient(circle at 35% 35%, #fff, #cfc7b5); border: 1px solid #b3ada1; }
 /* 固定尺寸：无论显示罗盘计时器还是占位空盒，中间列footprint恒定，
    彻底消除「顶部倒计时出现/消失导致页面跳动」。 */
-.player-bar-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: none; width: 72px; height: 84px; }
+.player-bar-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: none; width: 58px; height: 74px; }
 .turn-arrow { font-size: 14px; color: var(--gold); height: 16px; line-height: 16px; }
-.compass-idle { width: 64px; height: 64px; }
+.compass-idle { width: 52px; height: 52px; }
 .start-countdown {
   position: absolute;
   inset: 0;
@@ -994,8 +1004,8 @@ button:disabled {
   background-size: cover;
   background-position: center;
   border: 2px solid #5c3a17;
-  color: #33200d;
-  text-shadow: 0 1px 0 rgba(255, 250, 236, 0.85), 0 -1px 1px rgba(74, 46, 18, 0.45);
+  color: #f6e2ab;
+  text-shadow: 0 1px 0 #5a3410, 0 2px 3px rgba(0, 0, 0, 0.35);
   font-size: 18px;
   font-weight: 700;
   box-shadow: 0 3px 0 #7c4a1e, var(--shadow);
@@ -1041,7 +1051,8 @@ button:disabled {
 }
 .result-top { position: absolute; top: 20px; left: 16px; display: flex; gap: 10px; }
 .round-btn {
-  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 50%; padding: 0; line-height: 1;
   background: radial-gradient(circle at 40% 35%, #d9a86a, #a86b32 70%, #7c4a1e);
   border: 2px solid #5c3a17; font-size: 18px;
 }

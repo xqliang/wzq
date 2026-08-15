@@ -418,7 +418,9 @@ export function Game() {
         />
       )}
       <div className="hud">
-        {g.turn === g.myColor ? <span className="tip">轮到你落子</span> : <span>对方思考中…</span>}
+        <span className={`turn-hint${g.turn === g.myColor ? ' tip' : ''}`}>
+          {g.turn === g.myColor ? '轮到你落子' : '对方思考中…'}
+        </span>
         <GameMenu
           onSettings={() => nav('/settings')}
           actions={[

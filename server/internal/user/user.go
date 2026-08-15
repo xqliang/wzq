@@ -29,6 +29,10 @@ type User struct {
 	// 双货币（阶段C）：coins 金币（软通货），scrolls 卷轴（稀有通货）。
 	Coins   int `json:"coins"`
 	Scrolls int `json:"scrolls"`
+	// 已装备外观（阶段C）：棋盘皮肤 / 头像框 / 落子动效。
+	EquippedBoard  string `json:"equippedBoard"`
+	EquippedFrame  string `json:"equippedFrame"`
+	EquippedEffect string `json:"equippedEffect"`
 }
 
 // Service 提供用户相关业务能力，依赖底层 store。
@@ -79,8 +83,8 @@ func (svc *Service) Get(id int64) (*User, error) {
 	u := &User{}
 	var username sql.NullString
 	err := svc.s.DB.QueryRow(
-		`SELECT id, guest_id, username, nickname, avatar, exp, level, rank_tier, rank_points, coins, scrolls FROM user WHERE id=?`, id).
-		Scan(&u.ID, &u.GuestID, &username, &u.Nickname, &u.Avatar, &u.Exp, &u.Level, &u.RankTier, &u.RankPoints, &u.Coins, &u.Scrolls)
+		`SELECT id, guest_id, username, nickname, avatar, exp, level, rank_tier, rank_points, coins, scrolls, equipped_board, equipped_frame, equipped_effect FROM user WHERE id=?`, id).
+		Scan(&u.ID, &u.GuestID, &username, &u.Nickname, &u.Avatar, &u.Exp, &u.Level, &u.RankTier, &u.RankPoints, &u.Coins, &u.Scrolls, &u.EquippedBoard, &u.EquippedFrame, &u.EquippedEffect)
 	if err != nil {
 		return nil, err
 	}

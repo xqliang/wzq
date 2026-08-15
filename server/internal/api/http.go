@@ -16,6 +16,7 @@ import (
 	"github.com/wzq/gomoku/internal/rank"
 	"github.com/wzq/gomoku/internal/record"
 	"github.com/wzq/gomoku/internal/room"
+	"github.com/wzq/gomoku/internal/shop"
 	"github.com/wzq/gomoku/internal/user"
 )
 
@@ -26,6 +27,7 @@ type Server struct {
 	Hub           *room.Hub
 	Records       *record.Service
 	Endgame       *endgame.Service
+	Shop          *shop.Service
 	DailyAiWinCap int
 	WebDir        string // 前端构建产物目录；为空则不托管前端（仅提供 API）。
 	AdminPassword string // 运营后台登录口令。
@@ -81,6 +83,9 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/room", s.handleRoom)
 	mux.HandleFunc("/api/match", s.handleMatch)
 	mux.HandleFunc("/api/match/cancel", s.handleMatchCancel)
+	mux.HandleFunc("/api/shop", s.handleShop)
+	mux.HandleFunc("/api/shop/buy", s.handleShopBuy)
+	mux.HandleFunc("/api/shop/equip", s.handleShopEquip)
 	mux.HandleFunc("/api/endgame/levels", s.handleEndgameLevels)
 	mux.HandleFunc("/api/endgame/level", s.handleEndgameLevel)
 	mux.HandleFunc("/api/endgame/submit", s.handleEndgameSubmit)
@@ -392,6 +397,79 @@ func (s *Server) handleMatchCancel(w http.ResponseWriter, r *http.Request) {
 	}
 	s.Hub.CancelMatch(uid)
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
+}
+
+// handleShop 返回商店状态：余额、已装备、带拥有/装备标记的商品列表。
+func (s *Server) handleShop(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	st, err := s.Shop.State(uid)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, st)
+}
+
+// handleShopBuy 购买商品（body: {slot,id}）。返回购买后的最新商店状态。
+func (s *Server) handleShopBuy(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	var body struct {
+		Slot string `json:"slot"`
+		ID   string `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad request"})
+		return
+	}
+	if err := s.Shop.Buy(uid, body.Slot, body.ID); err != nil {
+		writeJSON(w, shopErrStatus(err), map[string]string{"error": err.Error()})
+		return
+	}
+	st, _ := s.Shop.State(uid)
+	writeJSON(w, http.StatusOK, st)
+}
+
+// handleShopEquip 装备已拥有商品（body: {slot,id}）。返回最新商店状态。
+func (s *Server) handleShopEquip(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	var body struct {
+		Slot string `json:"slot"`
+		ID   string `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad request"})
+		return
+	}
+	if err := s.Shop.Equip(uid, body.Slot, body.ID); err != nil {
+		writeJSON(w, shopErrStatus(err), map[string]string{"error": err.Error()})
+		return
+	}
+	st, _ := s.Shop.State(uid)
+	writeJSON(w, http.StatusOK, st)
+}
+
+// shopErrStatus 将商店领域错误映射为 HTTP 状态码。
+func shopErrStatus(err error) int {
+	switch err {
+	case shop.ErrNotFound, shop.ErrBadSlot:
+		return http.StatusNotFound
+	case shop.ErrInsufficient, shop.ErrOwned, shop.ErrNotOwned:
+		return http.StatusConflict
+	default:
+		return http.StatusInternalServerError
+	}
 }
 
 // handleWS 升级为 WebSocket 并接入房间；令牌通过 ?token= 传入。

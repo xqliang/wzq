@@ -78,6 +78,9 @@ func (s *Store) Migrate() error {
 			attempts INT NOT NULL DEFAULT 0, hints INT NOT NULL DEFAULT 0,
 			PRIMARY KEY (uid, level_id)
 		)`,
+		`CREATE TABLE IF NOT EXISTS user_item (
+			uid BIGINT, item_id VARCHAR(32), PRIMARY KEY (uid, item_id)
+		)`,
 	}
 	for _, q := range stmts {
 		if _, err := s.DB.Exec(q); err != nil {
@@ -96,6 +99,16 @@ func (s *Store) Migrate() error {
 		return err
 	}
 	if err := s.addColumnIfMissing("user", "scrolls", "INT NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	// 已装备外观（阶段C）：棋盘皮肤/头像框/落子动效，默认基础款。
+	if err := s.addColumnIfMissing("user", "equipped_board", "VARCHAR(32) NOT NULL DEFAULT 'wood'"); err != nil {
+		return err
+	}
+	if err := s.addColumnIfMissing("user", "equipped_frame", "VARCHAR(32) NOT NULL DEFAULT 'gold'"); err != nil {
+		return err
+	}
+	if err := s.addColumnIfMissing("user", "equipped_effect", "VARCHAR(32) NOT NULL DEFAULT 'ripple'"); err != nil {
 		return err
 	}
 	return nil

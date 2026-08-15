@@ -12,6 +12,7 @@ import (
 	"github.com/wzq/gomoku/internal/endgame"
 	"github.com/wzq/gomoku/internal/record"
 	"github.com/wzq/gomoku/internal/room"
+	"github.com/wzq/gomoku/internal/shop"
 	"github.com/wzq/gomoku/internal/store"
 	"github.com/wzq/gomoku/internal/user"
 )
@@ -39,6 +40,7 @@ func main() {
 		Hub:           room.NewHub(),
 		Records:       record.New(st),
 		Endgame:       endgame.New(st, userSvc),
+		Shop:          shop.New(st),
 		DailyAiWinCap: 20,
 		WebDir:        cfg.Web.Dir,
 		AdminPassword: cfg.Admin.Password,

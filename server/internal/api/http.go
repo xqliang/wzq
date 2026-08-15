@@ -92,6 +92,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/checkin/claim", s.handleCheckinClaim)
 	mux.HandleFunc("/api/wheel", s.handleWheel)
 	mux.HandleFunc("/api/wheel/spin", s.handleWheelSpin)
+	mux.HandleFunc("/api/reward/adbonus", s.handleAdBonus)
 	mux.HandleFunc("/api/endgame/levels", s.handleEndgameLevels)
 	mux.HandleFunc("/api/endgame/level", s.handleEndgameLevel)
 	mux.HandleFunc("/api/endgame/submit", s.handleEndgameSubmit)
@@ -537,6 +538,33 @@ func (s *Server) handleWheelSpin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// handleAdBonus 模拟「看广告双倍」：发放一笔奖励金币并返回最新余额。
+// 这是运营模拟（真实场景应由广告 SDK 回调校验）；此处对单次发放设上限防刷。
+func (s *Server) handleAdBonus(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	var body struct {
+		Coins int `json:"coins"`
+	}
+	json.NewDecoder(r.Body).Decode(&body)
+	bonus := body.Coins
+	if bonus < 0 {
+		bonus = 0
+	}
+	if bonus > 60 { // 反作弊：单次看广告翻倍上限（不超过 PvP 胜局奖励）
+		bonus = 60
+	}
+	if err := s.Users.AddCoins(uid, bonus); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	u, _ := s.Users.Get(uid)
+	writeJSON(w, http.StatusOK, map[string]any{"granted": bonus, "coins": u.Coins})
 }
 
 // handleWS 升级为 WebSocket 并接入房间；令牌通过 ?token= 传入。

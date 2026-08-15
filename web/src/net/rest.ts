@@ -94,6 +94,10 @@ export const reportAiResult = (level: number, win: boolean, moves = 0) =>
     rank: RankSettle
   }>
 
+// 模拟「看广告双倍」：发放一笔金币奖励（服务端限额防刷），返回本次发放量与最新余额。
+export const adBonus = (coins: number) =>
+  req('/api/reward/adbonus', 'POST', { coins }) as Promise<{ granted: number; coins: number }>
+
 // 战绩统计结构，与服务端 record.Stats JSON 对齐。
 export interface Stats {
   total: number

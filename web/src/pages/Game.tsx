@@ -6,7 +6,7 @@ import { StartCountdown } from '../components/StartCountdown'
 import { GameMenu } from '../components/GameMenu'
 import { useGame } from '../store/game'
 import { playSfx, startBgm } from '../audio/audio'
-import { reportAiResult, getCurrentUser, me } from '../net/rest'
+import { reportAiResult, getCurrentUser, me, adBonus } from '../net/rest'
 import { connectRoom, sendMove, sendUndoReq, sendUndoReply, sendResign } from '../net/ws'
 import type { ServerMsg } from '../net/ws'
 import type { Color } from '../core/types'
@@ -64,6 +64,9 @@ export function Game() {
   } | null>(null)
   // 晋级动画是否已看完（先播晋级、再显示结算弹窗）。
   const [rankupDone, setRankupDone] = useState(false)
+  // 看广告双倍：广告模拟播放中 / 已翻倍（每局仅一次）。
+  const [adPlaying, setAdPlaying] = useState(false)
+  const [doubled, setDoubled] = useState(false)
 
   // 统一结算：只结算一次；播放音效、（人机）上报结果得到经验增量；不再直接跳转。
   // 若当前存在获胜连线（winLine），交由 BoardCanvas 的 onWinAnimationEnd 在动画结束后展示弹窗；
@@ -107,6 +110,23 @@ export function Game() {
   const rematch = () => {
     if (st.mode === 'pvp' && st.roomId) nav('/game', { state: { mode: 'pvp', roomId: st.roomId } })
     else nav('/game', { state: { mode: 'ai', level: st.level ?? 1 } })
+  }
+
+  // 看广告双倍（模拟）：播放约 1.8s 假广告后，再发放一份等额金币奖励，本局仅一次。
+  const onDouble = () => {
+    if (doubled || adPlaying) return
+    const base = result?.coinDelta ?? 0
+    if (base <= 0) return
+    setAdPlaying(true)
+    window.setTimeout(() => {
+      adBonus(base)
+        .then((r) => {
+          setResult((prev) => (prev ? { ...prev, coinDelta: (prev.coinDelta ?? 0) + r.granted } : prev))
+          setDoubled(true)
+        })
+        .catch(() => {})
+        .finally(() => setAdPlaying(false))
+    }, 1800)
   }
 
   // 预演双方各再走 3 步（共 6 手）的分步配色（绿/蓝/紫，深浅区分先后）。
@@ -392,7 +412,9 @@ export function Game() {
           onRematch={rematch}
           onHome={() => nav('/')}
           onShare={() => alert('分享（后续接入）')}
-          onDouble={() => alert('看广告双倍（阶段C）')}
+          onDouble={onDouble}
+          doubled={doubled}
+          adPlaying={adPlaying}
         />
       )}
       <div className="hud">

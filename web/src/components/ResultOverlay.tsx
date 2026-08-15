@@ -21,6 +21,8 @@ export function ResultOverlay({
   onHome,
   onShare,
   onDouble,
+  doubled = false,
+  adPlaying = false,
 }: {
   win: boolean
   me: ResultPlayer
@@ -30,6 +32,8 @@ export function ResultOverlay({
   onHome: () => void
   onShare: () => void
   onDouble: () => void
+  doubled?: boolean
+  adPlaying?: boolean
 }) {
   return (
     <div className="result-overlay">
@@ -49,7 +53,9 @@ export function ResultOverlay({
             <img src="/assets/img/icon_coin.png" alt="金币" />
             <span>+{coins}</span>
           </div>
-          <button className="ad-double" onClick={onDouble}>看广告双倍领取</button>
+          <button className="ad-double" onClick={onDouble} disabled={doubled || adPlaying}>
+            {doubled ? '已翻倍领取' : adPlaying ? '广告播放中…' : '看广告双倍领取'}
+          </button>
         </>
       )}
       <button className="rematch" onClick={onRematch}>再来一盘</button>

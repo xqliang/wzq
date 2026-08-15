@@ -794,15 +794,20 @@ button:disabled {
   pointer-events: none;
 }
 .start-num {
+  display: inline-block;
   font-family: 'Guqi', 'STKaiti', serif;
-  font-size: 140px;
+  font-size: 150px;
   font-weight: 700;
+  line-height: 1;
+  /* 内边距让背景定位区(padding box)高于字形，background-clip:text 才能填满整字，
+     否则 140px 大字溢出行盒，只有交叠处被填充（表现为“只填了一点点”）。 */
+  padding: 0.18em 0.22em;
   background-image: linear-gradient(180deg, #fff2b0, #f5c542 45%, #b8791b);
   background-clip: text;
   -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(60, 40, 10, 0.5);
-  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 3px 2px rgba(80, 50, 10, 0.55)) drop-shadow(0 1px 0 rgba(255, 255, 255, 0.35));
   animation: start-pop 1s ease;
 }
 @keyframes start-pop {

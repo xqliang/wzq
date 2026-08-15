@@ -1,5 +1,5 @@
 // 棋盘主题定义：棋盘面/立体边框/网格/星位配色 + 棋子渲染样式。
-// wood 主题使用玉石 PNG 贴图；其余主题用径向渐变程序化绘制棋子（无需新素材）。
+// 棋子统一用径向渐变程序化绘制（黑白玻璃子）；wood 主题另附木纹贴图作盘面。
 
 // 单色棋子的径向渐变规格：hi=高光中心色，body=主体色，edge=外缘色，
 // rim=描边色（可选），specular=是否叠加高光亮点（玉石光泽）。
@@ -22,27 +22,29 @@ export interface Theme {
   star: string // 星位点颜色
   accent: string // 准心/预落子准星强调色
   baseShadow?: string // 棋盘底部立体底座色（缺省用 frameDark）
+  faceImage?: string // 棋盘面木纹贴图路径（缺省则用 boardFace 纯色）
   useImage: boolean // true=玉石 PNG（仅 wood）；false=程序化渐变棋子
   black: StoneSpec
   white: StoneSpec
 }
 
 export const THEMES: Record<string, Theme> = {
-  // 木纹：暖木底 + 棕线，棋子用现有玉石贴图。
+  // 木纹（默认，复刻竞品）：浅暖木盘面 + 木纹贴图 + 棕线，玻璃光泽黑白子。
   wood: {
     id: 'wood',
     name: '木纹',
-    boardFace: '#e3c088',
-    frameBase: '#8a5a2b',
-    frameLight: '#c79a5c',
-    frameDark: '#5c3a17',
-    line: '#6b4423',
-    star: '#6b4423',
+    boardFace: '#e9d3a5',
+    frameBase: '#b5823f',
+    frameLight: '#e0b877',
+    frameDark: '#6f4a20',
+    line: '#9c7a44',
+    star: '#6f4a20',
     accent: '#8a2b2b',
-    useImage: true,
-    // 贴图未就绪时的回退渲染。
-    black: { hi: '#5a5a5a', body: '#1f1f1f', edge: '#050505', rim: 'rgba(0,0,0,0.4)' },
-    white: { hi: '#ffffff', body: '#f2efe6', edge: '#cfc7b5', rim: 'rgba(0,0,0,0.25)' },
+    baseShadow: '#5c3a17',
+    faceImage: '/assets/img/board_wood.jpg',
+    useImage: false,
+    black: { hi: '#6b6b6b', body: '#161616', edge: '#000000', rim: 'rgba(0,0,0,0.35)', specular: true },
+    white: { hi: '#ffffff', body: '#f4f0e6', edge: '#d6ccb4', rim: 'rgba(110,80,35,0.3)', specular: true },
   },
   // 黑白（水墨纸）：浅纸底 + 细黑线，扁平径向渐变圆子。
   ink: {
@@ -105,9 +107,25 @@ export const THEMES: Record<string, Theme> = {
     black: { hi: '#5a5a62', body: '#1a1a22', edge: '#000006', rim: 'rgba(245,197,66,0.4)', specular: true },
     white: { hi: '#ffffff', body: '#f0e6c8', edge: '#c8b483', rim: 'rgba(120,74,30,0.4)', specular: true },
   },
+  // 青蓝（高阶皮肤，复刻竞品高级盘）：宝蓝盘面 + 浅蓝网格 + 金色框，玻璃光泽黑白子。
+  blue: {
+    id: 'blue',
+    name: '青蓝',
+    boardFace: '#41528a',
+    frameBase: '#c19a3c',
+    frameLight: '#f0d27a',
+    frameDark: '#856016',
+    line: '#aab7de',
+    star: '#cdd7f0',
+    accent: '#f0d27a',
+    baseShadow: '#6e5018',
+    useImage: false,
+    black: { hi: '#5a5a62', body: '#16161c', edge: '#000004', rim: 'rgba(255,255,255,0.14)', specular: true },
+    white: { hi: '#ffffff', body: '#f4f6fb', edge: '#c3ccdd', rim: 'rgba(20,30,60,0.35)', specular: true },
+  },
 }
 
-// 读取主题；未知 id 回退 wood。
+// 读取主题；未知 id 回退默认木纹。
 export function getTheme(id: string): Theme {
   return THEMES[id] ?? THEMES.wood
 }

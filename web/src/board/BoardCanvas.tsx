@@ -33,6 +33,19 @@ const pieceImgs: Record<'black' | 'white', HTMLImageElement> = {
 pieceImgs.black.src = '/assets/img/piece_black.png'
 pieceImgs.white.src = '/assets/img/piece_white.png'
 
+// 棋盘面木纹贴图缓存（按主题 faceImage 路径懒加载）。未就绪则回退纯色盘面。
+const faceImgs: Record<string, HTMLImageElement> = {}
+function faceImage(src?: string): HTMLImageElement | null {
+  if (!src) return null
+  let img = faceImgs[src]
+  if (!img) {
+    img = new Image()
+    img.src = src
+    faceImgs[src] = img
+  }
+  return img.complete && img.naturalWidth > 0 ? img : null
+}
+
 // 两色贴图的透明留白不同，用不同放大系数抵消，使黑白子视觉大小一致。
 const STONE_FACTOR: Record<'black' | 'white', number> = { black: 2.0, white: 1.5 }
 
@@ -230,73 +243,51 @@ export function BoardCanvas({
   )
 }
 
-// 立体外框：外深内浅的斜面（top/left 受光、right/bottom 背光）+ 内凹棋盘面。
+// 立体外框：四周为同色平整木框（不做四向斜面高光/阴影）；
+// 3D 厚度只体现在底部——底沿是一条更深的木色“厚度带”并压一条高光缝，
+// 像厚木盘受自上而下的光坐在桌面上（参考竞品默认盘）。
 function drawFrame(ctx: CanvasRenderingContext2D, theme: Theme) {
-  const F = FRAME
-  // 最外层一圈最深，托出厚度。
-  ctx.fillStyle = theme.frameDark
-  ctx.fillRect(0, 0, PX, PX)
+  const F = FRAME // 上/左/右/底 边框厚度
+  // 平整木框（无四向斜面）。
   ctx.fillStyle = theme.frameBase
-  ctx.fillRect(1.5, 1.5, PX - 3, PX - 3)
-  // 四条斜面：上/左高光，右/下暗部，形成凸起的立体边框。
+  ctx.fillRect(0, 0, PX, PX)
+  // 底部厚度带（唯一 3D 来源）：底边框用更深木色。
+  const baseColor = theme.baseShadow ?? theme.frameDark
+  const bg = ctx.createLinearGradient(0, PX - F, 0, PX)
+  bg.addColorStop(0, baseColor)
+  bg.addColorStop(1, theme.frameDark)
+  ctx.fillStyle = bg
+  ctx.fillRect(0, PX - F, PX, F)
+  // 厚度带顶沿高光缝：承接自上而下的光，凸显“厚度”。
+  ctx.strokeStyle = theme.frameLight
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.moveTo(0, PX - F + 0.75)
+  ctx.lineTo(PX, PX - F + 0.75)
+  ctx.stroke()
+  // 细外缘线，勾出整体轮廓。
+  ctx.strokeStyle = theme.frameDark
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(0.75, 0.75, PX - 1.5, PX - 1.5)
+  // 棋盘面（内凹）：四周留 F。
   const inner = { l: F, t: F, r: PX - F, b: PX - F }
-  ctx.fillStyle = theme.frameLight
-  ctx.beginPath() // 上斜面
-  ctx.moveTo(0, 0)
-  ctx.lineTo(PX, 0)
-  ctx.lineTo(inner.r, inner.t)
-  ctx.lineTo(inner.l, inner.t)
-  ctx.closePath()
-  ctx.fill()
-  ctx.beginPath() // 左斜面
-  ctx.moveTo(0, 0)
-  ctx.lineTo(inner.l, inner.t)
-  ctx.lineTo(inner.l, inner.b)
-  ctx.lineTo(0, PX)
-  ctx.closePath()
-  ctx.fill()
-  ctx.fillStyle = theme.frameDark
-  ctx.beginPath() // 右斜面
-  ctx.moveTo(PX, 0)
-  ctx.lineTo(PX, PX)
-  ctx.lineTo(inner.r, inner.b)
-  ctx.lineTo(inner.r, inner.t)
-  ctx.closePath()
-  ctx.fill()
-  ctx.beginPath() // 下斜面
-  ctx.moveTo(0, PX)
-  ctx.lineTo(PX, PX)
-  ctx.lineTo(inner.r, inner.b)
-  ctx.lineTo(inner.l, inner.b)
-  ctx.closePath()
-  ctx.fill()
-  // 棋盘面（内凹）。
   ctx.fillStyle = theme.boardFace
   ctx.fillRect(inner.l, inner.t, inner.r - inner.l, inner.b - inner.t)
-  // 内凹阴影：面的上/左压暗、右/下提亮，让棋盘像“沉”在框里。
+  // 木纹贴图盘面（就绪时覆盖纯色）。
+  const face = faceImage(theme.faceImage)
+  if (face) ctx.drawImage(face, inner.l, inner.t, inner.r - inner.l, inner.b - inner.t)
+  // 盘面内凹：仅顶沿一道柔和内阴影 + 底沿一道提亮（自上而下的光），不做左右斜面。
   ctx.lineWidth = 3
-  ctx.strokeStyle = 'rgba(0,0,0,0.18)'
+  ctx.strokeStyle = 'rgba(0,0,0,0.16)'
   ctx.beginPath()
-  ctx.moveTo(inner.l, inner.b)
-  ctx.lineTo(inner.l, inner.t)
-  ctx.lineTo(inner.r, inner.t)
+  ctx.moveTo(inner.l, inner.t + 1.5)
+  ctx.lineTo(inner.r, inner.t + 1.5)
   ctx.stroke()
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)'
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)'
   ctx.beginPath()
-  ctx.moveTo(inner.r, inner.t)
-  ctx.lineTo(inner.r, inner.b)
-  ctx.lineTo(inner.l, inner.b)
+  ctx.moveTo(inner.l, inner.b - 1.5)
+  ctx.lineTo(inner.r, inner.b - 1.5)
   ctx.stroke()
-  // 底部立体底座：在棋盘下沿外侧压一条更深的厚度带，增强“坐在桌面上”的立体感。
-  const baseColor = theme.baseShadow ?? theme.frameDark
-  ctx.fillStyle = baseColor
-  ctx.beginPath()
-  ctx.moveTo(0, PX)
-  ctx.lineTo(PX, PX)
-  ctx.lineTo(PX - 6, PX - 6)
-  ctx.lineTo(6, PX - 6)
-  ctx.closePath()
-  ctx.fill()
 }
 
 // 四角准心：围绕交叉点的四个 L 形转角括号（相机对焦框风格），带轻微呼吸。
@@ -401,7 +392,7 @@ function drawProgStone(
 
 // 绘制单颗棋子；alpha 用于预落子半透明；scale 用于落下动画（以交叉点为中心缩放）。
 // 所有主题统一叠加「接触阴影 + 左上玻璃高光」，增强棋子的立体感与光泽。
-// wood 主题用玉石贴图（就绪时）；其余主题用程序化径向渐变圆子。
+// 棋子统一用程序化径向渐变绘制（黑白玻璃子）；useImage 主题就绪时改用贴图。
 function drawStone(
   ctx: CanvasRenderingContext2D,
   x: number,

@@ -795,15 +795,17 @@ button:disabled {
 .profile .currency {
   margin-left: auto;
   display: flex;
-  gap: 6px;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
+  align-items: stretch;
+  flex: none;
 }
 .profile .currency span {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 2px 7px;
-  font-size: 13px;
+  gap: 4px;
+  padding: 2px 9px;
+  font-size: 14px;
   font-weight: 700;
   color: #5c360f;
   background: rgba(255, 242, 208, 0.72);
@@ -811,8 +813,8 @@ button:disabled {
   border-radius: 999px;
 }
 .profile .currency img {
-  width: 17px;
-  height: 17px;
+  width: 22px;
+  height: 22px;
 }
 .ops-row {
   display: flex;
@@ -930,14 +932,14 @@ button:disabled {
 .player-side {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 1 1 0;
   min-width: 0;
   box-sizing: border-box;
   background: var(--panel);
   border: 1.5px solid var(--ink);
   border-radius: 12px;
-  padding: 6px 8px;
+  padding: 5px 7px;
   box-shadow: var(--shadow);
 }
 .player-side.right {
@@ -953,7 +955,7 @@ button:disabled {
 .player-side.right .player-meta { text-align: left; }
 .player-nick { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .player-rank { font-size: 12px; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.stone-chip { width: 15px; height: 15px; border-radius: 50%; flex: none; }
+.stone-chip { width: 13px; height: 13px; border-radius: 50%; flex: none; }
 .stone-chip.black { background: radial-gradient(circle at 35% 35%, #555, #111); }
 .stone-chip.white { background: radial-gradient(circle at 35% 35%, #fff, #cfc7b5); border: 1px solid #b3ada1; }
 /* 固定尺寸：无论显示罗盘计时器还是占位空盒，中间列footprint恒定，
@@ -1071,7 +1073,7 @@ button:disabled {
 .delta.up { color: #2ecc71; font-weight: 700; }
 .delta.down { color: #e74c3c; font-weight: 700; }
 .reward-row { display: flex; align-items: center; gap: 6px; font-size: 22px; color: #f5c542; font-weight: 700; }
-.reward-row img { width: 26px; height: 26px; }
+.reward-row img { width: 36px; height: 36px; }
 .ad-double {
   background: linear-gradient(180deg, #ffd76a, #e0a52f);
   border: 2px solid #a86b32; color: #5c360f; font-weight: 700;
@@ -1241,7 +1243,7 @@ button:disabled {
   border: 2px solid #a86b32;
   border-radius: 16px;
 }
-.price-btn img { width: 18px; height: 18px; }
+.price-btn img { width: 26px; height: 26px; }
 .tag-equipped {
   display: inline-block;
   padding: 6px 16px;
@@ -1256,7 +1258,8 @@ button:disabled {
   position: relative;
   width: 72px;
   height: 72px;
-  border-width: 5px;
+  box-sizing: border-box;
+  border-width: 4px;
   border-style: solid;
   border-radius: 8px;
 }
@@ -1301,8 +1304,8 @@ button:disabled {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(20, 14, 6, 0.66);
-  backdrop-filter: blur(2px);
+  /* 背景复用首页水墨山景 + 柔和压暗，让面板更聚焦。 */
+  background: linear-gradient(rgba(20, 14, 6, 0.32), rgba(20, 14, 6, 0.42)), url('/assets/img/bg_home.jpg') center / cover no-repeat;
 }
 .gp-panel {
   position: relative;
@@ -1312,24 +1315,23 @@ button:disabled {
   gap: 12px;
   width: 100%;
   max-width: 460px;
-  max-height: 92vh;
-  padding: 18px 18px 20px;
-  /* 雕花边框用 border-image：四角固定裁切、四边平铺(round 避免接缝错位)。 */
-  border: 28px solid transparent;
-  border-image: url('/assets/img/panel_frame.png') 22% / 28px / 0 round;
-  /* 中心绢帛底只填充边框内(padding box)，不铺到边框下。 */
+  max-height: 94vh;
+  padding: 30px 20px 22px;
+  /* 生成的均匀雕花边框：border-image 九宫格裁切 + round 平铺，永远贴边不错位。 */
+  border: 22px solid transparent;
+  border-image: url('/assets/img/panel_frame.png') 72 / 22px / 0 round;
+  border-radius: 18px;
   background: linear-gradient(180deg, #fbf1d8, #efe0bd);
-  background-clip: padding-box;
 }
-/* 顶部孔明灯装饰：叠在边框上沿、标题之后（不参与边框平铺）。 */
+/* 顶部孔明灯装饰（居中叠在上沿、标题之后）。 */
 .gp-panel::before {
   content: '';
   position: absolute;
-  top: -22px;
+  top: -34px;
   left: 50%;
   transform: translateX(-50%);
-  width: 60%;
-  height: 46px;
+  width: 72%;
+  height: 60px;
   z-index: 1;
   pointer-events: none;
   background: url('/assets/img/panel_top.png') center / contain no-repeat;
@@ -1348,10 +1350,13 @@ button:disabled {
 }
 .gp-close {
   position: absolute;
-  top: -14px;
-  right: -8px;
-  width: 40px;
-  height: 40px;
+  top: 2px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
   padding: 0;
   border-radius: 50%;
   font-size: 18px;
@@ -1359,6 +1364,7 @@ button:disabled {
   background: radial-gradient(circle at 40% 35%, #f4d989, #cf9a34 70%, #8a5a1c);
   border: 3px solid #fbeecb;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  z-index: 3;
 }
 .gp-currency {
   display: flex;
@@ -1376,7 +1382,7 @@ button:disabled {
   border: 2px solid var(--gold);
   border-radius: 16px;
 }
-.gp-currency img { width: 20px; height: 20px; }
+.gp-currency img { width: 30px; height: 30px; }
 .gp-content {
   display: flex;
   flex-direction: column;
@@ -1428,8 +1434,8 @@ button:disabled {
 /* ===== 幸运转盘 ===== */
 .wheel-wrap {
   position: relative;
-  width: min(78vw, 300px);
-  height: min(78vw, 300px);
+  width: min(64vw, 240px);
+  height: min(64vw, 240px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1484,4 +1490,4 @@ button:disabled {
   font-weight: 700;
   color: #5c360f;
 }
-.wheel-cost img { width: 18px; height: 18px; }
+.wheel-cost img { width: 26px; height: 26px; }

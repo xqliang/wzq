@@ -13,13 +13,14 @@ export function CompassTimer({
 }) {
   const R = 21
   const C = 2 * Math.PI * R
-  const color = level === 'danger' ? '#c0392b' : level === 'warn' ? '#d97706' : '#c8912f'
+  // 进度颜色与底环区分：底环用浅色轨道，进度用亮色（正常金/警告橙/危险红），线宽一致不加粗。
+  const color = level === 'danger' ? '#e0503a' : level === 'warn' ? '#f0a020' : '#ffd24a'
   return (
     <div className={`compass compass-${level}`}>
       <svg width="52" height="52" viewBox="0 0 52 52">
-        <circle cx="26" cy="26" r={R} fill="rgba(58,44,26,0.85)" stroke="#c8912f" strokeWidth="3" />
+        <circle cx="26" cy="26" r={R} fill="rgba(58,44,26,0.85)" stroke="rgba(246,236,216,0.28)" strokeWidth="3" />
         <circle
-          cx="26" cy="26" r={R} fill="none" stroke={color} strokeWidth="4"
+          cx="26" cy="26" r={R} fill="none" stroke={color} strokeWidth="3"
           strokeDasharray={C} strokeDashoffset={C * (1 - progress)}
           transform="rotate(-90 26 26)" strokeLinecap="round"
         />

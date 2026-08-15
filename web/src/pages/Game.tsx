@@ -18,6 +18,7 @@ import { PlayerBar, type PlayerInfo } from '../components/PlayerBar'
 import { Banner } from '../components/Banner'
 import { RankUpOverlay } from '../components/RankUpOverlay'
 import { rankLabel, rankGroup, rankThreshold } from '../theme/ranks'
+import { SettingsModal } from '../components/SettingsModal'
 
 // 对局页：人机模式驱动 AI Web Worker；真人模式持有唯一的 WebSocket 连接。
 export function Game() {
@@ -67,6 +68,7 @@ export function Game() {
   // 看广告双倍：广告模拟播放中 / 已翻倍（每局仅一次）。
   const [adPlaying, setAdPlaying] = useState(false)
   const [doubled, setDoubled] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   // 统一结算：只结算一次；播放音效、（人机）上报结果得到经验增量；不再直接跳转。
   // 若当前存在获胜连线（winLine），交由 BoardCanvas 的 onWinAnimationEnd 在动画结束后展示弹窗；
@@ -422,7 +424,7 @@ export function Game() {
           {g.turn === g.myColor ? '轮到你落子' : '对方思考中…'}
         </span>
         <GameMenu
-          onSettings={() => nav('/settings')}
+          onSettings={() => setShowSettings(true)}
           actions={[
             ...(st.mode === 'ai' && !previewSteps
               ? [{ label: '提示', onClick: onHint }, { label: '预演', onClick: onPreview }, { label: '悔棋', onClick: onUndoAi }]
@@ -435,6 +437,7 @@ export function Game() {
           ]}
         />
       </div>
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   )
 }

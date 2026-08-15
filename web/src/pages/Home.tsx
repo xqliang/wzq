@@ -4,6 +4,7 @@ import { me, matchJoin, matchCancel } from '../net/rest'
 import type { User } from '../net/rest'
 import { rankLabel } from '../theme/ranks'
 import { Avatar } from '../components/Avatar'
+import { SettingsModal } from '../components/SettingsModal'
 
 // 首页：LOGO + 资料/货币占位条 + 对战入口 + 运营入口（商店/签到/转盘占位）。
 export function Home({ user }: { user: User }) {
@@ -11,6 +12,7 @@ export function Home({ user }: { user: User }) {
   const [u, setU] = useState<User>(user)
   // 随机匹配「匹配中」浮层：进入后轮询后端匹配池，配上对手再进对局。
   const [matching, setMatching] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const pollRef = useRef<number | undefined>(undefined)
   useEffect(() => {
     me().then(setU).catch(() => {})
@@ -58,7 +60,7 @@ export function Home({ user }: { user: User }) {
           <span className="coin"><img src="/assets/img/icon_coin.png" alt="金币" />{u.coins ?? 0}</span>
           <span className="scroll"><img src="/assets/img/icon_scroll.png" alt="卷轴" />{u.scrolls ?? 0}</span>
         </div>
-        <button className="settings-btn" onClick={() => nav('/settings')} aria-label="设置">
+        <button className="settings-btn" onClick={() => setShowSettings(true)} aria-label="设置">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="#3a240f" aria-hidden="true">
             <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.62-.94l-.36-2.54A.5.5 0 0 0 13.4 2h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.6.22L1.77 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.42.32.66.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54c.05.24.25.42.5.42h3.84c.25 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.24.1.52.02.66-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z" />
           </svg>
@@ -86,6 +88,7 @@ export function Home({ user }: { user: User }) {
           </div>
         </div>
       )}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   )
 }

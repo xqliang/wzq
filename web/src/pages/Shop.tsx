@@ -95,7 +95,7 @@ function ItemPreview({ item }: { item: ShopItem }) {
     const at = (i: number) => m + i * step
     const lines = Array.from({ length: n }, (_, i) => i)
     return (
-      <svg className="board-swatch" width={size} height={size} style={{ background: t.boardFace, borderColor: t.frameBase }}>
+      <svg className="board-swatch" width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ background: t.boardFace, borderColor: t.frameBase }}>
         {lines.map((i) => (
           <line key={`h${i}`} x1={m} y1={at(i)} x2={size - m} y2={at(i)} stroke={t.line} strokeWidth={1} />
         ))}

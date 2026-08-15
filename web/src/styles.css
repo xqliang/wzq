@@ -150,7 +150,7 @@ button:disabled {
   border-radius: 50%;
   font-size: 18px;
   color: #3a240f;
-  background: radial-gradient(circle at 40% 30%, rgba(255, 240, 205, 0.45), rgba(92, 52, 20, 0.3)), var(--wood-tex);
+  background: radial-gradient(circle at 40% 30%, rgba(255, 246, 220, 0.5), rgba(214, 170, 110, 0.42)), var(--wood-tex);
   background-size: cover;
   background-position: center;
   border: 2px solid #5c3a17;
@@ -178,9 +178,10 @@ button:disabled {
   font-size: 21px;
   letter-spacing: 3px;
   font-weight: 700;
-  color: #3a240f;
-  text-shadow: 0 1px 0 rgba(255, 240, 210, 0.55);
-  background: linear-gradient(180deg, rgba(255, 240, 200, 0.3), rgba(92, 52, 20, 0.24)), var(--wood-tex);
+  color: #33200d;
+  /* 凹刻感：字下缘亮高光 + 上缘暗影，像刻进木头。 */
+  text-shadow: 0 1px 0 rgba(255, 250, 236, 0.85), 0 -1px 1px rgba(74, 46, 18, 0.45);
+  background: linear-gradient(180deg, rgba(255, 247, 225, 0.62), rgba(232, 198, 142, 0.42)), var(--wood-tex);
   background-size: cover;
   background-position: center;
   border: 2px solid #5c3a17;
@@ -189,7 +190,7 @@ button:disabled {
 }
 .entry.primary {
   color: #5c360f;
-  background: linear-gradient(180deg, rgba(255, 222, 130, 0.55), rgba(160, 92, 24, 0.3)), var(--wood-tex);
+  background: linear-gradient(180deg, rgba(255, 236, 175, 0.68), rgba(216, 164, 86, 0.42)), var(--wood-tex);
   background-size: cover;
   background-position: center;
   border-color: #7c4a1e;
@@ -798,9 +799,9 @@ button:disabled {
   padding: 10px 22px;
   font-size: 17px;
   font-weight: 700;
-  color: #3a240f;
-  text-shadow: 0 1px 0 rgba(255, 240, 210, 0.5);
-  background: linear-gradient(180deg, rgba(255, 240, 200, 0.3), rgba(92, 52, 20, 0.24)), var(--wood-tex);
+  color: #33200d;
+  text-shadow: 0 1px 0 rgba(255, 250, 236, 0.85), 0 -1px 1px rgba(74, 46, 18, 0.45);
+  background: linear-gradient(180deg, rgba(255, 247, 225, 0.62), rgba(232, 198, 142, 0.42)), var(--wood-tex);
   background-size: cover;
   background-position: center;
   border: 2px solid #5c3a17;
@@ -828,7 +829,7 @@ button:disabled {
   padding: 14px 16px;
   text-align: left;
   color: #3a240f;
-  background: linear-gradient(180deg, rgba(255, 240, 200, 0.3), rgba(92, 52, 20, 0.24)), var(--wood-tex);
+  background: linear-gradient(180deg, rgba(255, 247, 225, 0.62), rgba(232, 198, 142, 0.42)), var(--wood-tex);
   background-size: cover;
   background-position: center;
   border: 2px solid #5c3a17;
@@ -969,12 +970,12 @@ button:disabled {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 30%, rgba(255, 240, 205, 0.4), rgba(92, 52, 20, 0.28)), var(--wood-tex);
+  background: radial-gradient(circle at 40% 30%, rgba(255, 246, 220, 0.5), rgba(214, 170, 110, 0.42)), var(--wood-tex);
   background-size: cover;
   background-position: center;
   border: 2px solid #5c3a17;
-  color: #3a240f;
-  text-shadow: 0 1px 0 rgba(255, 240, 210, 0.5);
+  color: #33200d;
+  text-shadow: 0 1px 0 rgba(255, 250, 236, 0.85), 0 -1px 1px rgba(74, 46, 18, 0.45);
   font-size: 18px;
   font-weight: 700;
   box-shadow: 0 3px 0 #7c4a1e, var(--shadow);

@@ -13,6 +13,7 @@ import (
 
 	"github.com/wzq/gomoku/internal/auth"
 	"github.com/wzq/gomoku/internal/endgame"
+	"github.com/wzq/gomoku/internal/rank"
 	"github.com/wzq/gomoku/internal/record"
 	"github.com/wzq/gomoku/internal/room"
 	"github.com/wzq/gomoku/internal/user"
@@ -227,8 +228,28 @@ func (s *Server) handleAiResult(w http.ResponseWriter, r *http.Request) {
 	}); err != nil {
 		log.Printf("save ai record: %v", err)
 	}
+	// 段位结算（阶段B）：AI 对局同样计入段位（胜 +10 / 负 -10）。
+	rankDelta := rank.LossDelta
+	if body.Win {
+		rankDelta = rank.WinDelta
+	}
+	rk, err := s.Users.SettleRank(uid, body.Win)
+	if err != nil {
+		log.Printf("settle ai rank: %v", err)
+	}
 	u, _ := s.Users.Get(uid)
-	writeJSON(w, http.StatusOK, map[string]any{"expDelta": delta, "user": u})
+	writeJSON(w, http.StatusOK, map[string]any{
+		"expDelta": delta,
+		"user":     u,
+		"rank": map[string]any{
+			"tier":      rk.Tier,
+			"points":    rk.Points,
+			"threshold": rank.Threshold(rk.Tier),
+			"delta":     rankDelta,
+			"promoted":  rk.Promoted,
+			"demoted":   rk.Demoted,
+		},
+	})
 }
 
 // SettlePvP 结算一局真人对战：给胜者 +20、负者 +5 经验，并落库战绩。
@@ -247,6 +268,15 @@ func (s *Server) SettlePvP(g room.GameOver) {
 	if loser != 0 {
 		if err := s.Users.AddExp(loser, 5); err != nil {
 			log.Printf("settle pvp loser exp: %v", err)
+		}
+	}
+	// 段位结算（阶段B）：胜者 +10、负者 -10。客户端在收到 game_over 后重新拉取 /api/me 获取新段位。
+	if _, err := s.Users.SettleRank(g.Winner, true); err != nil {
+		log.Printf("settle pvp winner rank: %v", err)
+	}
+	if loser != 0 {
+		if _, err := s.Users.SettleRank(loser, false); err != nil {
+			log.Printf("settle pvp loser rank: %v", err)
 		}
 	}
 	winnerStr := "white"

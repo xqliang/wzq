@@ -54,6 +54,8 @@ func (s *Store) Migrate() error {
 			avatar VARCHAR(128),
 			exp INT NOT NULL DEFAULT 0,
 			level INT NOT NULL DEFAULT 1,
+			rank_tier INT NOT NULL DEFAULT 0,
+			rank_points INT NOT NULL DEFAULT 0,
 			created_at DATETIME,
 			last_login DATETIME
 		)`,
@@ -80,5 +82,58 @@ func (s *Store) Migrate() error {
 			return err
 		}
 	}
+	// 存量库补列（CREATE IF NOT EXISTS 不会给老表加列）：段位阶与阶内积分。幂等。
+	if err := s.addColumnIfMissing("user", "rank_tier", "INT NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	if err := s.addColumnIfMissing("user", "rank_points", "INT NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
 	return nil
+}
+
+// LockClause 返回行级排他锁子句，用于「读改写」结算的并发安全。
+// mysql 支持 SELECT ... FOR UPDATE；sqlite 单写者串行，返回空串即可。
+func (s *Store) LockClause() string {
+	if s.driver == "mysql" {
+		return " FOR UPDATE"
+	}
+	return ""
+}
+
+// hasColumn 判断表是否已有某列（兼容 mysql information_schema 与 sqlite PRAGMA）。
+func (s *Store) hasColumn(table, col string) bool {
+	if s.driver == "mysql" {
+		var n int
+		s.DB.QueryRow(
+			`SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=? AND column_name=?`,
+			table, col).Scan(&n)
+		return n > 0
+	}
+	rows, err := s.DB.Query(`PRAGMA table_info(` + table + `)`)
+	if err != nil {
+		return false
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, ctype string
+		var dflt sql.NullString
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return false
+		}
+		if name == col {
+			return true
+		}
+	}
+	return false
+}
+
+// addColumnIfMissing 在列不存在时 ALTER TABLE 增加列；已存在则跳过。幂等，兼容两种驱动。
+func (s *Store) addColumnIfMissing(table, col, def string) error {
+	if s.hasColumn(table, col) {
+		return nil
+	}
+	_, err := s.DB.Exec(`ALTER TABLE ` + table + ` ADD COLUMN ` + col + ` ` + def)
+	return err
 }

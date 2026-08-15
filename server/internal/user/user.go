@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/wzq/gomoku/internal/rank"
 	"github.com/wzq/gomoku/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -22,6 +23,9 @@ type User struct {
 	Avatar   string `json:"avatar"`
 	Exp      int    `json:"exp"`
 	Level    int    `json:"level"`
+	// 段位（阶段B）：rankTier 为阶梯索引(0..18)，rankPoints 为当前阶内积分。
+	RankTier   int `json:"rankTier"`
+	RankPoints int `json:"rankPoints"`
 }
 
 // Service 提供用户相关业务能力，依赖底层 store。
@@ -72,8 +76,8 @@ func (svc *Service) Get(id int64) (*User, error) {
 	u := &User{}
 	var username sql.NullString
 	err := svc.s.DB.QueryRow(
-		`SELECT id, guest_id, username, nickname, avatar, exp, level FROM user WHERE id=?`, id).
-		Scan(&u.ID, &u.GuestID, &username, &u.Nickname, &u.Avatar, &u.Exp, &u.Level)
+		`SELECT id, guest_id, username, nickname, avatar, exp, level, rank_tier, rank_points FROM user WHERE id=?`, id).
+		Scan(&u.ID, &u.GuestID, &username, &u.Nickname, &u.Avatar, &u.Exp, &u.Level, &u.RankTier, &u.RankPoints)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +160,7 @@ func (svc *Service) CountSince(sinceRFC string) (int, error) {
 // Recent 返回最近注册的用户（按 id 倒序），供运营后台列表展示。
 func (svc *Service) Recent(limit int) ([]User, error) {
 	rows, err := svc.s.DB.Query(
-		`SELECT id, guest_id, username, nickname, avatar, exp, level FROM user ORDER BY id DESC LIMIT ?`, limit)
+		`SELECT id, guest_id, username, nickname, avatar, exp, level, rank_tier, rank_points FROM user ORDER BY id DESC LIMIT ?`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -166,11 +170,47 @@ func (svc *Service) Recent(limit int) ([]User, error) {
 	for rows.Next() {
 		var u User
 		var username sql.NullString
-		if err := rows.Scan(&u.ID, &u.GuestID, &username, &u.Nickname, &u.Avatar, &u.Exp, &u.Level); err != nil {
+		if err := rows.Scan(&u.ID, &u.GuestID, &username, &u.Nickname, &u.Avatar, &u.Exp, &u.Level, &u.RankTier, &u.RankPoints); err != nil {
 			return nil, err
 		}
 		u.Username = username.String
 		users = append(users, u)
 	}
 	return users, rows.Err()
+}
+
+// RankResult 是一次段位结算的结果（供响应/触发晋级动画）。
+type RankResult struct {
+	Tier     int  `json:"tier"`     // 结算后阶梯索引
+	Points   int  `json:"points"`   // 结算后阶内积分
+	Promoted bool `json:"promoted"` // 是否升阶
+	Demoted  bool `json:"demoted"`  // 是否降阶
+}
+
+// SettleRank 结算一局的段位变化（胜 +10 / 负 -10）。
+// 用事务「读改写」并在 mysql 上加 FOR UPDATE 行锁，保证同一用户并发结算的安全。
+func (svc *Service) SettleRank(id int64, win bool) (RankResult, error) {
+	delta := rank.LossDelta
+	if win {
+		delta = rank.WinDelta
+	}
+	tx, err := svc.s.DB.Begin()
+	if err != nil {
+		return RankResult{}, err
+	}
+	defer tx.Rollback()
+	var tier, points int
+	if err := tx.QueryRow(
+		`SELECT rank_tier, rank_points FROM user WHERE id=?`+svc.s.LockClause(), id).
+		Scan(&tier, &points); err != nil {
+		return RankResult{}, err
+	}
+	nt, np, up, down := rank.Apply(tier, points, delta)
+	if _, err := tx.Exec(`UPDATE user SET rank_tier=?, rank_points=? WHERE id=?`, nt, np, id); err != nil {
+		return RankResult{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return RankResult{}, err
+	}
+	return RankResult{Tier: nt, Points: np, Promoted: up, Demoted: down}, nil
 }

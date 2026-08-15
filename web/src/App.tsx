@@ -16,6 +16,8 @@ import { Share } from './pages/Share'
 import { Admin } from './pages/Admin'
 import { Settings } from './pages/Settings'
 import { Shop } from './pages/Shop'
+import { Checkin } from './pages/Checkin'
+import { Wheel } from './pages/Wheel'
 
 // 用 location.key 作为 key 强制重挂载 Game：
 // “再来一局”会从 /game 导航到 /game，路由匹配不变不会自动重挂载，
@@ -53,6 +55,8 @@ export default function App() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/shop" element={<Shop />} />
+        <Route path="/checkin" element={<Checkin />} />
+        <Route path="/wheel" element={<Wheel />} />
       </Routes>
     </BrowserRouter>
   )

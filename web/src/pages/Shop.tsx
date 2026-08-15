@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { shopState, shopBuy, shopEquip } from '../net/rest'
 import type { ShopState, ShopItem } from '../net/rest'
-import { Banner } from '../components/Banner'
+import { GamePanel } from '../components/GamePanel'
 import { Avatar } from '../components/Avatar'
 import { getTheme } from '../board/themes'
 import { setSettings } from '../audio/audio'
@@ -17,7 +17,7 @@ const SLOTS = [
 
 type SlotKey = (typeof SLOTS)[number]['key']
 
-// 商店页：顶部木匾标题 + 货币条 + 左侧分类标签 + 卡片网格（名称/预览/购买或装备）。
+// 商店页：竞品风格面板 + 左侧分类标签 + 卡片网格（名称/预览/购买或装备）。
 export function Shop() {
   const nav = useNavigate()
   const [state, setState] = useState<ShopState | null>(null)
@@ -49,15 +49,7 @@ export function Shop() {
   const items = state.items.filter((i) => i.slot === slot)
 
   return (
-    <div className="shop screen">
-      <div className="shop-head">
-        <Banner text="商店" tone="gold" />
-        <button className="shop-close" onClick={() => nav('/')} aria-label="关闭">✕</button>
-      </div>
-      <div className="shop-currency">
-        <span className="coin"><img src="/assets/img/icon_coin.png" alt="金币" />{state.coins}</span>
-        <span className="scroll"><img src="/assets/img/icon_scroll.png" alt="卷轴" />{state.scrolls}</span>
-      </div>
+    <GamePanel title="商店" onClose={() => nav('/')} coins={state.coins} scrolls={state.scrolls}>
       <div className="shop-body">
         <div className="shop-tabs">
           {SLOTS.map((s) => (
@@ -88,8 +80,7 @@ export function Shop() {
         </div>
       </div>
       {err && <p className="warn">{err}</p>}
-      <button className="back-btn" onClick={() => nav('/')}>返回</button>
-    </div>
+    </GamePanel>
   )
 }
 

@@ -1147,14 +1147,7 @@ button:disabled {
   display: flex;
   gap: 10px;
   width: 100%;
-  max-width: 520px;
-  flex: 1;
   min-height: 0;
-  padding: 12px;
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(250, 240, 214, 0.96), rgba(238, 224, 194, 0.96));
-  border: 3px solid #3f8ea3;
-  box-shadow: inset 0 0 0 2px rgba(255, 245, 214, 0.6), var(--shadow);
 }
 .shop-tabs {
   display: flex;
@@ -1264,3 +1257,178 @@ button:disabled {
   border: 3px solid #6fae86;
   box-shadow: 0 0 0 2px #2e7d4f;
 }
+
+/* ===== 竞品风格通用面板 GamePanel（商店/签到/转盘共用）===== */
+.gp-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(20, 14, 6, 0.66);
+  backdrop-filter: blur(2px);
+}
+.gp-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 92vh;
+  padding: 30px 16px 18px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fbf1d8, #efe0bd);
+  border: 4px solid #3f97ad;
+  box-shadow: inset 0 0 0 3px rgba(255, 248, 224, 0.8), inset 0 0 0 6px #2f7d90, 0 12px 30px rgba(20, 14, 6, 0.5);
+}
+.gp-titlebar {
+  position: absolute;
+  top: -22px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+}
+.gp-close {
+  position: absolute;
+  top: -14px;
+  right: -8px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 18px;
+  color: #5c360f;
+  background: radial-gradient(circle at 40% 35%, #f4d989, #cf9a34 70%, #8a5a1c);
+  border: 3px solid #fbeecb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.gp-currency {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.gp-currency span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 16px;
+  font-weight: 700;
+  color: #5c360f;
+  background: linear-gradient(180deg, #fbeecb, #e6cf9a);
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+}
+.gp-currency img { width: 20px; height: 20px; }
+.gp-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* ===== 每日签到 ===== */
+.checkin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+.checkin-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  background: linear-gradient(180deg, #fffaf0, #f0e4c8);
+  border: 2px solid #cba76a;
+  border-radius: 12px;
+}
+.checkin-cell.today { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(200, 145, 47, 0.55); }
+.checkin-cell.done { filter: grayscale(0.5); opacity: 0.7; }
+.checkin-day { font-size: 13px; font-weight: 700; color: #8a5a1c; }
+.checkin-icon { width: 40px; height: 40px; object-fit: contain; }
+.checkin-amt { font-size: 13px; font-weight: 700; color: #5c360f; }
+.checkin-day7 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, #f6d79a, #e0a955);
+  border: 2px solid #b5793f;
+  border-radius: 12px;
+}
+.checkin-day7-title { font-size: 16px; font-weight: 700; color: #5c360f; }
+.checkin-day7-desc { font-size: 13px; color: #6b451c; }
+.checkin-chest { width: 56px; height: 56px; object-fit: contain; }
+.checkin-actions { display: flex; gap: 12px; }
+
+/* ===== 幸运转盘 ===== */
+.wheel-wrap {
+  position: relative;
+  width: min(78vw, 300px);
+  height: min(78vw, 300px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wheel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 8px solid #3f97ad;
+  background: repeating-conic-gradient(from -22.5deg, #f6e3b0 0 45deg, #e7c471 45deg 90deg);
+  box-shadow: inset 0 0 0 4px rgba(255, 248, 224, 0.7), 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+.wheel-seg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+}
+.wheel-label {
+  margin-top: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #5c360f;
+  transform: rotate(0deg);
+  white-space: nowrap;
+}
+.wheel-hub {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #ff6b5a, #c0281c);
+  border: 3px solid #fbeecb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.wheel-pointer {
+  position: absolute;
+  top: -6px;
+  z-index: 2;
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 22px solid #f0d27a;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.4));
+}
+.wheel-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  color: #5c360f;
+}
+.wheel-cost img { width: 18px; height: 18px; }

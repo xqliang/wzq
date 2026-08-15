@@ -163,6 +163,49 @@ export const shopBuy = (slot: string, id: string) =>
 export const shopEquip = (slot: string, id: string) =>
   req('/api/shop/equip', 'POST', { slot, id }) as Promise<ShopState>
 
+// ===== 每日签到 / 幸运转盘（阶段D）=====
+
+// 一份奖励：kind=coins/scrolls/item。
+export interface Reward {
+  kind: 'coins' | 'scrolls' | 'item'
+  amount: number
+  itemId?: string
+  label: string
+}
+
+// 签到面板状态。
+export interface CheckinState {
+  rewards: Reward[]
+  dayIndex: number // 今日应领下标(0-6)
+  claimed: boolean
+  streak: number
+}
+
+export const checkinState = () => req('/api/checkin', 'GET') as Promise<CheckinState>
+export const checkinClaim = (double = false) =>
+  req('/api/checkin/claim', 'POST', { double }) as Promise<{
+    reward: Reward
+    coins: number
+    scrolls: number
+    state: CheckinState
+  }>
+
+// 转盘面板状态。
+export interface WheelState {
+  prizes: Reward[]
+  cost: number
+  coins: number
+  scrolls: number
+}
+export const wheelState = () => req('/api/wheel', 'GET') as Promise<WheelState>
+export const wheelSpin = () =>
+  req('/api/wheel/spin', 'POST') as Promise<{
+    index: number
+    prize: Reward
+    coins: number
+    scrolls: number
+  }>
+
 // ===== 残局闯关（endgame）相关接口 =====
 
 // 关卡元信息：用于列表页展示（章节、难度、是否通关、尝试次数）。

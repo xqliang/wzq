@@ -69,8 +69,8 @@ export function Home({ user }: { user: User }) {
       </main>
       <nav className="ops-row">
         <button className="op-btn" onClick={() => nav('/shop')}>商店</button>
-        <button className="op-btn" onClick={() => alert('每日签到（阶段D）')}>签到</button>
-        <button className="op-btn" onClick={() => alert('幸运转盘（阶段D）')}>转盘</button>
+        <button className="op-btn" onClick={() => nav('/checkin')}>签到</button>
+        <button className="op-btn" onClick={() => nav('/wheel')}>转盘</button>
       </nav>
       {matching && (
         <div className="matching-mask">

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { ensureGuest } from './net/rest'
 import type { User } from './net/rest'
+import { setSettings } from './audio/audio'
+import type { Effect } from './audio/audio'
 import { Home } from './pages/Home'
 import { AiConfig } from './pages/AiConfig'
 import { Game } from './pages/Game'
@@ -13,6 +15,7 @@ import { Stats } from './pages/Stats'
 import { Share } from './pages/Share'
 import { Admin } from './pages/Admin'
 import { Settings } from './pages/Settings'
+import { Shop } from './pages/Shop'
 
 // 用 location.key 作为 key 强制重挂载 Game：
 // “再来一局”会从 /game 导航到 /game，路由匹配不变不会自动重挂载，
@@ -26,7 +29,13 @@ function GameRoute() {
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
   useEffect(() => {
-    ensureGuest().then(setUser).catch(console.error)
+    ensureGuest()
+      .then((u) => {
+        // 同步已装备外观到本地设置：棋盘皮肤驱动对局主题、落子动效驱动特效。
+        setSettings({ theme: u.equippedBoard || 'wood', effect: (u.equippedEffect || 'ripple') as Effect })
+        setUser(u)
+      })
+      .catch(console.error)
   }, [])
   if (!user) return <div className="loading">加载中…</div>
   return (
@@ -43,6 +52,7 @@ export default function App() {
         <Route path="/share/:uid" element={<Share />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/shop" element={<Shop />} />
       </Routes>
     </BrowserRouter>
   )

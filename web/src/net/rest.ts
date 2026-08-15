@@ -31,6 +31,10 @@ export interface User {
   // 双货币（阶段C）：coins 金币，scrolls 卷轴。
   coins: number
   scrolls: number
+  // 已装备外观（阶段C）：棋盘皮肤 / 头像框 / 落子动效。
+  equippedBoard: string
+  equippedFrame: string
+  equippedEffect: string
   username?: string
 }
 
@@ -127,6 +131,37 @@ export const matchJoin = () => req('/api/match', 'POST') as Promise<{ roomId: st
 
 // 退出随机匹配池（离开匹配界面 / 点取消时调用）。
 export const matchCancel = () => req('/api/match/cancel', 'POST') as Promise<{ ok: boolean }>
+
+// ===== 商店（阶段C）=====
+
+// 商店商品（带拥有/装备标记）。slot: board 棋盘 / frame 头像框 / effect 落子动效。
+export interface ShopItem {
+  id: string
+  name: string
+  slot: 'board' | 'frame' | 'effect'
+  price: number
+  currency: 'coins' | 'scrolls'
+  preview: string
+  owned: boolean
+  equipped: boolean
+}
+
+// 商店状态：余额 + 已装备 + 商品列表。
+export interface ShopState {
+  coins: number
+  scrolls: number
+  equipped: { board: string; frame: string; effect: string }
+  items: ShopItem[]
+}
+
+// 拉取商店状态。
+export const shopState = () => req('/api/shop', 'GET') as Promise<ShopState>
+// 购买商品，返回购买后的最新商店状态。
+export const shopBuy = (slot: string, id: string) =>
+  req('/api/shop/buy', 'POST', { slot, id }) as Promise<ShopState>
+// 装备已拥有商品，返回最新商店状态。
+export const shopEquip = (slot: string, id: string) =>
+  req('/api/shop/equip', 'POST', { slot, id }) as Promise<ShopState>
 
 // ===== 残局闯关（endgame）相关接口 =====
 

@@ -49,7 +49,7 @@ export function Home({ user }: { user: User }) {
     <div className="home screen">
       <img src="/assets/img/logo_title.png" alt="五子棋" className="home-logo" />
       <header className="profile">
-        <Avatar src={`/assets/img/${u.avatar}.png`} size={60} />
+        <Avatar src={`/assets/img/${u.avatar}.png`} size={60} frame={u.equippedFrame || 'gold'} />
         <div>
           <div className="nick">{u.nickname}</div>
           <div className="rank-tag">{rankLabel(u.rankTier ?? 0)}</div>
@@ -68,7 +68,7 @@ export function Home({ user }: { user: User }) {
         <button className="entry" onClick={() => nav('/stats')}>我的战绩</button>
       </main>
       <nav className="ops-row">
-        <button className="op-btn" onClick={() => alert('商店（阶段C）')}>商店</button>
+        <button className="op-btn" onClick={() => nav('/shop')}>商店</button>
         <button className="op-btn" onClick={() => alert('每日签到（阶段D）')}>签到</button>
         <button className="op-btn" onClick={() => alert('幸运转盘（阶段D）')}>转盘</button>
       </nav>

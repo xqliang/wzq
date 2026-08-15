@@ -1101,3 +1101,167 @@ button:disabled {
 @keyframes matching-rotate { to { transform: rotate(360deg); } }
 .matching-title { font-size: 18px; font-weight: 700; color: var(--ink); }
 .matching-sub { font-size: 13px; color: var(--ink-soft); }
+
+/* ===== 商店（阶段C）：木匾标题 + 货币条 + 左侧分类标签 + 卡片网格。 ===== */
+.shop {
+  justify-content: flex-start;
+  gap: 12px;
+}
+.shop-head {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.shop-close {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 18px;
+  color: #5c360f;
+  background: radial-gradient(circle at 40% 35%, #f0d27a, #c8912f 70%, #7c4a1e);
+  border: 2px solid #5c3a17;
+}
+.shop-currency {
+  display: flex;
+  gap: 10px;
+}
+.shop-currency span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  font-weight: 700;
+  color: #5c360f;
+  background: linear-gradient(180deg, #fbeecb, #edd6a6);
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+}
+.shop-currency img { width: 20px; height: 20px; }
+/* 主面板：青蓝描边 + 绢帛底，内含左侧分类与卡片网格。 */
+.shop-body {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 520px;
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(250, 240, 214, 0.96), rgba(238, 224, 194, 0.96));
+  border: 3px solid #3f8ea3;
+  box-shadow: inset 0 0 0 2px rgba(255, 245, 214, 0.6), var(--shadow);
+}
+.shop-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: none;
+}
+.shop-tab {
+  width: 48px;
+  padding: 14px 6px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff5e6;
+  background: linear-gradient(180deg, #d0714a, #a8471f);
+  border: 2px solid #7c3a1e;
+  border-radius: 12px;
+  text-shadow: 0 1px 0 rgba(80, 30, 10, 0.6);
+}
+.shop-tab.active {
+  background: linear-gradient(180deg, #f0b24a, #d4881f);
+  color: #5c360f;
+  box-shadow: 0 0 0 2px rgba(240, 210, 122, 0.7);
+}
+.shop-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  align-content: start;
+}
+.shop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  background: linear-gradient(180deg, #fffaf0, #f0e4c8);
+  border: 2px solid #cba76a;
+  border-radius: 12px;
+}
+.shop-card.equipped {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(200, 145, 47, 0.5);
+}
+.shop-card-name { font-size: 15px; font-weight: 700; color: #5c360f; }
+.shop-card-foot { margin-top: 2px; }
+.price-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 16px;
+  font-weight: 700;
+  color: #5c360f;
+  background: linear-gradient(180deg, #ffe6a0, #e0a52f);
+  border: 2px solid #a86b32;
+  border-radius: 16px;
+}
+.price-btn img { width: 18px; height: 18px; }
+.tag-equipped {
+  display: inline-block;
+  padding: 6px 16px;
+  font-weight: 700;
+  color: #2e7d4f;
+  background: #e4f3e8;
+  border: 2px solid #6fae86;
+  border-radius: 16px;
+}
+/* 棋盘皮肤迷你预览：主题色矩形盘 + 十字线 + 黑白子。 */
+.board-swatch {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-width: 5px;
+  border-style: solid;
+  border-radius: 8px;
+}
+.sw-line { position: absolute; opacity: 0.7; }
+.sw-line.h { left: 8%; right: 8%; top: 50%; height: 1.5px; }
+.sw-line.v { top: 8%; bottom: 8%; left: 50%; width: 1.5px; }
+.sw-stone { position: absolute; width: 16px; height: 16px; border-radius: 50%; }
+.sw-stone.b { left: 26%; top: 28%; background: radial-gradient(circle at 35% 35%, #555, #111); }
+.sw-stone.w { right: 22%; bottom: 24%; background: radial-gradient(circle at 35% 35%, #fff, #cfc7b5); }
+.effect-swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #5c360f;
+  background: radial-gradient(circle at 50% 40%, #fff2cf, #e6cf9a);
+  border: 2px solid #cba76a;
+}
+
+/* 头像框皮肤变体（无贴图时用彩环表现）。 */
+.avatar-box.frame-bronze {
+  overflow: visible;
+  border: 3px solid #b5793f;
+  box-shadow: 0 0 0 2px #7c4a1e;
+}
+.avatar-box.frame-jade {
+  overflow: visible;
+  border: 3px solid #6fae86;
+  box-shadow: 0 0 0 2px #2e7d4f;
+}

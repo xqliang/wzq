@@ -1,8 +1,8 @@
-// 头像 + 外框容器。阶段 A 只用默认框；frame 预留给阶段 C 的头像框皮肤。
+// 头像 + 外框容器。默认叠古风金环（复刻竞品）；frame 可切换其它头像框皮肤（阶段 C）。
 export function Avatar({
   src,
   size = 56,
-  frame = 'none',
+  frame = 'gold',
 }: {
   src: string
   size?: number

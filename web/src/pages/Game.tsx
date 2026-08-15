@@ -5,7 +5,7 @@ import { ResultOverlay } from '../components/ResultOverlay'
 import { StartCountdown } from '../components/StartCountdown'
 import { GameMenu } from '../components/GameMenu'
 import { useGame } from '../store/game'
-import { playSfx } from '../audio/audio'
+import { playSfx, startBgm } from '../audio/audio'
 import { reportAiResult, getCurrentUser, me } from '../net/rest'
 import { connectRoom, sendMove, sendUndoReq, sendUndoReply, sendResign } from '../net/ws'
 import type { ServerMsg } from '../net/ws'
@@ -181,6 +181,7 @@ export function Game() {
 
   // 初始化：人机建 Worker；真人连 WS。
   useEffect(() => {
+    startBgm() // 进入对局自动播放背景音乐（用户点击进入即为交互手势，满足自动播放策略）。
     if (st.mode === 'ai') {
       g.reset('black')
       workerRef.current = new Worker(new URL('../ai/worker.ts', import.meta.url), { type: 'module' })
@@ -347,36 +348,36 @@ export function Game() {
           onWinAnimationEnd={() => setShowModal(true)}
         />
         {started && !introDone && <StartCountdown onDone={() => setIntroDone(true)} />}
-        {/* 晋级动画：本局升阶时先播放，看完再显示结算弹窗。 */}
-        {showModal && rankResult?.promoted && !rankupDone && (
-          <RankUpOverlay
-            fromLabel={rankLabel(rankResult.fromTier)}
-            toLabel={rankLabel(rankResult.tier)}
-            group={rankGroup(rankResult.tier)}
-            coins={0}
-            onContinue={() => setRankupDone(true)}
-          />
-        )}
-        {showModal && result && (!rankResult?.promoted || rankupDone) && (
-          <ResultOverlay
-            win={result.win}
-            coins={result.coinDelta ?? 0}
-            me={{
-              nickname: '我',
-              avatar: 'avatar_01',
-              rankLabel: rankLabel(rankResult?.tier ?? preTierRef.current),
-              points: rankResult?.points ?? 0,
-              threshold: rankResult?.threshold ?? rankThreshold(preTierRef.current),
-              delta: rankResult?.delta ?? (result.win ? 10 : -10),
-            }}
-            opp={{ nickname: st.mode === 'ai' ? 'AI大师' : '对手', avatar: 'avatar_02', rankLabel: st.mode === 'ai' ? rankLabel(18) : rankLabel(3), points: 20, threshold: 30, delta: result.win ? -10 : 10 }}
-            onRematch={rematch}
-            onHome={() => nav('/')}
-            onShare={() => alert('分享（后续接入）')}
-            onDouble={() => alert('看广告双倍（阶段C）')}
-          />
-        )}
       </div>
+      {/* 晋级动画：本局升阶时先播放，看完再显示结算弹窗。二者均覆盖整个游戏画面。 */}
+      {showModal && rankResult?.promoted && !rankupDone && (
+        <RankUpOverlay
+          fromLabel={rankLabel(rankResult.fromTier)}
+          toLabel={rankLabel(rankResult.tier)}
+          group={rankGroup(rankResult.tier)}
+          coins={0}
+          onContinue={() => setRankupDone(true)}
+        />
+      )}
+      {showModal && result && (!rankResult?.promoted || rankupDone) && (
+        <ResultOverlay
+          win={result.win}
+          coins={result.coinDelta ?? 0}
+          me={{
+            nickname: '我',
+            avatar: 'avatar_01',
+            rankLabel: rankLabel(rankResult?.tier ?? preTierRef.current),
+            points: rankResult?.points ?? 0,
+            threshold: rankResult?.threshold ?? rankThreshold(preTierRef.current),
+            delta: rankResult?.delta ?? (result.win ? 10 : -10),
+          }}
+          opp={{ nickname: st.mode === 'ai' ? 'AI大师' : '对手', avatar: 'avatar_02', rankLabel: st.mode === 'ai' ? rankLabel(18) : rankLabel(3), points: 20, threshold: 30, delta: result.win ? -10 : 10 }}
+          onRematch={rematch}
+          onHome={() => nav('/')}
+          onShare={() => alert('分享（后续接入）')}
+          onDouble={() => alert('看广告双倍（阶段C）')}
+        />
+      )}
       <div className="hud">
         {g.turn === g.myColor ? <span className="tip">轮到你落子</span> : <span>对方思考中…</span>}
         <GameMenu

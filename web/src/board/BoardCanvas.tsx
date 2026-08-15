@@ -49,11 +49,12 @@ function faceImage(src?: string): HTMLImageElement | null {
 // 两色贴图的透明留白不同，用不同放大系数抵消，使黑白子视觉大小一致。
 const STONE_FACTOR: Record<'black' | 'white', number> = { black: 2.0, white: 1.5 }
 
-// 灰尘粒子：从落点向外飞散并渐隐（简单物理：位置=速度*时间）。
+// 灰尘/迸屑粒子：从落点向外飞散并渐隐（简单物理：位置=速度*时间 + 轻微重力）。
 interface Dust {
   a: number // 飞散角度
   sp: number // 速度系数
   r0: number // 初始半径
+  col: string // 粒子颜色（木屑/金光混合，更有层次）
 }
 
 // Canvas 棋盘：立体木框 + 网格 + 棋子；预落子四角准心；最近一手落下动画/呼吸灯；
@@ -114,10 +115,11 @@ export function BoardCanvas({
     const effect: Effect = getSettings().effect
     const dust: Dust[] =
       effect === 'dust'
-        ? Array.from({ length: 8 }, () => ({
+        ? Array.from({ length: 16 }, () => ({
             a: Math.random() * PI2,
-            sp: 0.6 + Math.random() * 1.4,
-            r0: 2 + Math.random() * 2.5,
+            sp: 0.8 + Math.random() * 2.2,
+            r0: 1.5 + Math.random() * 3,
+            col: ['#e9d3a5', '#c9a35b', '#fff2c0', '#a8763a'][Math.floor(Math.random() * 4)],
           }))
         : []
 
@@ -158,12 +160,11 @@ export function BoardCanvas({
           if (last && x === last.x && y === last.y) continue
           drawStone(ctx, x, y, board[y][x]!, 1, 1, theme)
         }
-      // 预落子：淡色棋子 + 四角准心（相机对焦框）。
+      // 预落子：只显示四角准心（相机对焦框），不再画半透明棋子。
       if (pending) {
-        drawStone(ctx, pending.x, pending.y, myColor, 0.35, 1, theme)
         drawCrosshair(ctx, pending.x, pending.y, theme.accent, t)
       }
-      // 最新子：落下动画（起始略大→收拢，有分量）+ 触地冲击环 / 稳定后呼吸灯
+      // 最新子：落下动画（起始略大→收拢，有分量）+ 触地冲击环；落定后用静态标记（不再呼吸闪烁）。
       if (last && board[last.y][last.x]) {
         const elapsed = t - dropStart
         const cx = PAD + last.x * CELL
@@ -177,16 +178,11 @@ export function BoardCanvas({
           ctx.strokeStyle = `rgba(80,50,20,${0.5 * (1 - p)})`
           ctx.lineWidth = 3 * (1 - p)
           ctx.stroke()
-        } else {
-          const pulse = 0.5 + 0.5 * Math.sin(t / 300)
-          ctx.beginPath()
-          ctx.arc(cx, cy, CELL * 0.5 + pulse * 4, 0, PI2)
-          ctx.strokeStyle = `rgba(200,40,40,${0.35 + pulse * 0.35})`
-          ctx.lineWidth = 2.5
-          ctx.stroke()
         }
         // 落子特效（叠加在落下动画之上）：水波纹 / 灰尘 / 无。
         drawEffect(ctx, effect, dust, cx, cy, elapsed, theme.accent)
+        // 最近一手静态标记：白子=描边黄点，黑子=靶心，清晰不刺眼（参考竞品）。
+        drawLastMark(ctx, cx, cy, board[last.y][last.x]!)
       }
       // 覆盖标记（提示光圈 / 预演步序）
       if (overlays) {
@@ -284,10 +280,6 @@ function drawFrame(ctx: CanvasRenderingContext2D, theme: Theme) {
   ctx.moveTo(0, PX - LIP + 0.5)
   ctx.lineTo(PX, PX - LIP + 0.5)
   ctx.stroke()
-  // 细外缘线，勾出整体轮廓。
-  ctx.strokeStyle = theme.frameDark
-  ctx.lineWidth = 1.5
-  ctx.strokeRect(0.75, 0.75, PX - 1.5, PX - 1.5)
 }
 
 // 四角准心：围绕交叉点的四个 L 形转角括号（相机对焦框风格），带轻微呼吸。
@@ -323,7 +315,43 @@ function drawCrosshair(
   ctx.restore()
 }
 
-// 落子特效：ripple=扩散水波纹环；dust=向外飞散的灰尘粒子；none=无。约 550ms。
+// 最近一手静态标记：白子=描深边的黄色圆点；黑子=靶心（四向短刻线 + 中心点）。清晰而不刺眼。
+function drawLastMark(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: 'black' | 'white') {
+  ctx.save()
+  if (color === 'white') {
+    ctx.beginPath()
+    ctx.arc(cx, cy, 5, 0, PI2)
+    ctx.fillStyle = '#ffcf2e'
+    ctx.fill()
+    ctx.lineWidth = 1.6
+    ctx.strokeStyle = 'rgba(90,60,15,0.95)'
+    ctx.stroke()
+  } else {
+    const R = 8
+    ctx.strokeStyle = '#ffd24a'
+    ctx.lineWidth = 2
+    ctx.lineCap = 'round'
+    for (const [dx, dy] of [
+      [0, -1],
+      [0, 1],
+      [-1, 0],
+      [1, 0],
+    ]) {
+      ctx.beginPath()
+      ctx.moveTo(cx + dx * R * 0.5, cy + dy * R * 0.5)
+      ctx.lineTo(cx + dx * R, cy + dy * R)
+      ctx.stroke()
+    }
+    ctx.beginPath()
+    ctx.arc(cx, cy, 2.4, 0, PI2)
+    ctx.fillStyle = '#ffd24a'
+    ctx.fill()
+  }
+  ctx.restore()
+}
+
+// 落子特效（更炫，配合落子音效）：约 520ms。
+// ripple=中心闪光 + 冲击波双环 + 放射火花；dust=迸屑粒子（重力下坠）+ 亮火花。none=无。
 function drawEffect(
   ctx: CanvasRenderingContext2D,
   effect: Effect,
@@ -333,34 +361,87 @@ function drawEffect(
   elapsed: number,
   accent: string,
 ) {
-  const DUR = 550
+  const DUR = 520
   if (effect === 'ripple') {
     ctx.save()
-    ctx.strokeStyle = accent
-    for (let i = 0; i < 3; i++) {
-      const e = elapsed - i * 120 // 每环延迟出现
+    // 中心闪光（前 ~140ms 一瞬）。
+    if (elapsed < 140) {
+      const p = elapsed / 140
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, CELL * 0.62)
+      g.addColorStop(0, `rgba(255,246,208,${0.8 * (1 - p)})`)
+      g.addColorStop(0.5, `rgba(255,210,74,${0.4 * (1 - p)})`)
+      g.addColorStop(1, 'rgba(255,210,74,0)')
+      ctx.fillStyle = g
+      ctx.beginPath()
+      ctx.arc(cx, cy, CELL * 0.62, 0, PI2)
+      ctx.fill()
+    }
+    // 冲击波双环（金 + 主题色，一前一后）。
+    for (let i = 0; i < 2; i++) {
+      const e = elapsed - i * 90
       if (e < 0 || e > DUR) continue
       const p = e / DUR
-      ctx.globalAlpha = (1 - p) * 0.55
-      ctx.lineWidth = 2 * (1 - p) + 0.5
+      ctx.globalAlpha = (1 - p) * 0.65
+      ctx.strokeStyle = i === 0 ? '#ffd24a' : accent
+      ctx.lineWidth = 3 * (1 - p) + 0.5
       ctx.beginPath()
-      ctx.arc(cx, cy, CELL * (0.3 + p * 0.95), 0, PI2)
+      ctx.arc(cx, cy, CELL * (0.25 + p * 1.1), 0, PI2)
       ctx.stroke()
+    }
+    // 放射火花（前 ~260ms 迸出）。
+    if (elapsed < 260) {
+      const p = elapsed / 260
+      ctx.globalAlpha = 1 - p
+      ctx.strokeStyle = '#ffe9a0'
+      ctx.lineWidth = 2 * (1 - p)
+      ctx.lineCap = 'round'
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * PI2
+        const r0 = CELL * (0.35 + p * 0.5)
+        const r1 = r0 + CELL * 0.22 * (1 - p)
+        ctx.beginPath()
+        ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0)
+        ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
+        ctx.stroke()
+      }
     }
     ctx.restore()
   } else if (effect === 'dust') {
     if (elapsed > DUR) return
     const p = elapsed / DUR
     ctx.save()
-    ctx.fillStyle = accent
-    for (const d of dust) {
-      const dist = d.sp * elapsed * 0.11 // 位置 = 速度 * 时间
-      const px = cx + Math.cos(d.a) * dist
-      const py = cy + Math.sin(d.a) * dist + 0.00035 * elapsed * elapsed * 0.5 // 轻微下坠
-      ctx.globalAlpha = (1 - p) * 0.7
+    // 初始迸射闪光。
+    if (elapsed < 100) {
+      ctx.globalAlpha = (1 - elapsed / 100) * 0.6
+      ctx.fillStyle = '#fff2c0'
       ctx.beginPath()
-      ctx.arc(px, py, d.r0 * (1 - p * 0.5), 0, PI2)
+      ctx.arc(cx, cy, CELL * 0.3, 0, PI2)
       ctx.fill()
+    }
+    // 木屑/金光粒子：向外飞散 + 重力下坠 + 渐隐。
+    for (const d of dust) {
+      const dist = d.sp * elapsed * 0.16
+      const px = cx + Math.cos(d.a) * dist
+      const py = cy + Math.sin(d.a) * dist + 0.0011 * elapsed * elapsed * 0.5
+      ctx.globalAlpha = (1 - p) * 0.85
+      ctx.fillStyle = d.col
+      ctx.beginPath()
+      ctx.arc(px, py, Math.max(0.4, d.r0 * (1 - p * 0.6)), 0, PI2)
+      ctx.fill()
+    }
+    // 亮火花放射线。
+    ctx.globalAlpha = (1 - p) * 0.9
+    ctx.strokeStyle = '#ffe9a0'
+    ctx.lineWidth = 1.6 * (1 - p)
+    ctx.lineCap = 'round'
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * PI2 + 0.3
+      const r0 = CELL * (0.2 + p * 0.7)
+      const r1 = r0 + CELL * 0.3 * (1 - p)
+      ctx.beginPath()
+      ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0)
+      ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
+      ctx.stroke()
     }
     ctx.restore()
   }
@@ -472,15 +553,15 @@ function drawWinLine(
       if (on < 0) continue
       const cx = PAD + line[i].x * CELL
       const cy = PAD + line[i].y * CELL
-      drawGlowRing(ctx, cx, cy, CELL * 0.55, 1)
+      drawGlowRing(ctx, cx, cy, CELL * 0.46, 1)
       // 当前激活子（进入 WIN_STEP 内）追加一圈扩张脉冲。
       if (on < WIN_STEP) {
         const p = on / WIN_STEP
         ctx.globalAlpha = 1 - p
         ctx.strokeStyle = WIN_GOLD
-        ctx.lineWidth = 3 * (1 - p) + 1
+        ctx.lineWidth = 2 * (1 - p) + 0.5
         ctx.beginPath()
-        ctx.arc(cx, cy, CELL * (0.55 + p * 0.6), 0, PI2)
+        ctx.arc(cx, cy, CELL * (0.46 + p * 0.45), 0, PI2)
         ctx.stroke()
         ctx.globalAlpha = 1
       }
@@ -492,7 +573,7 @@ function drawWinLine(
     for (const c of line) {
       const cx = PAD + c.x * CELL
       const cy = PAD + c.y * CELL
-      drawGlowRing(ctx, cx, cy, CELL * 0.55, 0.6 + pulse * 0.4)
+      drawGlowRing(ctx, cx, cy, CELL * 0.46, 0.6 + pulse * 0.4)
     }
   }
   ctx.restore()
@@ -507,16 +588,16 @@ function drawGlowRing(
   alpha: number,
 ) {
   ctx.save()
-  // 外晕：宽而淡。
-  ctx.globalAlpha = alpha * 0.4
+  // 外晕：宽而淡（收窄，避免过分凸出）。
+  ctx.globalAlpha = alpha * 0.32
   ctx.strokeStyle = WIN_GOLD
-  ctx.lineWidth = 10
+  ctx.lineWidth = 6
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, PI2)
   ctx.stroke()
   // 亮环：细而明。
   ctx.globalAlpha = alpha
-  ctx.lineWidth = 4
+  ctx.lineWidth = 2
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, PI2)
   ctx.stroke()

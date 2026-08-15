@@ -144,6 +144,7 @@ button:disabled {
   font-size: 14px;
 }
 .profile .settings-btn {
+  flex: none;
   width: 42px;
   height: 42px;
   padding: 0;
@@ -917,9 +918,9 @@ button:disabled {
   border-color: var(--gold);
   box-shadow: 0 0 0 2px rgba(200, 145, 47, 0.5), var(--shadow);
 }
-.player-meta { min-width: 0; }
-.player-nick { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px; }
-.player-rank { font-size: 12px; color: var(--accent); }
+.player-meta { min-width: 0; flex: 1; }
+.player-nick { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 96px; }
+.player-rank { font-size: 12px; color: var(--accent); white-space: nowrap; }
 .stone-chip { width: 16px; height: 16px; border-radius: 50%; flex: none; }
 .stone-chip.black { background: radial-gradient(circle at 35% 35%, #555, #111); }
 .stone-chip.white { background: radial-gradient(circle at 35% 35%, #fff, #cfc7b5); border: 1px solid #b3ada1; }
@@ -1007,20 +1008,19 @@ button:disabled {
 }
 
 .result-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 16px;
+  gap: 14px;
+  padding: 20px;
   background: rgba(30, 20, 8, 0.72);
   backdrop-filter: blur(2px);
 }
-.result-top { position: absolute; top: 12px; left: 12px; display: flex; gap: 10px; }
+.result-top { position: absolute; top: 20px; left: 16px; display: flex; gap: 10px; }
 .round-btn {
   width: 44px; height: 44px; border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #d9a86a, #a86b32 70%, #7c4a1e);
@@ -1050,15 +1050,14 @@ button:disabled {
 }
 
 .rankup-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 1100;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 18px;
-  border-radius: 16px;
   background: rgba(20, 14, 6, 0.85);
 }
 .rankup-transit { display: flex; align-items: center; gap: 14px; font-size: 22px; font-weight: 700; }

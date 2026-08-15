@@ -57,3 +57,23 @@ describe('bestMove 防守', () => {
     expect(performance.now() - t0).toBeLessThan(3500)
   })
 })
+
+describe('bestMove 进攻', () => {
+  it('己方活三应主动扩成活四(而非消极防守)', () => {
+    let b = emptyBoard()
+    // 白活三 (6,7)(7,7)(8,7)，两端 (5,7)(9,7) 空；黑仅一枚远子，轮到白。
+    for (let x = 6; x <= 8; x++) b = applyMove(b, { x, y: 7, color: 'white' })
+    b = applyMove(b, { x: 0, y: 0, color: 'black' })
+    const mv = bestMove(b, 'white', 2)
+    const makesOpenFour = (mv.x === 5 && mv.y === 7) || (mv.x === 9 && mv.y === 7)
+    expect(makesOpenFour).toBe(true)
+  })
+  it('应封堵对方“双三”落点(避免被双活三先手压制)', () => {
+    let b = emptyBoard()
+    // 黑若落 (7,7) 则同时形成横向(5,6,7)与纵向(7,5)(7,6)(7,7)两条活三 => 双三。
+    for (const [x, y] of [[5, 7], [6, 7], [7, 5], [7, 6]] as const)
+      b = applyMove(b, { x, y, color: 'black' })
+    const mv = bestMove(b, 'white', 3)
+    expect(mv.x === 7 && mv.y === 7).toBe(true)
+  })
+})

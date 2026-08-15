@@ -229,7 +229,9 @@ button:disabled {
 }
 .board-canvas {
   display: block;
-  border-radius: 14px;
+  /* 圆角由 canvas 内部按「顶部 16 / 底部 22」自绘裁剪（见 drawFrame），
+     这里不再设 border-radius，避免 CSS 直角圆角把底部更大的前下缘弧线切掉。 */
+  border-radius: 0;
   cursor: pointer;
 }
 

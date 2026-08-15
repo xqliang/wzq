@@ -256,27 +256,60 @@ export function BoardCanvas({
   )
 }
 
-// 立体外框：四边同色平整浅木框（不做四向斜面高光/阴影）；
-// 3D 厚度只来自最底沿一条薄的深木“厚度条”+ 其上一道高光缝（四边浅木边框保持一致），
-// 配合 .board-wrap 的落地阴影，像厚木盘坐在桌面上（参考竞品默认盘）。
+// 圆角矩形路径（四角半径可分别指定），用于把「盘面 + 底部厚度」整体裁剪成自然圆角。
+function roundRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  tl: number,
+  tr: number,
+  br: number,
+  bl: number,
+) {
+  ctx.beginPath()
+  ctx.moveTo(x + tl, y)
+  ctx.lineTo(x + w - tr, y)
+  ctx.arcTo(x + w, y, x + w, y + tr, tr)
+  ctx.lineTo(x + w, y + h - br)
+  ctx.arcTo(x + w, y + h, x + w - br, y + h, br)
+  ctx.lineTo(x + bl, y + h)
+  ctx.arcTo(x, y + h, x, y + h - bl, bl)
+  ctx.lineTo(x, y + tl)
+  ctx.arcTo(x, y, x + tl, y, tl)
+  ctx.closePath()
+}
+
+// 立体外框：把整块盘面(PX×PX)与底部立体厚度(LIP)一起裁剪成一个圆角木盘。
+// 底部圆角半径比顶部更大，模拟厚木盘被磨圆的“前下缘”，让底部转角自然过渡（弧线衔接），
+// 而不是被 CSS 直角圆角硬切出突兀的缺口；配合 .board-wrap 的落地阴影，像厚木盘坐在桌面上。
+const R_TOP = 16 // 顶部圆角
+const R_BOT = 22 // 底部圆角（更圆润，前下缘弧线更明显）
 function drawFrame(ctx: CanvasRenderingContext2D, theme: Theme) {
+  ctx.save()
+  // 先把绘制区域裁剪为整块圆角木盘，之后的盘面贴图与底部厚度都被裁进圆角内，转角平滑。
+  roundRectPath(ctx, 0, 0, PX, PXH, R_TOP, R_TOP, R_BOT, R_BOT)
+  ctx.clip()
   // 正方形盘面铺满上方 PX×PX（网格四边留白等宽，居中对称）。
   ctx.fillStyle = theme.boardFace
   ctx.fillRect(0, 0, PX, PX)
   const face = faceImage(theme.faceImage)
   if (face) ctx.drawImage(face, 0, 0, PX, PX)
-  // 底部立体厚度：画在盘面之下的额外 LIP 高度里（不占盘面），深木渐变 + 顶沿高光缝。
+  // 底部立体厚度：画在盘面之下的额外 LIP 高度里（不占盘面），深木渐变（上浅下深）。
   const baseColor = theme.baseShadow ?? theme.frameDark
   const bg = ctx.createLinearGradient(0, PX, 0, PXH)
   bg.addColorStop(0, baseColor)
   bg.addColorStop(1, theme.frameDark)
   ctx.fillStyle = bg
   ctx.fillRect(0, PX, PX, LIP)
+  ctx.restore()
+  // 盘面/厚度交界处的高光缝：只画中段、避开两侧圆角转角，接缝更自然不突兀。
   ctx.strokeStyle = theme.frameLight
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(0, PX + 0.5)
-  ctx.lineTo(PX, PX + 0.5)
+  ctx.moveTo(R_TOP, PX + 0.5)
+  ctx.lineTo(PX - R_TOP, PX + 0.5)
   ctx.stroke()
 }
 

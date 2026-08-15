@@ -81,6 +81,9 @@ func (s *Store) Migrate() error {
 		`CREATE TABLE IF NOT EXISTS user_item (
 			uid BIGINT, item_id VARCHAR(32), PRIMARY KEY (uid, item_id)
 		)`,
+		`CREATE TABLE IF NOT EXISTS checkin (
+			uid BIGINT PRIMARY KEY, last_day VARCHAR(10), streak INT NOT NULL DEFAULT 0
+		)`,
 	}
 	for _, q := range stmts {
 		if _, err := s.DB.Exec(q); err != nil {

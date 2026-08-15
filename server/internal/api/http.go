@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/wzq/gomoku/internal/auth"
+	"github.com/wzq/gomoku/internal/daily"
 	"github.com/wzq/gomoku/internal/endgame"
 	"github.com/wzq/gomoku/internal/rank"
 	"github.com/wzq/gomoku/internal/record"
@@ -28,6 +29,7 @@ type Server struct {
 	Records       *record.Service
 	Endgame       *endgame.Service
 	Shop          *shop.Service
+	Daily         *daily.Service
 	DailyAiWinCap int
 	WebDir        string // 前端构建产物目录；为空则不托管前端（仅提供 API）。
 	AdminPassword string // 运营后台登录口令。
@@ -86,6 +88,10 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/shop", s.handleShop)
 	mux.HandleFunc("/api/shop/buy", s.handleShopBuy)
 	mux.HandleFunc("/api/shop/equip", s.handleShopEquip)
+	mux.HandleFunc("/api/checkin", s.handleCheckin)
+	mux.HandleFunc("/api/checkin/claim", s.handleCheckinClaim)
+	mux.HandleFunc("/api/wheel", s.handleWheel)
+	mux.HandleFunc("/api/wheel/spin", s.handleWheelSpin)
 	mux.HandleFunc("/api/endgame/levels", s.handleEndgameLevels)
 	mux.HandleFunc("/api/endgame/level", s.handleEndgameLevel)
 	mux.HandleFunc("/api/endgame/submit", s.handleEndgameSubmit)
@@ -467,6 +473,70 @@ func shopErrStatus(err error) int {
 	default:
 		return http.StatusInternalServerError
 	}
+}
+
+// handleCheckin 返回每日签到面板状态。
+func (s *Server) handleCheckin(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.Daily.CheckinState(uid))
+}
+
+// handleCheckinClaim 领取今日签到（body: {double}）。返回奖励与最新余额。
+func (s *Server) handleCheckinClaim(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	var body struct {
+		Double bool `json:"double"`
+	}
+	json.NewDecoder(r.Body).Decode(&body)
+	reward, err := s.Daily.Claim(uid, body.Double)
+	if err == daily.ErrClaimed {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "already claimed"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	u, _ := s.Users.Get(uid)
+	writeJSON(w, http.StatusOK, map[string]any{"reward": reward, "coins": u.Coins, "scrolls": u.Scrolls, "state": s.Daily.CheckinState(uid)})
+}
+
+// handleWheel 返回转盘奖池、单次消耗与当前余额。
+func (s *Server) handleWheel(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	u, _ := s.Users.Get(uid)
+	writeJSON(w, http.StatusOK, map[string]any{"prizes": s.Daily.Prizes(), "cost": daily.WheelCost, "coins": u.Coins, "scrolls": u.Scrolls})
+}
+
+// handleWheelSpin 抽奖一次（扣金币、发奖），返回命中扇区与最新余额。
+func (s *Server) handleWheelSpin(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	out, err := s.Daily.Spin(uid)
+	if err == daily.ErrInsufficient {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "insufficient coins"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // handleWS 升级为 WebSocket 并接入房间；令牌通过 ?token= 传入。

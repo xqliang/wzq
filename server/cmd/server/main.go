@@ -9,6 +9,7 @@ import (
 	"github.com/wzq/gomoku/internal/api"
 	"github.com/wzq/gomoku/internal/auth"
 	"github.com/wzq/gomoku/internal/config"
+	"github.com/wzq/gomoku/internal/daily"
 	"github.com/wzq/gomoku/internal/endgame"
 	"github.com/wzq/gomoku/internal/record"
 	"github.com/wzq/gomoku/internal/room"
@@ -41,6 +42,7 @@ func main() {
 		Records:       record.New(st),
 		Endgame:       endgame.New(st, userSvc),
 		Shop:          shop.New(st),
+		Daily:         daily.New(st),
 		DailyAiWinCap: 20,
 		WebDir:        cfg.Web.Dir,
 		AdminPassword: cfg.Admin.Password,

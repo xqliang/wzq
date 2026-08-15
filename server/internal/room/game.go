@@ -31,6 +31,7 @@ type Game struct {
 	over         bool
 	undoUsed     map[int64]int
 	pendingUndo  int64
+	pendingSteps int
 }
 
 // NewGame 创建一局对战，黑方先行。
@@ -76,6 +77,7 @@ func (g *Game) Move(uid int64, x, y int) (*Result, error) {
 	}
 	g.history = append(g.history, moveRec{uid, x, y})
 	g.pendingUndo = 0
+	g.pendingSteps = 0
 	if g.board.CheckWin(x, y) != "" {
 		g.over = true
 		return &Result{Winner: uid, Reason: "five"}, nil
@@ -84,31 +86,41 @@ func (g *Game) Move(uid int64, x, y int) (*Result, error) {
 	return nil, nil
 }
 
-// RequestUndo 发起悔棋请求：需未结束、有历史、且请求方悔棋未超配额（每人 2 次）。
-func (g *Game) RequestUndo(uid int64) bool {
-	if g.over || len(g.history) == 0 || g.undoUsed[uid] >= 2 {
+// RequestUndo 发起悔棋请求：撤销最近 steps 手。需未结束、有足够历史、且请求方悔棋未超配额（每人 3 次）。
+func (g *Game) RequestUndo(uid int64, steps int) bool {
+	if g.over || steps < 1 || len(g.history) < steps || g.undoUsed[uid] >= 3 {
 		return false
 	}
 	g.pendingUndo = uid
+	g.pendingSteps = steps
 	return true
 }
 
-// ReplyUndo 应答悔棋请求：同意则撤销最后一手并把回合交还给该手玩家。
-func (g *Game) ReplyUndo(agree bool) bool {
-	if g.pendingUndo == 0 {
-		return false
-	}
+// ReplyUndo 应答悔棋：同意则撤销 steps 手、依剩余手数奇偶定轮次（黑先）。
+// 返回 (是否同意, 实际撤销手数, 发起者 uid)，供上层广播结果/toast。
+func (g *Game) ReplyUndo(agree bool) (bool, int, int64) {
 	requester := g.pendingUndo
+	steps := g.pendingSteps
 	g.pendingUndo = 0
-	if !agree {
-		return false
+	g.pendingSteps = 0
+	if requester == 0 || !agree {
+		return false, steps, requester
 	}
-	last := g.history[len(g.history)-1]
-	g.history = g.history[:len(g.history)-1]
+	n := steps
+	if n > len(g.history) {
+		n = len(g.history)
+	}
+	g.history = g.history[:len(g.history)-n]
 	g.rebuild()
-	g.turnUID = last.uid
+	// 依剩余手数奇偶决定轮到谁（黑先落子：偶数手后轮黑，奇数手后轮白）。
+	if len(g.history)%2 == 0 {
+		g.turnUID = g.black
+	} else {
+		g.turnUID = g.white
+	}
+	g.over = false
 	g.undoUsed[requester]++
-	return true
+	return true, n, requester
 }
 
 // rebuild 依据历史重放，重建棋盘状态。

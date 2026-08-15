@@ -6,6 +6,7 @@ type ClientMsg struct {
 	X     int    `json:"x"`
 	Y     int    `json:"y"`
 	Agree bool   `json:"agree"`
+	Steps int    `json:"steps"` // 悔棋请求：撤销手数
 }
 
 // ServerMsg 是服务端 -> 客户端的消息（房间状态/开局/落子/回合/结束/悔棋结果）。

@@ -69,6 +69,16 @@ export function Game() {
   const [adPlaying, setAdPlaying] = useState(false)
   const [doubled, setDoubled] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  // 悔棋：undoPick=我方选择悔几步；undoAsk=对手请求待我审批；toast=飘动通知。
+  const [undoPick, setUndoPick] = useState(false)
+  const [undoAsk, setUndoAsk] = useState<{ from: number; steps: number } | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+  const toastTimer = useRef<number | undefined>(undefined)
+  const showToast = (msg: string) => {
+    window.clearTimeout(toastTimer.current)
+    setToast(msg)
+    toastTimer.current = window.setTimeout(() => setToast(null), 2200)
+  }
 
   // 统一结算：只结算一次；播放音效、（人机）上报结果得到经验增量；不再直接跳转。
   // 若当前存在获胜连线（winLine），交由 BoardCanvas 的 onWinAnimationEnd 在动画结束后展示弹窗；
@@ -172,6 +182,18 @@ export function Game() {
     playSfx('undo')
   }
 
+  // PvP：发起悔棋请求（撤 steps 手，服务端只转发给对手）。
+  const requestUndo = (steps: number) => {
+    if (wsRef.current) sendUndoReq(wsRef.current, steps)
+    setUndoPick(false)
+    showToast('已发送悔棋请求…')
+  }
+  // PvP：审批对手的悔棋请求。
+  const replyUndo = (agree: boolean) => {
+    if (wsRef.current) sendUndoReply(wsRef.current, agree)
+    setUndoAsk(null)
+  }
+
   // 处理服务端消息。内部一律用 useGame.getState() 读取最新状态，避免闭包过期。
   function handleServer(m: ServerMsg) {
     const store = useGame.getState()
@@ -197,16 +219,20 @@ export function Game() {
         break
       }
       case 'undo_req': {
-        // 对手发起悔棋：本地弹窗询问，回应服务端。
-        const agree = window.confirm('对方请求悔棋，是否同意？')
-        if (wsRef.current) sendUndoReply(wsRef.current, agree)
+        // 对手发起悔棋（服务端只发给对手，发起者不会收到）：弹审批弹窗，不再用 alert。
+        if (m.uid !== undefined && m.uid !== myUid) {
+          setUndoAsk({ from: m.uid, steps: m.n ?? 1 })
+        }
         break
       }
       case 'undo_result': {
-        // 悔棋被同意：按服务端撤销手数回退本地棋盘（两端同步），并标记悔棋位置。
+        // 悔棋结果：同意则双方按手数回退；我是发起者(uid==我)时飘 toast 告知同意/拒绝。
         if (m.agree) {
           useGame.getState().undo(m.n ?? 1)
           playSfx('undo')
+        }
+        if (m.uid === myUid) {
+          showToast(m.agree ? '对方同意了悔棋' : '对方拒绝了悔棋')
         }
         break
       }
@@ -431,13 +457,39 @@ export function Game() {
               : []),
             ...(previewSteps ? [{ label: '结束预演', onClick: endPreview }] : []),
             ...(st.mode === 'pvp' && wsRef.current && !previewSteps
-              ? [{ label: '悔棋', onClick: () => sendUndoReq(wsRef.current!) }]
+              ? [{ label: '悔棋', onClick: () => setUndoPick(true) }]
               : []),
             ...(!previewSteps ? [{ label: '认输', onClick: onResign }] : []),
           ]}
         />
       </div>
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {undoPick && (
+        <div className="mini-mask" onClick={() => setUndoPick(false)}>
+          <div className="mini-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="mini-title">悔棋 · 选择步数</div>
+            <div className="mini-actions">
+              {Array.from({ length: Math.min(3, g.history.length) }, (_, i) => i + 1).map((n) => (
+                <button key={n} className="op-btn" onClick={() => requestUndo(n)}>悔 {n} 步</button>
+              ))}
+              {g.history.length === 0 && <span className="mini-note">暂无可悔的落子</span>}
+            </div>
+            <button className="back-btn" onClick={() => setUndoPick(false)}>取消</button>
+          </div>
+        </div>
+      )}
+      {undoAsk && (
+        <div className="mini-mask">
+          <div className="mini-dialog">
+            <div className="mini-title">对方请求悔 {undoAsk.steps} 步</div>
+            <div className="mini-actions">
+              <button className="op-btn" onClick={() => replyUndo(true)}>同意</button>
+              <button className="back-btn" onClick={() => replyUndo(false)}>拒绝</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {toast && <div className="toast">{toast}</div>}
     </div>
   )
 }

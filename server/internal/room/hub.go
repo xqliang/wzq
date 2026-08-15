@@ -240,17 +240,18 @@ func (r *Room) handle(uid int64, msg ClientMsg) {
 			r.startTurnTimer()
 		}
 	case "undo_req":
-		if r.game.RequestUndo(uid) {
-			r.broadcast(ServerMsg{Type: "undo_req", UID: uid})
+		if r.game.RequestUndo(uid, msg.Steps) {
+			// 只通知对手（不把请求回推给发起者自己）。
+			for _, p := range r.players {
+				if p != uid {
+					r.sendTo(p, ServerMsg{Type: "undo_req", UID: uid, N: msg.Steps})
+				}
+			}
 		}
 	case "undo_reply":
-		agreed := r.game.ReplyUndo(msg.Agree)
-		// 同意时撤销 1 手；广播撤销手数供两端回退同步。
-		n := 0
-		if agreed {
-			n = 1
-		}
-		r.broadcast(ServerMsg{Type: "undo_result", Agree: agreed, N: n})
+		agreed, steps, requester := r.game.ReplyUndo(msg.Agree)
+		// 广播结果：双方据此回退棋盘，发起者据 uid 判断给自己弹 toast。
+		r.broadcast(ServerMsg{Type: "undo_result", Agree: agreed, N: steps, UID: requester})
 		if agreed {
 			r.startTurnTimer()
 		}

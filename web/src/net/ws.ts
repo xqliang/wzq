@@ -31,8 +31,8 @@ export function connectRoom(roomId: string, onMsg: (m: ServerMsg) => void): WebS
 export function sendMove(ws: WebSocket, x: number, y: number) {
   ws.send(JSON.stringify({ type: 'move', x, y }))
 }
-// 发起悔棋请求。
-export const sendUndoReq = (ws: WebSocket) => ws.send(JSON.stringify({ type: 'undo_req' }))
+// 发起悔棋请求（steps=撤销手数）。
+export const sendUndoReq = (ws: WebSocket, steps: number) => ws.send(JSON.stringify({ type: 'undo_req', steps }))
 // 回应悔棋请求（同意/拒绝）。
 export const sendUndoReply = (ws: WebSocket, agree: boolean) => ws.send(JSON.stringify({ type: 'undo_reply', agree }))
 // 认输。

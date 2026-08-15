@@ -54,17 +54,27 @@ func (r *Room) addPlayer(uid int64) error {
 	return nil
 }
 
-// Hub 管理全部内存房间与 WebSocket 升级器。
+// Hub 管理全部内存房间、随机匹配池与 WebSocket 升级器。
 type Hub struct {
 	mu         sync.Mutex
 	rooms      map[string]*Room
 	up         websocket.Upgrader
 	onGameOver func(GameOver) // 对局结束时的全局结算钩子（可选）。
+
+	// 随机匹配池：不为独自等待者预建房，两人真正配上才建房。
+	// matchMu 串行化 waiters/matched 的读写；建房走 Hub.Create（独立锁 h.mu，无嵌套死锁）。
+	matchMu sync.Mutex
+	waiters []waiter         // 等待配对的玩家队列（FIFO），仅存 uid + 最近心跳时间。
+	matched map[int64]string // 等待方被他人配走后，此处记下其房间号，供其下次轮询领取。
 }
 
 // NewHub 构造 Hub，允许任意来源的跨域升级（前端与后端可能不同源）。
 func NewHub() *Hub {
-	return &Hub{rooms: map[string]*Room{}, up: websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }}}
+	return &Hub{
+		rooms:   map[string]*Room{},
+		matched: map[int64]string{},
+		up:      websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }},
+	}
 }
 
 // SetOnGameOver 注册对局结束回调（用于结算 PvP 经验与落库战绩）。

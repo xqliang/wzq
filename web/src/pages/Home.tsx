@@ -17,8 +17,6 @@ export function Home({ user }: { user: User }) {
   }, [])
   // 组件卸载时兜底清理轮询定时器。
   useEffect(() => () => window.clearTimeout(pollRef.current), [])
-  // 阶段 A 占位：用 level 粗映射一个段位索引展示（B 阶段接真实 rank_tier）。
-  const placeholderTier = Math.min(18, (u.level ?? 1) - 1)
 
   // 开始随机匹配：进入浮层并轮询。waiting=false 拿到房间号即进入对局。
   const startMatch = () => {
@@ -54,7 +52,7 @@ export function Home({ user }: { user: User }) {
         <Avatar src={`/assets/img/${u.avatar}.png`} size={60} />
         <div>
           <div className="nick">{u.nickname}</div>
-          <div className="rank-tag">{rankLabel(placeholderTier)}</div>
+          <div className="rank-tag">{rankLabel(u.rankTier ?? 0)}</div>
         </div>
         <div className="currency">
           <span className="coin"><img src="/assets/img/icon_coin.png" alt="金币" />0</span>

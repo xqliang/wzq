@@ -25,7 +25,20 @@ export interface User {
   avatar: string
   exp: number
   level: number
+  // 段位（阶段B）：rankTier 阶梯索引(0..18)，rankPoints 当前阶内积分。
+  rankTier: number
+  rankPoints: number
   username?: string
+}
+
+// 一次段位结算结果（与服务端 /api/ai/result 的 rank 字段对齐）。
+export interface RankSettle {
+  tier: number
+  points: number
+  threshold: number
+  delta: number
+  promoted: boolean
+  demoted: boolean
 }
 
 // 缓存当前登录用户：供 Game 页判断“我是谁”（区分自己/对手的落子广播）。
@@ -65,9 +78,13 @@ export async function login(username: string, password: string): Promise<User> {
   return user
 }
 
-// 上报人机对局结果，服务端返回本局经验增量与最新用户信息。moves 为总手数（可选）。
+// 上报人机对局结果，服务端返回本局经验增量、最新用户信息与段位结算。moves 为总手数（可选）。
 export const reportAiResult = (level: number, win: boolean, moves = 0) =>
-  req('/api/ai/result', 'POST', { level, win, moves })
+  req('/api/ai/result', 'POST', { level, win, moves }) as Promise<{
+    expDelta: number
+    user: User
+    rank: RankSettle
+  }>
 
 // 战绩统计结构，与服务端 record.Stats JSON 对齐。
 export interface Stats {

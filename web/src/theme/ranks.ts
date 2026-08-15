@@ -23,3 +23,11 @@ export function rankGroup(tier: number): 'ji' | 'duan' | 'master' {
   if (t === 18) return 'master'
   return t < 9 ? 'ji' : 'duan'
 }
+
+// 升阶所需阶内积分阈值（镜像后端 rank.Threshold）：业余级 30、业余段 50；
+// 大师封顶，用 50 作为进度条满格展示上限。
+export function rankThreshold(tier: number): number {
+  const t = clampTier(tier)
+  if (t === 18) return 50
+  return t < 9 ? 30 : 50
+}

@@ -6,7 +6,7 @@ import { StartCountdown } from '../components/StartCountdown'
 import { GameMenu } from '../components/GameMenu'
 import { useGame } from '../store/game'
 import { playSfx } from '../audio/audio'
-import { reportAiResult, getCurrentUser } from '../net/rest'
+import { reportAiResult, getCurrentUser, me } from '../net/rest'
 import { connectRoom, sendMove, sendUndoReq, sendUndoReply, sendResign } from '../net/ws'
 import type { ServerMsg } from '../net/ws'
 import type { Color } from '../core/types'
@@ -17,7 +17,7 @@ import { countdownState } from '../lib/countdown'
 import { PlayerBar, type PlayerInfo } from '../components/PlayerBar'
 import { Banner } from '../components/Banner'
 import { RankUpOverlay } from '../components/RankUpOverlay'
-import { rankLabel, rankGroup } from '../theme/ranks'
+import { rankLabel, rankGroup, rankThreshold } from '../theme/ranks'
 
 // 对局页：人机模式驱动 AI Web Worker；真人模式持有唯一的 WebSocket 连接。
 export function Game() {
@@ -51,8 +51,19 @@ export function Game() {
   // 记录本次请求 AI 的起始时刻，用于把"思考"总时长控制在 1~2s（含真实运算耗时）。
   const aiStartRef = useRef(0)
 
-  // 阶段A 占位开关：恒 false，段位进阶界面不实际渲染；阶段B 改为结算返回的真实 promoted。
-  const RANKUP_ENABLED = false
+  // 段位（阶段B）：进对局前我的段位阶（用于对阵条展示与晋级前后对比）。
+  const preTierRef = useRef(getCurrentUser()?.rankTier ?? 0)
+  // 本局段位结算结果（AI 由 /api/ai/result 返回，PvP 结束后 refetch me 计算）。
+  const [rankResult, setRankResult] = useState<{
+    tier: number
+    points: number
+    threshold: number
+    delta: number
+    promoted: boolean
+    fromTier: number
+  } | null>(null)
+  // 晋级动画是否已看完（先播晋级、再显示结算弹窗）。
+  const [rankupDone, setRankupDone] = useState(false)
 
   // 统一结算：只结算一次；播放音效、（人机）上报结果得到经验增量；不再直接跳转。
   // 若当前存在获胜连线（winLine），交由 BoardCanvas 的 onWinAnimationEnd 在动画结束后展示弹窗；
@@ -62,9 +73,32 @@ export function Game() {
     settledRef.current = true
     playSfx(win ? 'win' : 'lose')
     if (st.mode === 'ai') {
-      reportAiResult(st.level ?? 1, win).then((r) => setResult({ win, reason, expDelta: r.expDelta }))
+      reportAiResult(st.level ?? 1, win).then((r) => {
+        setResult({ win, reason, expDelta: r.expDelta })
+        setRankResult({
+          tier: r.rank.tier,
+          points: r.rank.points,
+          threshold: r.rank.threshold,
+          delta: r.rank.delta,
+          promoted: r.rank.promoted,
+          fromTier: preTierRef.current,
+        })
+      })
     } else {
       setResult({ win, reason })
+      // PvP 由服务端结算段位；结束后拉取最新段位并据进对局前的阶判断是否晋级。
+      me()
+        .then((u) =>
+          setRankResult({
+            tier: u.rankTier,
+            points: u.rankPoints,
+            threshold: rankThreshold(u.rankTier),
+            delta: win ? 10 : -10,
+            promoted: u.rankTier > preTierRef.current,
+            fromTier: preTierRef.current,
+          }),
+        )
+        .catch(() => {})
     }
     if (!useGame.getState().winLine) setShowModal(true)
   }
@@ -287,11 +321,11 @@ export function Game() {
   return (
     <div className="game screen">
       <PlayerBar
-        me={{ nickname: '我', avatar: 'avatar_01', rankLabel: rankLabel(1), color: g.myColor } as PlayerInfo}
+        me={{ nickname: '我', avatar: 'avatar_01', rankLabel: rankLabel(preTierRef.current), color: g.myColor } as PlayerInfo}
         opp={{
           nickname: st.mode === 'ai' ? 'AI大师' : '对手',
           avatar: 'avatar_02',
-          rankLabel: rankLabel(3),
+          rankLabel: st.mode === 'ai' ? rankLabel(18) : rankLabel(3),
           color: g.myColor === 'black' ? 'white' : 'black',
         } as PlayerInfo}
         turn={g.turn}
@@ -313,26 +347,33 @@ export function Game() {
           onWinAnimationEnd={() => setShowModal(true)}
         />
         {started && !introDone && <StartCountdown onDone={() => setIntroDone(true)} />}
-        {showModal && result && (
+        {/* 晋级动画：本局升阶时先播放，看完再显示结算弹窗。 */}
+        {showModal && rankResult?.promoted && !rankupDone && (
+          <RankUpOverlay
+            fromLabel={rankLabel(rankResult.fromTier)}
+            toLabel={rankLabel(rankResult.tier)}
+            group={rankGroup(rankResult.tier)}
+            coins={0}
+            onContinue={() => setRankupDone(true)}
+          />
+        )}
+        {showModal && result && (!rankResult?.promoted || rankupDone) && (
           <ResultOverlay
             win={result.win}
             coins={result.win ? 120 : 0}
-            me={{ nickname: '我', avatar: 'avatar_01', rankLabel: rankLabel(1), points: 10, threshold: 30, delta: result.win ? 10 : -10 }}
-            opp={{ nickname: st.mode === 'ai' ? 'AI大师' : '对手', avatar: 'avatar_02', rankLabel: rankLabel(3), points: 20, threshold: 30, delta: result.win ? -10 : 10 }}
+            me={{
+              nickname: '我',
+              avatar: 'avatar_01',
+              rankLabel: rankLabel(rankResult?.tier ?? preTierRef.current),
+              points: rankResult?.points ?? 0,
+              threshold: rankResult?.threshold ?? rankThreshold(preTierRef.current),
+              delta: rankResult?.delta ?? (result.win ? 10 : -10),
+            }}
+            opp={{ nickname: st.mode === 'ai' ? 'AI大师' : '对手', avatar: 'avatar_02', rankLabel: st.mode === 'ai' ? rankLabel(18) : rankLabel(3), points: 20, threshold: 30, delta: result.win ? -10 : 10 }}
             onRematch={rematch}
             onHome={() => nav('/')}
             onShare={() => alert('分享（后续接入）')}
             onDouble={() => alert('看广告双倍（阶段C）')}
-          />
-        )}
-        {/* 阶段A 占位：RANKUP_ENABLED 恒 false，不弹出；阶段B 用结算返回的 promoted 触发。 */}
-        {RANKUP_ENABLED && (
-          <RankUpOverlay
-            fromLabel={rankLabel(1)}
-            toLabel={rankLabel(2)}
-            group={rankGroup(2)}
-            coins={120}
-            onContinue={() => undefined}
           />
         )}
       </div>

@@ -28,6 +28,9 @@ export interface User {
   // 段位（阶段B）：rankTier 阶梯索引(0..18)，rankPoints 当前阶内积分。
   rankTier: number
   rankPoints: number
+  // 双货币（阶段C）：coins 金币，scrolls 卷轴。
+  coins: number
+  scrolls: number
   username?: string
 }
 
@@ -82,6 +85,7 @@ export async function login(username: string, password: string): Promise<User> {
 export const reportAiResult = (level: number, win: boolean, moves = 0) =>
   req('/api/ai/result', 'POST', { level, win, moves }) as Promise<{
     expDelta: number
+    coinDelta: number
     user: User
     rank: RankSettle
   }>

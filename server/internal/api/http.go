@@ -237,10 +237,23 @@ func (s *Server) handleAiResult(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("settle ai rank: %v", err)
 	}
+	// 金币奖励（阶段C）：与经验配额一致——胜且在每日配额内 +20、超额 +0；负 +5（防刷）。
+	coinDelta := 5
+	if body.Win {
+		if delta == 20 {
+			coinDelta = 20
+		} else {
+			coinDelta = 0
+		}
+	}
+	if err := s.Users.AddCoins(uid, coinDelta); err != nil {
+		log.Printf("award ai coins: %v", err)
+	}
 	u, _ := s.Users.Get(uid)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"expDelta": delta,
-		"user":     u,
+		"expDelta":  delta,
+		"coinDelta": coinDelta,
+		"user":      u,
 		"rank": map[string]any{
 			"tier":      rk.Tier,
 			"points":    rk.Points,
@@ -277,6 +290,15 @@ func (s *Server) SettlePvP(g room.GameOver) {
 	if loser != 0 {
 		if _, err := s.Users.SettleRank(loser, false); err != nil {
 			log.Printf("settle pvp loser rank: %v", err)
+		}
+	}
+	// 金币奖励（阶段C）：真人对局胜 +60、负 +10。
+	if err := s.Users.AddCoins(g.Winner, 60); err != nil {
+		log.Printf("award pvp winner coins: %v", err)
+	}
+	if loser != 0 {
+		if err := s.Users.AddCoins(loser, 10); err != nil {
+			log.Printf("award pvp loser coins: %v", err)
 		}
 	}
 	winnerStr := "white"

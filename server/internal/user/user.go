@@ -26,6 +26,9 @@ type User struct {
 	// 段位（阶段B）：rankTier 为阶梯索引(0..18)，rankPoints 为当前阶内积分。
 	RankTier   int `json:"rankTier"`
 	RankPoints int `json:"rankPoints"`
+	// 双货币（阶段C）：coins 金币（软通货），scrolls 卷轴（稀有通货）。
+	Coins   int `json:"coins"`
+	Scrolls int `json:"scrolls"`
 }
 
 // Service 提供用户相关业务能力，依赖底层 store。
@@ -76,8 +79,8 @@ func (svc *Service) Get(id int64) (*User, error) {
 	u := &User{}
 	var username sql.NullString
 	err := svc.s.DB.QueryRow(
-		`SELECT id, guest_id, username, nickname, avatar, exp, level, rank_tier, rank_points FROM user WHERE id=?`, id).
-		Scan(&u.ID, &u.GuestID, &username, &u.Nickname, &u.Avatar, &u.Exp, &u.Level, &u.RankTier, &u.RankPoints)
+		`SELECT id, guest_id, username, nickname, avatar, exp, level, rank_tier, rank_points, coins, scrolls FROM user WHERE id=?`, id).
+		Scan(&u.ID, &u.GuestID, &username, &u.Nickname, &u.Avatar, &u.Exp, &u.Level, &u.RankTier, &u.RankPoints, &u.Coins, &u.Scrolls)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +163,7 @@ func (svc *Service) CountSince(sinceRFC string) (int, error) {
 // Recent 返回最近注册的用户（按 id 倒序），供运营后台列表展示。
 func (svc *Service) Recent(limit int) ([]User, error) {
 	rows, err := svc.s.DB.Query(
-		`SELECT id, guest_id, username, nickname, avatar, exp, level, rank_tier, rank_points FROM user ORDER BY id DESC LIMIT ?`, limit)
+		`SELECT id, guest_id, username, nickname, avatar, exp, level, rank_tier, rank_points, coins, scrolls FROM user ORDER BY id DESC LIMIT ?`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +173,7 @@ func (svc *Service) Recent(limit int) ([]User, error) {
 	for rows.Next() {
 		var u User
 		var username sql.NullString
-		if err := rows.Scan(&u.ID, &u.GuestID, &username, &u.Nickname, &u.Avatar, &u.Exp, &u.Level, &u.RankTier, &u.RankPoints); err != nil {
+		if err := rows.Scan(&u.ID, &u.GuestID, &username, &u.Nickname, &u.Avatar, &u.Exp, &u.Level, &u.RankTier, &u.RankPoints, &u.Coins, &u.Scrolls); err != nil {
 			return nil, err
 		}
 		u.Username = username.String
@@ -213,4 +216,11 @@ func (svc *Service) SettleRank(id int64, win bool) (RankResult, error) {
 		return RankResult{}, err
 	}
 	return RankResult{Tier: nt, Points: np, Promoted: up, Demoted: down}, nil
+}
+
+// AddCoins 原子增加金币（用于对局/签到/转盘奖励，delta 应 ≥ 0）。
+// 花费金币（购买/抽奖）请走带余额校验的事务，不要用本方法传负值。
+func (svc *Service) AddCoins(id int64, delta int) error {
+	_, err := svc.s.DB.Exec(`UPDATE user SET coins = coins + ? WHERE id=?`, delta, id)
+	return err
 }

@@ -55,8 +55,8 @@ export function Home({ user }: { user: User }) {
           <div className="rank-tag">{rankLabel(u.rankTier ?? 0)}</div>
         </div>
         <div className="currency">
-          <span className="coin"><img src="/assets/img/icon_coin.png" alt="金币" />0</span>
-          <span className="scroll"><img src="/assets/img/icon_scroll.png" alt="卷轴" />0</span>
+          <span className="coin"><img src="/assets/img/icon_coin.png" alt="金币" />{u.coins ?? 0}</span>
+          <span className="scroll"><img src="/assets/img/icon_scroll.png" alt="卷轴" />{u.scrolls ?? 0}</span>
         </div>
         <button className="settings-btn" onClick={() => nav('/settings')}>⚙️</button>
       </header>

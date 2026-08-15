@@ -56,6 +56,8 @@ func (s *Store) Migrate() error {
 			level INT NOT NULL DEFAULT 1,
 			rank_tier INT NOT NULL DEFAULT 0,
 			rank_points INT NOT NULL DEFAULT 0,
+			coins INT NOT NULL DEFAULT 0,
+			scrolls INT NOT NULL DEFAULT 0,
 			created_at DATETIME,
 			last_login DATETIME
 		)`,
@@ -87,6 +89,13 @@ func (s *Store) Migrate() error {
 		return err
 	}
 	if err := s.addColumnIfMissing("user", "rank_points", "INT NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	// 双货币（阶段C）：金币 coins 与卷轴 scrolls。
+	if err := s.addColumnIfMissing("user", "coins", "INT NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	if err := s.addColumnIfMissing("user", "scrolls", "INT NOT NULL DEFAULT 0"); err != nil {
 		return err
 	}
 	return nil

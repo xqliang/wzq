@@ -44,7 +44,7 @@ export function Game() {
   // 防止重复结算（例如落子与动画/事件竞态）。
   const settledRef = useRef(false)
   // 结算结果与弹窗显隐。result 记录胜负/原因/经验；showModal 控制何时展示（等连线动画播放完）。
-  const [result, setResult] = useState<{ win: boolean; reason?: string; expDelta?: number } | null>(
+  const [result, setResult] = useState<{ win: boolean; reason?: string; expDelta?: number; coinDelta?: number } | null>(
     null,
   )
   const [showModal, setShowModal] = useState(false)
@@ -74,7 +74,7 @@ export function Game() {
     playSfx(win ? 'win' : 'lose')
     if (st.mode === 'ai') {
       reportAiResult(st.level ?? 1, win).then((r) => {
-        setResult({ win, reason, expDelta: r.expDelta })
+        setResult({ win, reason, expDelta: r.expDelta, coinDelta: r.coinDelta })
         setRankResult({
           tier: r.rank.tier,
           points: r.rank.points,
@@ -85,7 +85,7 @@ export function Game() {
         })
       })
     } else {
-      setResult({ win, reason })
+      setResult({ win, reason, coinDelta: win ? 60 : 10 })
       // PvP 由服务端结算段位；结束后拉取最新段位并据进对局前的阶判断是否晋级。
       me()
         .then((u) =>
@@ -360,7 +360,7 @@ export function Game() {
         {showModal && result && (!rankResult?.promoted || rankupDone) && (
           <ResultOverlay
             win={result.win}
-            coins={result.win ? 120 : 0}
+            coins={result.coinDelta ?? 0}
             me={{
               nickname: '我',
               avatar: 'avatar_01',

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { ensureGuest } from './net/rest'
 import type { User } from './net/rest'
-import { setSettings } from './audio/audio'
+import { setSettings, startBgm } from './audio/audio'
 import type { Effect } from './audio/audio'
 import { Home } from './pages/Home'
 import { AiConfig } from './pages/AiConfig'
@@ -38,6 +38,16 @@ export default function App() {
         setUser(u)
       })
       .catch(console.error)
+  }, [])
+  // 首次用户手势即启动背景音乐（满足浏览器自动播放策略）；音频元素为模块级单例，
+  // 切换页面时 play() 只是续播、不会重头播放，故全程保持连续。
+  useEffect(() => {
+    const start = () => {
+      startBgm()
+      window.removeEventListener('pointerdown', start)
+    }
+    window.addEventListener('pointerdown', start)
+    return () => window.removeEventListener('pointerdown', start)
   }, [])
   if (!user) return <div className="loading">加载中…</div>
   return (

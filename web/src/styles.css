@@ -795,15 +795,15 @@ button:disabled {
 .profile .currency {
   margin-left: auto;
   display: flex;
-  gap: 10px;
+  gap: 6px;
   align-items: center;
 }
 .profile .currency span {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 9px;
-  font-size: 14px;
+  gap: 3px;
+  padding: 2px 7px;
+  font-size: 13px;
   font-weight: 700;
   color: #5c360f;
   background: rgba(255, 242, 208, 0.72);
@@ -811,8 +811,8 @@ button:disabled {
   border-radius: 999px;
 }
 .profile .currency img {
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
 }
 .ops-row {
   display: flex;
@@ -852,7 +852,7 @@ button:disabled {
   width: 100%;
   padding: 14px 16px;
   text-align: left;
-  color: #3a240f;
+  color: #f6e2ab;
   background: linear-gradient(180deg, rgba(255, 247, 225, 0.62), rgba(232, 198, 142, 0.42)), var(--wood-tex);
   background-size: cover;
   background-position: center;
@@ -879,11 +879,13 @@ button:disabled {
   font-size: 20px;
   font-weight: 700;
   letter-spacing: 2px;
-  text-shadow: 0 1px 0 rgba(255, 240, 210, 0.5);
+  color: #f6e2ab;
+  text-shadow: 0 1px 0 #5a3410, 0 2px 3px rgba(0, 0, 0, 0.35);
 }
 .level-desc {
   font-size: 13px;
-  color: #6f4a20;
+  color: #f0e0b8;
+  text-shadow: 0 1px 1px rgba(60, 35, 8, 0.6);
 }
 .level-meta {
   display: flex;
@@ -891,12 +893,13 @@ button:disabled {
   align-items: flex-end;
   gap: 2px;
   font-size: 13px;
-  color: #5c360f;
+  color: #f3e2b0;
+  text-shadow: 0 1px 1px rgba(60, 35, 8, 0.6);
 }
 .level-meta em {
   font-style: normal;
   font-weight: 700;
-  color: #8a2b2b;
+  color: #ffcf6a;
 }
 .exp-hint {
   margin: 4px 0 0;
@@ -1011,9 +1014,9 @@ button:disabled {
   box-shadow: 0 3px 0 #7c4a1e, var(--shadow);
 }
 .game-menu-pop {
-  position: absolute;
-  bottom: 76px;
+  position: fixed;
   left: 50%;
+  bottom: 96px;
   transform: translateX(-50%);
   display: flex;
   flex-wrap: wrap;
@@ -1025,7 +1028,8 @@ button:disabled {
   padding: 10px;
   box-shadow: var(--shadow);
   width: max-content;
-  max-width: 90vw;
+  max-width: min(92vw, 380px);
+  z-index: 40;
 }
 
 /* 棋盘舞台：包住棋盘，作为开局倒计时/结算/进阶等覆盖层的定位参照，
@@ -1309,27 +1313,26 @@ button:disabled {
   width: 100%;
   max-width: 460px;
   max-height: 92vh;
-  padding: 42px 30px 30px;
-  background: none;
-  border: none;
+  padding: 18px 18px 20px;
+  /* 雕花边框用 border-image：四角固定裁切、四边平铺(round 避免接缝错位)。 */
+  border: 28px solid transparent;
+  border-image: url('/assets/img/panel_frame.png') 22% / 28px / 0 round;
+  /* 中心绢帛底只填充边框内(padding box)，不铺到边框下。 */
+  background: linear-gradient(180deg, #fbf1d8, #efe0bd);
+  background-clip: padding-box;
 }
-/* 中心绢帛底：内缩，避免盖住雕花边框。 */
+/* 顶部孔明灯装饰：叠在边框上沿、标题之后（不参与边框平铺）。 */
 .gp-panel::before {
   content: '';
   position: absolute;
-  inset: 22px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #fbf1d8, #efe0bd);
-  z-index: 0;
-}
-/* 古风雕花边框（含顶部孔明灯/星火），seedream 生成，透明中心。 */
-.gp-panel::after {
-  content: '';
-  position: absolute;
-  inset: 0;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 46px;
   z-index: 1;
   pointer-events: none;
-  background: url('/assets/img/panel_frame.png') center / 100% 100% no-repeat;
+  background: url('/assets/img/panel_top.png') center / contain no-repeat;
 }
 .gp-panel > * {
   position: relative;

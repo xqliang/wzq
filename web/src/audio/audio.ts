@@ -1,5 +1,6 @@
 // 音频管理：音效与背景音乐播放 + 用户设置持久化（localStorage）。
-// 素材位于 /assets/audio/<name>.mp3（后续里程碑补充），缺失时静默失败。
+// 背景音乐经 Vite 打包为带 hash 的 URL（避免固定名缓存）；音效用 Web Audio 实时合成。
+import bgmUrl from '../assets/audio/bgm.mp3'
 type Sfx = 'place' | 'win' | 'lose' | 'button' | 'undo' | 'tick' | 'timeout'
 
 // 落子特效类型：无 / 水波纹 / 灰尘。
@@ -141,7 +142,7 @@ export function playSfx(name: Sfx) {
 // 启动循环背景音乐（首次调用创建元素）。
 export function startBgm() {
   if (!bgmEl) {
-    bgmEl = new Audio('/assets/audio/bgm.mp3')
+    bgmEl = new Audio(bgmUrl)
     bgmEl.loop = true
   }
   bgmEl.volume = settings.bgmVol

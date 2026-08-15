@@ -7,7 +7,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 from _seedream import generate, chroma_key, save_scaled, crop_center_ratio
 
-OUT = "web/public/assets/img"
+OUT = "web/src/assets/img"
 GREEN = "纯绿色背景(#00ff00)，正面平视，无投影到背景，主体绝不使用绿色"
 
 # 1) 弹窗竖向边框：青绿描边+金色雕花四角，顶部中央融入暖黄孔明灯与星火，中间纯绿透空。

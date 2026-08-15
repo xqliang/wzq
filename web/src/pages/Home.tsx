@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { img } from '../lib/asset'
 import { useNavigate } from 'react-router-dom'
 import { me, matchJoin, matchCancel } from '../net/rest'
 import type { User } from '../net/rest'
@@ -49,16 +50,16 @@ export function Home({ user }: { user: User }) {
 
   return (
     <div className="home screen">
-      <img src="/assets/img/logo_title.png" alt="五子棋" className="home-logo" />
+      <img src={img('logo_title')} alt="五子棋" className="home-logo" />
       <header className="profile">
-        <Avatar src={`/assets/img/${u.avatar}.png`} size={60} frame={u.equippedFrame || 'gold'} />
+        <Avatar src={img(`${u.avatar}`)} size={60} frame={u.equippedFrame || 'gold'} />
         <div className="profile-meta">
           <div className="nick">{u.nickname}</div>
           <div className="rank-tag">{rankLabel(u.rankTier ?? 0)}</div>
         </div>
         <div className="currency">
-          <span className="coin"><img src="/assets/img/icon_coin.png" alt="金币" />{u.coins ?? 0}</span>
-          <span className="scroll"><img src="/assets/img/icon_scroll.png" alt="卷轴" />{u.scrolls ?? 0}</span>
+          <span className="coin"><img src={img('icon_coin')} alt="金币" />{u.coins ?? 0}</span>
+          <span className="scroll"><img src={img('icon_scroll')} alt="卷轴" />{u.scrolls ?? 0}</span>
         </div>
         <button className="settings-btn" onClick={() => setShowSettings(true)} aria-label="设置">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="#3a240f" aria-hidden="true">

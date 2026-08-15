@@ -1,5 +1,6 @@
 // 对局顶部对阵条：左右玩家（头像/昵称/段位/执子色），中间罗盘倒计时，▶ 指向当前手。
 import { Avatar } from './Avatar'
+import { img } from '../lib/asset'
 import { CompassTimer } from './CompassTimer'
 import type { CountdownLevel } from '../lib/countdown'
 
@@ -36,7 +37,7 @@ export function PlayerBar({
 function PlayerSide({ p, active, side }: { p: PlayerInfo; active: boolean; side: 'left' | 'right' }) {
   return (
     <div className={`player-side ${side} ${active ? 'active' : ''}`}>
-      <Avatar src={`/assets/img/${p.avatar}.png`} size={36} />
+      <Avatar src={img(`${p.avatar}`)} size={36} />
       <div className="player-meta">
         <div className="player-nick">{p.nickname}</div>
         <div className="player-rank">{p.rankLabel}</div>

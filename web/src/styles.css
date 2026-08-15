@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'Guqi';
-  src: url('/assets/fonts/guqi.woff2') format('woff2');
+  src: url('./assets/fonts/guqi.woff2') format('woff2');
   font-display: swap;
 }
 :root {
@@ -13,7 +13,7 @@
   --gold: #c8912f;
   --panel: rgba(246, 236, 216, 0.92);
   --shadow: 0 6px 20px rgba(58, 44, 26, 0.18);
-  --wood-tex: url('/assets/img/wood_btn.jpg');
+  --wood-tex: url('./assets/img/wood_btn.jpg');
 }
 * {
   box-sizing: border-box;
@@ -66,13 +66,13 @@ body {
   z-index: 1;
 }
 .home {
-  background-image: url('/assets/img/bg_home.jpg');
+  background-image: url('./assets/img/bg_home.jpg');
 }
 .game {
-  background-image: url('/assets/img/bg_home.jpg');
+  background-image: url('./assets/img/bg_home.jpg');
 }
 .endgame {
-  background-image: url('/assets/img/bg_home.jpg');
+  background-image: url('./assets/img/bg_home.jpg');
 }
 .loading {
   min-height: 100vh;
@@ -713,7 +713,7 @@ button:disabled {
   min-width: 180px;
   height: 64px;
   padding: 0 40px;
-  background: url('/assets/img/banner_wood.png') center/100% 100% no-repeat;
+  background: url('./assets/img/banner_wood.png') center/100% 100% no-repeat;
 }
 .banner-text {
   /* 楷体系（古风且系统自带覆盖全，避免自定义 Guqi 字体缺字导致的豆腐块/看不清）。 */
@@ -771,7 +771,7 @@ button:disabled {
   content: '';
   position: absolute;
   inset: -9%;
-  background: url('/assets/img/frame_gold.png') center / 100% 100% no-repeat;
+  background: url('./assets/img/frame_gold.png') center / 100% 100% no-repeat;
   pointer-events: none;
 }
 .home-logo {
@@ -837,7 +837,7 @@ button:disabled {
 
 /* 人机选难度页：木牌标题 + 古风木牌难度卡片（奖章 + 名称/描述 + 消耗/奖励）。 */
 .ai-config {
-  background-image: url('/assets/img/bg_home.jpg');
+  background-image: url('./assets/img/bg_home.jpg');
   justify-content: center;
 }
 .level-list {
@@ -1210,18 +1210,20 @@ button:disabled {
 }
 .shop-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   align-content: start;
 }
 .shop-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 10px;
+  gap: 5px;
+  padding: 8px 6px;
+  min-width: 0;
   background: linear-gradient(180deg, #fffaf0, #f0e4c8);
   border: 2px solid #cba76a;
   border-radius: 12px;
@@ -1256,8 +1258,8 @@ button:disabled {
 /* 棋盘皮肤迷你预览：主题色矩形盘 + 十字线 + 黑白子。 */
 .board-swatch {
   position: relative;
-  width: 72px;
-  height: 72px;
+  width: 58px;
+  height: 58px;
   box-sizing: border-box;
   border-width: 4px;
   border-style: solid;
@@ -1305,36 +1307,36 @@ button:disabled {
   justify-content: center;
   padding: 16px;
   /* 背景复用首页水墨山景 + 柔和压暗，让面板更聚焦。 */
-  background: linear-gradient(rgba(20, 14, 6, 0.32), rgba(20, 14, 6, 0.42)), url('/assets/img/bg_home.jpg') center / cover no-repeat;
+  background: linear-gradient(rgba(20, 14, 6, 0.32), rgba(20, 14, 6, 0.42)), url('./assets/img/bg_home.jpg') center / cover no-repeat;
 }
 .gp-panel {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  max-width: 460px;
-  max-height: 94vh;
-  padding: 30px 20px 22px;
-  /* 生成的均匀雕花边框：border-image 九宫格裁切 + round 平铺，永远贴边不错位。 */
-  border: 22px solid transparent;
-  border-image: url('/assets/img/panel_frame.png') 72 / 22px / 0 round;
-  border-radius: 18px;
+  max-width: 440px;
+  max-height: 86vh;
+  padding: 26px 18px 18px;
+  /* 生成的均匀雕花边框：border-image 九宫格裁切 + round 平铺，永远贴边不错位。
+     border-image 不遵循 border-radius，故不设圆角，避免边框方而底色圆导致的空角。 */
+  border: 20px solid transparent;
+  border-image: url('./assets/img/panel_frame.png') 72 / 20px / 0 round;
   background: linear-gradient(180deg, #fbf1d8, #efe0bd);
 }
-/* 顶部孔明灯装饰（居中叠在上沿、标题之后）。 */
+/* 顶部孔明灯装饰（放大并上移，居中叠在上沿、标题之后）。 */
 .gp-panel::before {
   content: '';
   position: absolute;
-  top: -34px;
+  top: -58px;
   left: 50%;
   transform: translateX(-50%);
-  width: 72%;
-  height: 60px;
+  width: 68%;
+  height: 96px;
   z-index: 1;
   pointer-events: none;
-  background: url('/assets/img/panel_top.png') center / contain no-repeat;
+  background: url('./assets/img/panel_top.png') center / contain no-repeat;
 }
 .gp-panel > * {
   position: relative;
@@ -1342,7 +1344,7 @@ button:disabled {
 }
 .gp-titlebar {
   position: absolute;
-  top: -22px;
+  top: -20px;
   left: 0;
   right: 0;
   display: flex;
@@ -1350,8 +1352,8 @@ button:disabled {
 }
 .gp-close {
   position: absolute;
-  top: 2px;
-  right: 4px;
+  top: -2px;
+  right: -10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1387,10 +1389,11 @@ button:disabled {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ===== 每日签到 ===== */
@@ -1434,8 +1437,8 @@ button:disabled {
 /* ===== 幸运转盘 ===== */
 .wheel-wrap {
   position: relative;
-  width: min(64vw, 240px);
-  height: min(64vw, 240px);
+  width: min(54vw, 208px);
+  height: min(54vw, 208px);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -113,17 +113,31 @@ func (s *Server) Routes() http.Handler {
 }
 
 // spaHandler 服务单页应用：存在的静态文件按原样返回，其余路径回退到 index.html。
+// 缓存策略：带 hash 的构建产物(js/css)长期不可变缓存；固定名素材(图片/音频/字体)与
+// index.html 用 no-cache 每次校验，避免重新部署后浏览器/CDN 仍显示旧素材。
 func spaHandler(dir string) http.Handler {
 	fs := http.FileServer(http.Dir(dir))
 	index := filepath.Join(dir, "index.html")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := filepath.Join(dir, filepath.Clean(r.URL.Path))
 		if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+			setStaticCache(w, r.URL.Path)
 			fs.ServeHTTP(w, r)
 			return
 		}
+		w.Header().Set("Cache-Control", "no-cache")
 		http.ServeFile(w, r, index)
 	})
+}
+
+// setStaticCache 设置缓存头：除 index.html 外，前端资源均带内容 hash（Vite 产出），
+// 可长期不可变缓存；html 用 no-cache 每次校验，从而始终拉到引用了最新 hash 的入口。
+func setStaticCache(w http.ResponseWriter, path string) {
+	if strings.HasSuffix(strings.ToLower(path), ".html") {
+		w.Header().Set("Cache-Control", "no-cache")
+		return
+	}
+	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 }
 
 // handleGuest 创建游客并签发令牌。
@@ -249,11 +263,17 @@ func (s *Server) handleAiResult(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("settle ai rank: %v", err)
 	}
-	// 金币奖励（阶段C）：与经验配额解耦——胜恒 +20、负 +5。
-	// （此前把胜局金币绑定经验配额，达配额后胜局 +0 而负局仍 +5，出现"赢没积分、输反而有"的反转。）
+	// 金币奖励（阶段C）：负 +5；胜按难度给金币（普通20 / 中级75 / 高级150）。
 	coinDelta := 5
 	if body.Win {
-		coinDelta = 20
+		switch body.Level {
+		case 2:
+			coinDelta = 75
+		case 3:
+			coinDelta = 150
+		default:
+			coinDelta = 20
+		}
 	}
 	if err := s.Users.AddCoins(uid, coinDelta); err != nil {
 		log.Printf("award ai coins: %v", err)

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { img } from '../lib/asset'
 import { useNavigate } from 'react-router-dom'
 import { wheelState, wheelSpin } from '../net/rest'
 import type { WheelState } from '../net/rest'
@@ -75,7 +76,7 @@ export function Wheel() {
         <div className="wheel-hub" />
       </div>
       <div className="wheel-cost">
-        <img src="/assets/img/icon_coin.png" alt="" />×{st.cost}/次
+        <img src={img('icon_coin')} alt="" />×{st.cost}/次
       </div>
       {msg && <p className="tip">{msg}</p>}
       <button className="ad-double" disabled={busy} onClick={spin}>{busy ? '抽奖中…' : '抽奖'}</button>

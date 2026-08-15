@@ -1,6 +1,7 @@
 // 对局结算覆盖层。win=true 胜利版（段位VS/进度/金币/双倍），false 失败版。
 // 阶段 A：段位进度、金币均为占位数据（props 传入），双倍/分享点击占位。
 import { Banner } from './Banner'
+import { img } from '../lib/asset'
 import { Avatar } from './Avatar'
 
 export interface ResultPlayer {
@@ -50,7 +51,7 @@ export function ResultOverlay({
             <ResultSide p={opp} />
           </div>
           <div className="reward-row">
-            <img src="/assets/img/icon_coin.png" alt="金币" />
+            <img src={img('icon_coin')} alt="金币" />
             <span>+{coins}</span>
           </div>
           <button className="ad-double" onClick={onDouble} disabled={doubled || adPlaying}>
@@ -67,7 +68,7 @@ function ResultSide({ p }: { p: ResultPlayer }) {
   const pct = Math.max(0, Math.min(100, (p.points / p.threshold) * 100))
   return (
     <div className="result-side">
-      <Avatar src={`/assets/img/${p.avatar}.png`} size={64} />
+      <Avatar src={img(`${p.avatar}`)} size={64} />
       <div className="result-rank">{p.rankLabel}</div>
       <div className="result-nick">{p.nickname}</div>
       <div className="rank-bar">

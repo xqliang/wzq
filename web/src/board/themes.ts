@@ -41,7 +41,7 @@ export const THEMES: Record<string, Theme> = {
     star: '#6f4a20',
     accent: '#8a2b2b',
     baseShadow: '#6f4a24',
-    faceImage: '/assets/img/board_wood.jpg',
+    faceImage: 'board_wood',
     useImage: false,
     black: { hi: '#6b6b6b', body: '#161616', edge: '#000000', rim: 'rgba(0,0,0,0.35)', specular: true },
     white: { hi: '#ffffff', body: '#f4f0e6', edge: '#d6ccb4', rim: 'rgba(110,80,35,0.3)', specular: true },

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { img } from '../lib/asset'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 import { SIZE } from '../core/types'
 import { useGame } from '../store/game'
@@ -31,20 +32,20 @@ const pieceImgs: Record<'black' | 'white', HTMLImageElement> = {
   black: new Image(),
   white: new Image(),
 }
-pieceImgs.black.src = '/assets/img/piece_black.png'
-pieceImgs.white.src = '/assets/img/piece_white.png'
+pieceImgs.black.src = img('piece_black')
+pieceImgs.white.src = img('piece_white')
 
-// 棋盘面木纹贴图缓存（按主题 faceImage 路径懒加载）。未就绪则回退纯色盘面。
+// 棋盘面木纹贴图缓存（按主题 faceImage 名字懒加载，经 img() 解析为打包后 URL）。未就绪则回退纯色盘面。
 const faceImgs: Record<string, HTMLImageElement> = {}
-function faceImage(src?: string): HTMLImageElement | null {
-  if (!src) return null
-  let img = faceImgs[src]
-  if (!img) {
-    img = new Image()
-    img.src = src
-    faceImgs[src] = img
+function faceImage(name?: string): HTMLImageElement | null {
+  if (!name) return null
+  let el = faceImgs[name]
+  if (!el) {
+    el = new Image()
+    el.src = img(name)
+    faceImgs[name] = el
   }
-  return img.complete && img.naturalWidth > 0 ? img : null
+  return el.complete && el.naturalWidth > 0 ? el : null
 }
 
 // 两色贴图的透明留白不同，用不同放大系数抵消，使黑白子视觉大小一致。

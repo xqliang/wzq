@@ -7,7 +7,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 from _seedream import generate, chroma_key, save_scaled, crop_center_ratio
 
-OUT = "web/public/assets/img"
+OUT = "web/src/assets/img"
 GREEN = "纯绿色背景(#00ff00)，正面平视，无投影到背景，主体绝不使用绿色"
 
 # LOGO：先按显示比例裁剪(方图→2.35:1)再缩放，避免正方形内容被压扁(上下压缩)。

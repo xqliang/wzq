@@ -8,7 +8,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 from _seedream import generate, chroma_key, save_scaled, crop_center_ratio
 
-OUT = "web/public/assets/img"
+OUT = "web/src/assets/img"
 GREEN = "纯绿色背景(#00ff00)，主体绝不使用绿色，正面平视，无投影"
 
 # 可平铺方形边框：四角对称、四边等宽连续纹样，中间大块纯绿透空。

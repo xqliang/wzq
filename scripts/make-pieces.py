@@ -7,7 +7,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 from _seedream import generate, chroma_key, save_scaled
 
-OUT = "web/public/assets/img"
+OUT = "web/src/assets/img"
 STYLE = "纯绿色背景(#00ff00)，正上方俯视单颗围棋子特写，无阴影投射到背景，扁平居中，写实玉石质感"
 
 for name, desc in [("piece_black", "墨玉黑子，温润哑光"), ("piece_white", "羊脂白玉白子，温润")]:

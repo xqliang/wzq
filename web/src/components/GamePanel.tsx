@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { img } from '../lib/asset'
 import { Banner } from './Banner'
 
 // 竞品风格弹窗面板（商店/签到/转盘共用）：全屏暗底 + 青蓝描边绢帛面板 +
@@ -25,8 +26,8 @@ export function GamePanel({
         </div>
         {coins != null && (
           <div className="gp-currency">
-            <span className="coin"><img src="/assets/img/icon_coin.png" alt="金币" />{coins}</span>
-            <span className="scroll"><img src="/assets/img/icon_scroll.png" alt="卷轴" />{scrolls ?? 0}</span>
+            <span className="coin"><img src={img('icon_coin')} alt="金币" />{coins}</span>
+            <span className="scroll"><img src={img('icon_scroll')} alt="卷轴" />{scrolls ?? 0}</span>
           </div>
         )}
         <div className="gp-content">{children}</div>

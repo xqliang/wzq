@@ -7,7 +7,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 from _seedream import generate, save_scaled, crop_center_ratio
 
-OUT = "web/public/assets/img"
+OUT = "web/src/assets/img"
 REF = "/Users/jyxc-dz-0100360/.claude/image-cache/945c658b-2f15-4c79-81f7-dbc7d546755b"
 # (提示, 竞品参考图)：保留竞品风格与构图，调整色调/元素，中央大留白。
 scenes = {

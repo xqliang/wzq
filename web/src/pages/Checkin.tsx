@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { img } from '../lib/asset'
 import { useNavigate } from 'react-router-dom'
 import { checkinState, checkinClaim } from '../net/rest'
 import type { CheckinState, Reward } from '../net/rest'
@@ -7,9 +8,9 @@ import { playSfx } from '../audio/audio'
 
 // 奖励图标：金币/卷轴用货币图标，item（特级棋盘）用奖章占位。
 function rewardIcon(r: Reward): string {
-  if (r.kind === 'scrolls') return '/assets/img/icon_scroll.png'
-  if (r.kind === 'item') return '/assets/img/medal_master.png'
-  return '/assets/img/icon_coin.png'
+  if (r.kind === 'scrolls') return img('icon_scroll')
+  if (r.kind === 'item') return img('medal_master')
+  return img('icon_coin')
 }
 
 // 每日签到页：7 天奖励（前 6 天网格 + 第 7 天大奖横条），支持普通/看广告双倍领取。
@@ -56,7 +57,7 @@ export function Checkin() {
           <div className="checkin-day7-title">第七天</div>
           <div className="checkin-day7-desc">累计登录 7 天，获取神秘大奖</div>
         </div>
-        <img src="/assets/img/medal_master.png" className="checkin-chest" alt="" />
+        <img src={img('medal_master')} className="checkin-chest" alt="" />
       </div>
       {msg && <p className="tip">{msg}</p>}
       <div className="checkin-actions">

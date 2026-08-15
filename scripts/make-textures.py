@@ -13,7 +13,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 from _seedream import generate, chroma_key, save_scaled
 
-OUT = "web/public/assets/img"
+OUT = "web/src/assets/img"
 GREEN = "纯绿色背景(#00ff00)，正面平视，扁平居中，无投影到背景"
 
 

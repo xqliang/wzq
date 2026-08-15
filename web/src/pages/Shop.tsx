@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { img } from '../lib/asset'
 import { useNavigate } from 'react-router-dom'
 import { shopState, shopBuy, shopEquip } from '../net/rest'
 import type { ShopState, ShopItem } from '../net/rest'
@@ -70,7 +71,7 @@ export function Shop() {
                   <button className="op-btn" disabled={busy} onClick={() => equip(it)}>装备</button>
                 ) : (
                   <button className="price-btn" disabled={busy} onClick={() => buy(it)}>
-                    <img src={it.currency === 'scrolls' ? '/assets/img/icon_scroll.png' : '/assets/img/icon_coin.png'} alt="" />
+                    <img src={it.currency === 'scrolls' ? img('icon_scroll') : img('icon_coin')} alt="" />
                     {it.price}
                   </button>
                 )}
@@ -109,7 +110,7 @@ function ItemPreview({ item }: { item: ShopItem }) {
     )
   }
   if (item.slot === 'frame') {
-    return <Avatar src="/assets/img/avatar_01.png" size={64} frame={item.preview} />
+    return <Avatar src={img('avatar_01')} size={64} frame={item.preview} />
   }
   return <div className={`effect-swatch effect-${item.preview}`}>{item.name}</div>
 }

@@ -242,14 +242,11 @@ func (s *Server) handleAiResult(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("settle ai rank: %v", err)
 	}
-	// 金币奖励（阶段C）：与经验配额一致——胜且在每日配额内 +20、超额 +0；负 +5（防刷）。
+	// 金币奖励（阶段C）：与经验配额解耦——胜恒 +20、负 +5。
+	// （此前把胜局金币绑定经验配额，达配额后胜局 +0 而负局仍 +5，出现"赢没积分、输反而有"的反转。）
 	coinDelta := 5
 	if body.Win {
-		if delta == 20 {
-			coinDelta = 20
-		} else {
-			coinDelta = 0
-		}
+		coinDelta = 20
 	}
 	if err := s.Users.AddCoins(uid, coinDelta); err != nil {
 		log.Printf("award ai coins: %v", err)

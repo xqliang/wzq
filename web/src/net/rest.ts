@@ -100,8 +100,12 @@ export const shareStats = (uid: number) =>
 // 创建真人对战房间，返回房间 id。
 export const createRoom = () => req('/api/room', 'POST') as Promise<{ roomId: string }>
 
-// 随机匹配：返回分配到的房间 id；waiting=true 表示你是先到的一方，需在房间内等待对手。
+// 随机匹配：把自己投入匹配池。waiting=true 表示尚未配到对手（roomId 为空），需继续轮询；
+// waiting=false 时 roomId 为已配对的对局房间号。不再为独自等待者预建房间。
 export const matchJoin = () => req('/api/match', 'POST') as Promise<{ roomId: string; waiting: boolean }>
+
+// 退出随机匹配池（离开匹配界面 / 点取消时调用）。
+export const matchCancel = () => req('/api/match/cancel', 'POST') as Promise<{ ok: boolean }>
 
 // ===== 残局闯关（endgame）相关接口 =====
 

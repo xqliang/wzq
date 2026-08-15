@@ -243,32 +243,15 @@ export function BoardCanvas({
   )
 }
 
-// 立体外框：四周为同色平整木框（不做四向斜面高光/阴影）；
-// 3D 厚度只体现在底部——底沿是一条更深的木色“厚度带”并压一条高光缝，
-// 像厚木盘受自上而下的光坐在桌面上（参考竞品默认盘）。
+// 立体外框：四边同色平整浅木框（不做四向斜面高光/阴影）；
+// 3D 厚度只来自最底沿一条薄的深木“厚度条”+ 其上一道高光缝（四边浅木边框保持一致），
+// 配合 .board-wrap 的落地阴影，像厚木盘坐在桌面上（参考竞品默认盘）。
 function drawFrame(ctx: CanvasRenderingContext2D, theme: Theme) {
-  const F = FRAME // 上/左/右/底 边框厚度
-  // 平整木框（无四向斜面）。
+  const F = FRAME // 四边边框厚度（同色浅木，四边一致）
+  const LIP = 6 // 底沿薄厚度条高度（3D），压在底边框最下沿，不破坏四边一致的浅木边框
+  // 平整浅木框（四边同色）。
   ctx.fillStyle = theme.frameBase
   ctx.fillRect(0, 0, PX, PX)
-  // 底部厚度带（唯一 3D 来源）：底边框用更深木色。
-  const baseColor = theme.baseShadow ?? theme.frameDark
-  const bg = ctx.createLinearGradient(0, PX - F, 0, PX)
-  bg.addColorStop(0, baseColor)
-  bg.addColorStop(1, theme.frameDark)
-  ctx.fillStyle = bg
-  ctx.fillRect(0, PX - F, PX, F)
-  // 厚度带顶沿高光缝：承接自上而下的光，凸显“厚度”。
-  ctx.strokeStyle = theme.frameLight
-  ctx.lineWidth = 1.5
-  ctx.beginPath()
-  ctx.moveTo(0, PX - F + 0.75)
-  ctx.lineTo(PX, PX - F + 0.75)
-  ctx.stroke()
-  // 细外缘线，勾出整体轮廓。
-  ctx.strokeStyle = theme.frameDark
-  ctx.lineWidth = 1.5
-  ctx.strokeRect(0.75, 0.75, PX - 1.5, PX - 1.5)
   // 棋盘面（内凹）：四周留 F。
   const inner = { l: F, t: F, r: PX - F, b: PX - F }
   ctx.fillStyle = theme.boardFace
@@ -288,6 +271,23 @@ function drawFrame(ctx: CanvasRenderingContext2D, theme: Theme) {
   ctx.moveTo(inner.l, inner.b - 1.5)
   ctx.lineTo(inner.r, inner.b - 1.5)
   ctx.stroke()
+  // 底部 3D：最底沿一条薄的深木厚度条 + 其上一道高光缝；四边浅木边框仍保持一致。
+  const baseColor = theme.baseShadow ?? theme.frameDark
+  const bg = ctx.createLinearGradient(0, PX - LIP, 0, PX)
+  bg.addColorStop(0, baseColor)
+  bg.addColorStop(1, theme.frameDark)
+  ctx.fillStyle = bg
+  ctx.fillRect(0, PX - LIP, PX, LIP)
+  ctx.strokeStyle = theme.frameLight
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(0, PX - LIP + 0.5)
+  ctx.lineTo(PX, PX - LIP + 0.5)
+  ctx.stroke()
+  // 细外缘线，勾出整体轮廓。
+  ctx.strokeStyle = theme.frameDark
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(0.75, 0.75, PX - 1.5, PX - 1.5)
 }
 
 // 四角准心：围绕交叉点的四个 L 形转角括号（相机对焦框风格），带轻微呼吸。

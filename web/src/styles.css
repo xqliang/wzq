@@ -24,7 +24,10 @@ body {
   height: 100%;
 }
 body {
-  font-family: 'Guqi', 'STKaiti', 'KaiTi', serif;
+  /* 正文/UI 用稳妥的跨平台中文字体栈，保证全字符覆盖（Guqi 装饰字缺字会显示豆腐块□，
+     故仅用于标题/倒计时等大字，见 .banner-text / .start-num）。 */
+  font-family: 'STKaiti', 'KaiTi', 'KaiTi SC', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
   color: var(--ink);
   background: var(--paper-2);
   -webkit-tap-highlight-color: transparent;
@@ -689,15 +692,22 @@ button:disabled {
   background: url('/assets/img/banner_wood.png') center/100% 100% no-repeat;
 }
 .banner-text {
-  font-family: 'Guqi', 'STKaiti', serif;
-  font-size: 34px;
+  /* 楷体系（古风且系统自带覆盖全，避免自定义 Guqi 字体缺字导致的豆腐块/看不清）。 */
+  font-family: 'STKaiti', 'KaiTi', 'KaiTi SC', 'STSong', 'Songti SC', serif;
+  display: inline-block;
+  font-size: 30px;
   letter-spacing: 4px;
   font-weight: 700;
+  line-height: 1.15;
+  /* padding 让 padding box 高于字形，background-clip:text 才能填满整字（同 .start-num 修复）。 */
+  padding: 2px 4px 6px;
+  background-image: linear-gradient(180deg, #fff2b0, #f5c542 45%, #b8791b);
   background-clip: text;
   -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   color: transparent;
-  -webkit-text-stroke: 0.5px rgba(60, 40, 10, 0.5);
-  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.35));
+  /* 用双层深色投影勾边替代 -webkit-text-stroke（后者会与 clip 抢渲染、使字迹发虚看不清）。 */
+  filter: drop-shadow(0 1px 0 rgba(70, 45, 10, 0.7)) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
 }
 .banner-gold .banner-text {
   background-image: linear-gradient(180deg, #fff2b0, #f5c542 45%, #b8791b);
@@ -868,8 +878,16 @@ button:disabled {
   font-size: 13px;
   color: var(--ink-soft);
 }
+/* 统一「返回/退出」次级按钮：描金绢帛药丸，古风且与主木纹按钮区分（全站一致）。 */
 .back-btn {
-  padding: 8px 28px;
+  padding: 9px 30px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #5c3a17;
+  background: linear-gradient(180deg, #f7ecd2, #e6d4ad);
+  border: 2px solid var(--gold);
+  border-radius: 22px;
+  box-shadow: inset 0 0 0 1px rgba(255, 245, 214, 0.6), 0 3px 0 rgba(124, 74, 30, 0.3), var(--shadow);
 }
 
 .player-bar {
@@ -904,8 +922,10 @@ button:disabled {
 .stone-chip { width: 16px; height: 16px; border-radius: 50%; flex: none; }
 .stone-chip.black { background: radial-gradient(circle at 35% 35%, #555, #111); }
 .stone-chip.white { background: radial-gradient(circle at 35% 35%, #fff, #cfc7b5); border: 1px solid #b3ada1; }
-.player-bar-center { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: none; }
-.turn-arrow { font-size: 14px; color: var(--gold); }
+/* 固定尺寸：无论显示罗盘计时器还是占位空盒，中间列footprint恒定，
+   彻底消除「顶部倒计时出现/消失导致页面跳动」。 */
+.player-bar-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: none; width: 72px; height: 84px; }
+.turn-arrow { font-size: 14px; color: var(--gold); height: 16px; line-height: 16px; }
 .compass-idle { width: 64px; height: 64px; }
 .start-countdown {
   position: absolute;
@@ -977,19 +997,29 @@ button:disabled {
   max-width: 90vw;
 }
 
+/* 棋盘舞台：包住棋盘，作为开局倒计时/结算/进阶等覆盖层的定位参照，
+   使这些浮层只覆盖棋盘区域（不再遮住整页），且天然居中于棋盘。 */
+.board-stage {
+  position: relative;
+  width: min(94vw, 560px);
+  align-self: center;
+}
+
 .result-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: 1000;
+  z-index: 50;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 20px;
-  background: rgba(30, 20, 8, 0.6);
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(30, 20, 8, 0.72);
+  backdrop-filter: blur(2px);
 }
-.result-top { position: absolute; top: 20px; left: 16px; display: flex; gap: 10px; }
+.result-top { position: absolute; top: 12px; left: 12px; display: flex; gap: 10px; }
 .round-btn {
   width: 44px; height: 44px; border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #d9a86a, #a86b32 70%, #7c4a1e);
@@ -1019,14 +1049,15 @@ button:disabled {
 }
 
 .rankup-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: 1100;
+  z-index: 60;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 18px;
+  border-radius: 16px;
   background: rgba(20, 14, 6, 0.85);
 }
 .rankup-transit { display: flex; align-items: center; gap: 14px; font-size: 22px; font-weight: 700; }
@@ -1035,3 +1066,37 @@ button:disabled {
 .rankup-to { color: #f5c542; }
 .rankup-medal { width: 140px; height: 140px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); animation: start-pop 0.6s ease; }
 .rankup-hint { color: #d8cfb8; font-size: 15px; margin-top: 8px; }
+
+/* 随机匹配「匹配中」浮层：全屏暗底 + 古风描金面板 + 旋转罗盘 + 取消。 */
+.matching-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 14, 6, 0.72);
+  backdrop-filter: blur(2px);
+}
+.matching-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 32px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(250, 240, 214, 0.98), rgba(236, 221, 190, 0.98));
+  border: 2px solid var(--gold);
+  box-shadow: inset 0 0 0 1px rgba(255, 245, 214, 0.6), 0 3px 0 rgba(124, 74, 30, 0.32), var(--shadow);
+}
+.matching-spin {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 4px solid rgba(124, 74, 30, 0.25);
+  border-top-color: var(--gold);
+  animation: matching-rotate 0.9s linear infinite;
+}
+@keyframes matching-rotate { to { transform: rotate(360deg); } }
+.matching-title { font-size: 18px; font-weight: 700; color: var(--ink); }
+.matching-sub { font-size: 13px; color: var(--ink-soft); }

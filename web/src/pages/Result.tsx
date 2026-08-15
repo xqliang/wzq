@@ -33,7 +33,7 @@ export function Result() {
       <p>{win ? `+${state?.expDelta ?? 20} 经验` : '+5 经验，再接再厉！'}</p>
       <button onClick={rematch}>再来一局</button>
       {state?.mode === 'pvp' && <p className="tip">双方都点「再来一局」即在原房间开新局</p>}
-      <button onClick={() => nav('/')}>返回首页</button>
+      <button className="back-btn" onClick={() => nav('/')}>返回首页</button>
     </div>
   )
 }

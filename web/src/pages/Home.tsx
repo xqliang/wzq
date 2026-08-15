@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { me, matchJoin } from '../net/rest'
+import { me, matchJoin, matchCancel } from '../net/rest'
 import type { User } from '../net/rest'
 import { rankLabel } from '../theme/ranks'
 import { Avatar } from '../components/Avatar'
@@ -9,11 +9,44 @@ import { Avatar } from '../components/Avatar'
 export function Home({ user }: { user: User }) {
   const nav = useNavigate()
   const [u, setU] = useState<User>(user)
+  // 随机匹配「匹配中」浮层：进入后轮询后端匹配池，配上对手再进对局。
+  const [matching, setMatching] = useState(false)
+  const pollRef = useRef<number | undefined>(undefined)
   useEffect(() => {
     me().then(setU).catch(() => {})
   }, [])
+  // 组件卸载时兜底清理轮询定时器。
+  useEffect(() => () => window.clearTimeout(pollRef.current), [])
   // 阶段 A 占位：用 level 粗映射一个段位索引展示（B 阶段接真实 rank_tier）。
   const placeholderTier = Math.min(18, (u.level ?? 1) - 1)
+
+  // 开始随机匹配：进入浮层并轮询。waiting=false 拿到房间号即进入对局。
+  const startMatch = () => {
+    setMatching(true)
+    const tick = () => {
+      matchJoin()
+        .then((r) => {
+          if (!r.waiting && r.roomId) {
+            window.clearTimeout(pollRef.current)
+            setMatching(false)
+            nav('/game', { state: { mode: 'pvp', roomId: r.roomId } })
+          } else {
+            pollRef.current = window.setTimeout(tick, 1500) // 仍在等待，稍后再轮询
+          }
+        })
+        .catch(() => {
+          pollRef.current = window.setTimeout(tick, 2000) // 网络抖动：退避后重试
+        })
+    }
+    tick()
+  }
+  // 取消匹配：停轮询、退出匹配池。
+  const cancelMatch = () => {
+    window.clearTimeout(pollRef.current)
+    setMatching(false)
+    matchCancel().catch(() => {})
+  }
+
   return (
     <div className="home screen">
       <img src="/assets/img/logo_title.png" alt="五子棋" className="home-logo" />
@@ -31,14 +64,7 @@ export function Home({ user }: { user: User }) {
       </header>
       <main className="entries">
         <button className="entry" onClick={() => nav('/ai')}>人机对战</button>
-        <button
-          className="entry primary"
-          onClick={() =>
-            matchJoin()
-              .then((r) => nav('/game', { state: { mode: 'pvp', roomId: r.roomId } }))
-              .catch(() => {})
-          }
-        >随机匹配</button>
+        <button className="entry primary" onClick={startMatch}>随机匹配</button>
         <button className="entry" onClick={() => nav('/room')}>好友对战</button>
         <button className="entry" onClick={() => nav('/endgame')}>残局闯关</button>
         <button className="entry" onClick={() => nav('/stats')}>我的战绩</button>
@@ -48,6 +74,16 @@ export function Home({ user }: { user: User }) {
         <button className="op-btn" onClick={() => alert('每日签到（阶段D）')}>签到</button>
         <button className="op-btn" onClick={() => alert('幸运转盘（阶段D）')}>转盘</button>
       </nav>
+      {matching && (
+        <div className="matching-mask">
+          <div className="matching-card">
+            <div className="matching-spin" />
+            <p className="matching-title">正在为你寻找对手…</p>
+            <p className="matching-sub">同时在线的棋友将随机结对</p>
+            <button className="op-btn" onClick={cancelMatch}>取消匹配</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

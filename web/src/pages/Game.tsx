@@ -273,7 +273,7 @@ export function Game() {
             </button>
           </div>
         )}
-        <button className="op-btn" onClick={() => nav('/')}>退出</button>
+        <button className="back-btn" onClick={() => nav('/')}>退出</button>
       </div>
     )
   }
@@ -305,13 +305,37 @@ export function Game() {
             : null
         }
       />
-      <BoardCanvas
-        onConfirm={onConfirm}
-        overlays={overlays}
-        interactive={!previewSteps && introDone}
-        onWinAnimationEnd={() => setShowModal(true)}
-      />
-      {started && !introDone && <StartCountdown onDone={() => setIntroDone(true)} />}
+      <div className="board-stage">
+        <BoardCanvas
+          onConfirm={onConfirm}
+          overlays={overlays}
+          interactive={!previewSteps && introDone}
+          onWinAnimationEnd={() => setShowModal(true)}
+        />
+        {started && !introDone && <StartCountdown onDone={() => setIntroDone(true)} />}
+        {showModal && result && (
+          <ResultOverlay
+            win={result.win}
+            coins={result.win ? 120 : 0}
+            me={{ nickname: '我', avatar: 'avatar_01', rankLabel: rankLabel(1), points: 10, threshold: 30, delta: result.win ? 10 : -10 }}
+            opp={{ nickname: st.mode === 'ai' ? 'AI大师' : '对手', avatar: 'avatar_02', rankLabel: rankLabel(3), points: 20, threshold: 30, delta: result.win ? -10 : 10 }}
+            onRematch={rematch}
+            onHome={() => nav('/')}
+            onShare={() => alert('分享（后续接入）')}
+            onDouble={() => alert('看广告双倍（阶段C）')}
+          />
+        )}
+        {/* 阶段A 占位：RANKUP_ENABLED 恒 false，不弹出；阶段B 用结算返回的 promoted 触发。 */}
+        {RANKUP_ENABLED && (
+          <RankUpOverlay
+            fromLabel={rankLabel(1)}
+            toLabel={rankLabel(2)}
+            group={rankGroup(2)}
+            coins={120}
+            onContinue={() => undefined}
+          />
+        )}
+      </div>
       <div className="hud">
         {g.turn === g.myColor ? <span className="tip">轮到你落子</span> : <span>对方思考中…</span>}
         <GameMenu
@@ -328,28 +352,6 @@ export function Game() {
           ]}
         />
       </div>
-      {showModal && result && (
-        <ResultOverlay
-          win={result.win}
-          coins={result.win ? 120 : 0}
-          me={{ nickname: '我', avatar: 'avatar_01', rankLabel: rankLabel(1), points: 10, threshold: 30, delta: result.win ? 10 : -10 }}
-          opp={{ nickname: st.mode === 'ai' ? 'AI大师' : '对手', avatar: 'avatar_02', rankLabel: rankLabel(3), points: 20, threshold: 30, delta: result.win ? -10 : 10 }}
-          onRematch={rematch}
-          onHome={() => nav('/')}
-          onShare={() => alert('分享（后续接入）')}
-          onDouble={() => alert('看广告双倍（阶段C）')}
-        />
-      )}
-      {/* 阶段A 占位：RANKUP_ENABLED 恒 false，不弹出；阶段B 用结算返回的 promoted 触发。 */}
-      {RANKUP_ENABLED && (
-        <RankUpOverlay
-          fromLabel={rankLabel(1)}
-          toLabel={rankLabel(2)}
-          group={rankGroup(2)}
-          coins={120}
-          onContinue={() => undefined}
-        />
-      )}
     </div>
   )
 }

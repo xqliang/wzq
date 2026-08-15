@@ -43,7 +43,7 @@ export function Room() {
       >
         进入对局
       </button>
-      <button className="op-btn" onClick={() => nav('/')}>退出</button>
+      <button className="back-btn" onClick={() => nav('/')}>退出</button>
     </div>
   )
 }

@@ -132,7 +132,7 @@ export function EndgamePlay() {
     return (
       <div className="endgame screen">
         <p className="tip">出错了：{err}</p>
-        <button onClick={() => nav('/endgame')}>返回列表</button>
+        <button className="back-btn" onClick={() => nav('/endgame')}>返回列表</button>
       </div>
     )
   }
@@ -162,7 +162,7 @@ export function EndgamePlay() {
           <>
             <button onClick={onHint}>💡 提示</button>
             <button onClick={retry}>重试</button>
-            <button onClick={() => nav('/endgame')}>返回列表</button>
+            <button className="back-btn" onClick={() => nav('/endgame')}>返回列表</button>
           </>
         )}
       </div>

@@ -104,7 +104,7 @@ export function Settings() {
           </span>
         </label>
 
-        <button onClick={() => nav('/')}>返回首页</button>
+        <button className="back-btn" onClick={() => nav('/')}>返回首页</button>
       </div>
     </div>
   )

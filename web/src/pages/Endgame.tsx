@@ -28,7 +28,7 @@ export function Endgame() {
   return (
     <div className="endgame screen">
       <header className="endgame-head">
-        <button onClick={() => nav('/')}>← 返回</button>
+        <button className="back-btn" onClick={() => nav('/')}>← 返回</button>
         <h2>残局闯关</h2>
       </header>
       {err && <p className="tip">加载失败：{err}</p>}

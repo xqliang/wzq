@@ -1,0 +1,3 @@
+# Python 脚本缓存（scripts/ 下用 uv 跑生图脚本时产生）
+__pycache__/
+*.pyc

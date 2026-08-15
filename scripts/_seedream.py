@@ -15,12 +15,24 @@ ARK_URL = "https://ark.cn-beijing.volces.com/api/v3/images/generations"
 MODEL = "doubao-seedream-5-0-260128"
 REQUEST_SIZE = "1920x1920"  # seedream 5.0 需 >= ~3.7M 像素
 
-def generate(prompt: str) -> Image.Image:
+def _data_uri(path: str, max_side: int = 1024) -> str:
+    """把参考图缩放到 max_side 内并转成 data URI（JPEG base64），用于图生图。"""
+    img = Image.open(path).convert("RGB")
+    img.thumbnail((max_side, max_side), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=90)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+
+def generate(prompt: str, ref_images: list[str] | None = None) -> Image.Image:
+    """文生图；传 ref_images 则走图生图（参考竞品图，保留风格、调整色调/元素）。"""
+    payload = {"model": MODEL, "prompt": prompt, "size": REQUEST_SIZE,
+               "response_format": "url", "watermark": False}
+    if ref_images:
+        payload["image"] = [_data_uri(p) for p in ref_images]
     resp = requests.post(
         ARK_URL,
         headers={"Authorization": f"Bearer {ARK_KEY}", "Content-Type": "application/json"},
-        json={"model": MODEL, "prompt": prompt, "size": REQUEST_SIZE,
-              "response_format": "url", "watermark": False},
+        json=payload,
         timeout=180)
     if not resp.ok:
         print(f"ARK HTTP {resp.status_code}: {resp.text}", file=sys.stderr)

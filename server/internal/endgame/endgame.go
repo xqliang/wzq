@@ -2,6 +2,7 @@ package endgame
 
 import (
 	"database/sql"
+	"math/rand"
 
 	"github.com/wzq/gomoku/internal/store"
 	"github.com/wzq/gomoku/internal/user"
@@ -221,6 +222,8 @@ func (svc *Service) Hint(uid int64, id string) (*[2]int, error) {
 	if len(answers) == 0 {
 		return nil, nil
 	}
-	cell := answers[0]
+	// 所有可接受首着在通关判定上等价（Submit 接受任意一个），随机返回其一，
+	// 避免每次提示都固定同一个点。
+	cell := answers[rand.Intn(len(answers))]
 	return &cell, nil
 }

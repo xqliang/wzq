@@ -190,3 +190,28 @@ func TestHintCounts(t *testing.T) {
 		t.Fatalf("hint 落子 %v 不在可接受答案集合内", *cell)
 	}
 }
+
+// TestHintRandomizes 校验有多解的关卡,多次 Hint 不应总返回同一个点(随机化)。
+// 取多解的第 3-4 关(4 个首着),连取 40 次,应出现至少 2 个不同落子。
+func TestHintRandomizes(t *testing.T) {
+	svc, _, uid := newSvc(t)
+	id := "3-4"
+	l, ok := findLevel(id)
+	if !ok {
+		t.Fatalf("level %s 不存在", id)
+	}
+	if n := len(l.AcceptedAnswers()); n < 2 {
+		t.Fatalf("%s 仅 %d 个可接受首着,不足以测随机", id, n)
+	}
+	seen := map[[2]int]bool{}
+	for i := 0; i < 40; i++ {
+		cell, err := svc.Hint(uid, id)
+		if err != nil || cell == nil {
+			t.Fatalf("hint 失败: %v %v", cell, err)
+		}
+		seen[[2]int{cell[0], cell[1]}] = true
+	}
+	if len(seen) < 2 {
+		t.Fatalf("40 次 Hint 只出现 1 个落子,随机化失效: %v", seen)
+	}
+}

@@ -58,7 +58,7 @@ function negamax(board: Board, color: Color, depth: number, alpha: number, beta:
 
 // 顶层决策：根据难度决定搜索深度与随机扰动，返回最佳落子。
 export function bestMove(board: Board, color: Color, level: number): Move {
-  const depth = level >= 3 ? 6 : level === 2 ? 4 : 2
+  const depth = level >= 3 ? 6 : level === 2 ? 4 : 3
   const noise = level === 1 ? 0.2 : 0 // 简单档加入随机性，让 AI 偶尔“走歪”
   const opp: Color = color === 'black' ? 'white' : 'black'
   const cands = candidates(board)

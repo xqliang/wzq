@@ -348,6 +348,34 @@ var Levels = []Level{
 			{5, 5, gomoku.White}, {5, 7, gomoku.White}, {5, 8, gomoku.White}, {6, 5, gomoku.White}, {6, 7, gomoku.White}, {6, 8, gomoku.White}, {6, 9, gomoku.White}, {7, 4, gomoku.White}, {7, 5, gomoku.White}, {7, 6, gomoku.White}, {7, 10, gomoku.White}, {8, 8, gomoku.White},
 		},
 	},
+	{
+		ID: "5-5", Chapter: 5, Name: "步步紧逼", Difficulty: 6, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{6, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 7, gomoku.Black}, {8, 4, gomoku.Black}, {9, 5, gomoku.Black}, {10, 4, gomoku.Black}, {10, 5, gomoku.Black}, {10, 6, gomoku.Black},
+			{4, 7, gomoku.White}, {5, 7, gomoku.White}, {6, 6, gomoku.White}, {6, 8, gomoku.White}, {7, 3, gomoku.White}, {7, 5, gomoku.White}, {8, 5, gomoku.White}, {10, 3, gomoku.White},
+		},
+	},
+	{
+		ID: "5-6", Chapter: 5, Name: "步步紧逼", Difficulty: 6, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{6, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 7, gomoku.Black}, {8, 4, gomoku.Black}, {9, 5, gomoku.Black}, {10, 2, gomoku.Black}, {10, 4, gomoku.Black}, {10, 5, gomoku.Black}, {10, 6, gomoku.Black},
+			{4, 7, gomoku.White}, {5, 7, gomoku.White}, {6, 6, gomoku.White}, {6, 8, gomoku.White}, {7, 3, gomoku.White}, {7, 5, gomoku.White}, {8, 5, gomoku.White}, {9, 4, gomoku.White}, {10, 3, gomoku.White},
+		},
+	},
+	{
+		ID: "5-7", Chapter: 5, Name: "步步紧逼", Difficulty: 6, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{4, 7, gomoku.Black}, {5, 3, gomoku.Black}, {6, 3, gomoku.Black}, {6, 7, gomoku.Black}, {7, 3, gomoku.Black}, {7, 6, gomoku.Black}, {7, 7, gomoku.Black}, {8, 4, gomoku.Black}, {8, 7, gomoku.Black}, {9, 5, gomoku.Black},
+			{4, 3, gomoku.White}, {5, 7, gomoku.White}, {6, 2, gomoku.White}, {6, 4, gomoku.White}, {6, 6, gomoku.White}, {7, 5, gomoku.White}, {8, 2, gomoku.White}, {8, 5, gomoku.White}, {8, 6, gomoku.White}, {8, 8, gomoku.White},
+		},
+	},
+	{
+		ID: "5-8", Chapter: 5, Name: "步步紧逼", Difficulty: 6, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{6, 7, gomoku.Black}, {6, 8, gomoku.Black}, {6, 9, gomoku.Black}, {7, 7, gomoku.Black}, {7, 8, gomoku.Black}, {7, 9, gomoku.Black}, {8, 9, gomoku.Black}, {9, 8, gomoku.Black}, {10, 7, gomoku.Black}, {10, 10, gomoku.Black}, {12, 7, gomoku.Black},
+			{5, 9, gomoku.White}, {6, 10, gomoku.White}, {7, 10, gomoku.White}, {8, 6, gomoku.White}, {8, 7, gomoku.White}, {8, 8, gomoku.White}, {9, 7, gomoku.White}, {9, 10, gomoku.White}, {10, 9, gomoku.White}, {10, 11, gomoku.White}, {11, 8, gomoku.White},
+		},
+	},
 	// —— 第六章 · 绝处逢生（黑方 7 步必胜）——
 	{
 		ID: "6-1", Chapter: 6, Name: "绝处逢生", Difficulty: 7, ToMove: gomoku.Black,

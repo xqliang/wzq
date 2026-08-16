@@ -144,7 +144,7 @@ func TestGenerateLevels(t *testing.T) {
 	if os.Getenv("GEN") == "" {
 		t.Skip("set GEN=1 to run the level generator")
 	}
-	need := map[int]int{2: 9, 3: 9, 4: 6, 5: 6, 6: 4, 7: 3}
+	need := map[int]int{6: 9}
 	got := map[int]int{}
 	found := map[string]genCand{}
 	enough := func() bool {

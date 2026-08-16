@@ -110,11 +110,18 @@ export function EndgamePlay() {
     playSfx('place')
   }
 
-  // 💡 提示：高亮推荐落子（当前局面的一个可接受首着）。
+  // 💡 提示：按固定逼杀线标出执子方各手（序号标记）；已落子的跳过，保留原步序号。
   const onHint = () => {
     playSfx('button')
     endgameHint(id)
-      .then((h) => setOverlays([{ x: h.x, y: h.y, color: '#f1c40f', label: '★' }]))
+      .then((h) => {
+        const board = useGame.getState().board
+        const overlays: Overlay[] = []
+        h.line.forEach(([x, y], i) => {
+          if (board[y][x] === null) overlays.push({ x, y, color: '#f1c40f', label: String(i + 1) })
+        })
+        setOverlays(overlays)
+      })
       .catch((e) => setErr(String(e)))
   }
 

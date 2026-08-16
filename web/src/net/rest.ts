@@ -247,9 +247,9 @@ export const endgameSubmit = (id: string, x: number, y: number) =>
 export const endgameComplete = (id: string, win: boolean) =>
   req('/api/endgame/complete', 'POST', { id, win }) as Promise<{ ok: boolean }>
 
-// 请求提示：返回推荐落子坐标。
+// 请求提示：返回完整逼杀线（执子方各手坐标，固定多步）。
 export const endgameHint = (id: string) =>
-  req('/api/endgame/hint', 'POST', { id }) as Promise<{ x: number; y: number }>
+  req('/api/endgame/hint', 'POST', { id }) as Promise<{ line: [number, number][] }>
 
 // 查看答案：返回所有正解坐标。
 export const endgameAnswer = (id: string) =>

@@ -41,6 +41,42 @@ func (l Level) MinSteps() int {
 	return minMateDepth(&g, l.ToMove, 5)
 }
 
+// HintLine 返回从初始局面开始的完整 VCF 逼杀线（执子方各手坐标），长度恰为 MinSteps，
+// 确保按提示可在规定步数内破局。每手用「剩余最小步数」封顶求解，取首个正解（固定）。
+// 对手被迫逐一堵冲四成五点；若某手形成双冲四（对手只能堵其一），则补上黑下一手的
+// 成五点（假定对手堵第一个，黑走第二个）后结束。
+func (l Level) HintLine() [][2]int {
+	g := gridFromStones(l.Stones)
+	steps := minMateDepth(&g, l.ToMove, 5)
+	if steps == 0 {
+		return nil
+	}
+	var line [][2]int
+	for steps >= 1 {
+		moves := solveFirstMoves(&g, l.ToMove, steps)
+		if len(moves) == 0 {
+			break
+		}
+		mv := moves[0]
+		line = append(line, mv)
+		g[mv[1]][mv[0]] = l.ToMove
+		if winAt(&g, mv[0], mv[1], l.ToMove) {
+			break // 直接成五
+		}
+		threats := immediateWins(&g, l.ToMove)
+		if len(threats) == 0 {
+			break // 非冲四，异常兜底
+		}
+		if len(threats) > 1 {
+			line = append(line, threats[1]) // 双冲四：黑走另一成五点即胜
+			break
+		}
+		g[threats[0][1]][threats[0][0]] = other(l.ToMove)
+		steps--
+	}
+	return line
+}
+
 // Levels 是全部预置关卡：均为「执黑走多步必胜」的真实中局残局，由生成器
 // （generate_test.go 的 TestGenerateLevels，GEN=1 时运行）模拟拟真短对局后，
 // 用解算器筛选出「黑方 2..5 步连续冲四(VCF)必胜」的自然聚拢局面，去重后收录。

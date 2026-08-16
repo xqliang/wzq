@@ -13,6 +13,23 @@ describe('evaluate', () => {
   it('空盘评分为 0', () => {
     expect(evaluate(emptyBoard(), 'black')).toBe(0)
   })
+  it('跳四(XX_XX)按冲四计分，不得高于连活四(_XXXX_)', () => {
+    // 连活四 _XXXX_：双端开放、不可一手堵死
+    let liveFour = emptyBoard()
+    for (const x of [3, 4, 5, 6]) liveFour = applyMove(liveFour, { x, y: 7, color: 'black' })
+    // 跳四 XX_XX：缺口在中间，仅一个成五点，对手一手即可封死
+    let jumpFour = emptyBoard()
+    for (const x of [3, 4, 6, 7]) jumpFour = applyMove(jumpFour, { x, y: 7, color: 'black' })
+    expect(evaluate(liveFour, 'black')).toBeGreaterThan(evaluate(jumpFour, 'black') * 2)
+  })
+  it('双缺口三(X_X_X)不算活三，不得触发分叉加成', () => {
+    // 两条相互独立的 X_X_X：修复前会各计活三并触发 +25 万分叉
+    let b = emptyBoard()
+    for (const x of [3, 5, 7]) b = applyMove(b, { x, y: 7, color: 'black' }) // 横向双缺口三
+    for (const y of [9, 11, 13]) b = applyMove(b, { x: 7, y, color: 'black' }) // 纵向双缺口三
+    // 修复后每个只值眠三 1000；若被误判为活三分叉，会额外 +250000
+    expect(evaluate(b, 'black')).toBeLessThan(50000)
+  })
 })
 
 import { bestMove } from './search'

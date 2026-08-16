@@ -79,17 +79,30 @@ function colorScore(board: Board, color: Color): number {
           score += SCORE.FIVE
           threats++
         } else if (cnt === 4) {
-          if (openL && openR) {
-            score += SCORE.LIVE_FOUR
-            threats++
-          } else if (openL || openR) {
+          // 只有“连四”（ls===3，4 子紧邻）才可能是活四；跳四（ls===4，如 X_XXX、
+          // XX_XX、XXX_X）中间有一个缺口，无论两端开合都只有“补缺口”一个成五点，
+          // 是冲四而非活四——对手一手即可封死，不能按活四计分。
+          if (ls === 3) {
+            if (openL && openR) {
+              score += SCORE.LIVE_FOUR
+              threats++
+            } else if (openL || openR) {
+              score += SCORE.RUSH_FOUR
+              threats++
+            } else {
+              score += SCORE.DEAD_FOUR
+            }
+          } else {
             score += SCORE.RUSH_FOUR
             threats++
-          } else {
-            score += SCORE.DEAD_FOUR
           }
         } else if (cnt === 3) {
-          if (openL && openR) {
+          // 只有“连三”（ls===2）或“单缺口三”（ls===3，如 XX_X / X_XX，补缺口即成活四）
+          // 才是真正的活三；双缺口三（ls===4，如 X_X_X / X__XX）补任一缺口只得到可被
+          // 一手堵死的冲四，并非必须应的活威胁，按眠三计且不计入分叉。
+          if (ls === 4) {
+            score += SCORE.SLEEP_THREE
+          } else if (openL && openR) {
             score += SCORE.LIVE_THREE
             threats++
           } else if (openL || openR) {

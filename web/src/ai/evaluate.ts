@@ -1,46 +1,116 @@
 import type { Board, Color } from '../core/types'
 import { SIZE } from '../core/types'
 
-// 四个基本方向：水平、垂直、正斜、反斜
-const DIRS: [number, number][] = [[1, 0], [0, 1], [1, 1], [1, -1]]
-// 不同连子长度对应的基础分值。四(接近取胜)与五给到压倒性权重，确保防守/进攻要点优先。
-const SCORE: Record<number, number> = { 1: 10, 2: 100, 3: 1000, 4: 100000, 5: 10000000 }
+// 四个基本方向：水平、垂直、正斜、反斜（拆成两个平行数组以省去取 `[dx, dy]` 的开销）
+const DXS = [1, 0, 1, 1]
+const DYS = [0, 1, 1, -1]
 
-// 计算以 (x,y) 为起点、沿 (dx,dy) 方向的一条连线的得分。
-// 为避免同一条线被重复统计，只有当该方向的“前一格”不是同色时，才把当前点视为线段起点。
-function lineScore(board: Board, x: number, y: number, dx: number, dy: number, color: Color): number {
-  const px = x - dx, py = y - dy
-  // 前一格是同色 => 说明当前点不是线段起点，跳过，避免重复计分
-  if (px >= 0 && py >= 0 && px < SIZE && py < SIZE && board[py][px] === color) return 0
-  // 从当前点开始，沿方向统计连续同色棋子的数量
-  let count = 0, cx = x, cy = y
-  while (cx >= 0 && cy >= 0 && cx < SIZE && cy < SIZE && board[cy][cx] === color) {
-    count++; cx += dx; cy += dy
-  }
-  if (count === 0) return 0
-  // 统计线段两端的“空位”数量（活/眠），open 越大越有威胁
-  let open = 0
-  const bx = x - dx, by = y - dy
-  if (bx >= 0 && by >= 0 && bx < SIZE && by < SIZE && board[by][bx] === null) open++
-  if (cx >= 0 && cy >= 0 && cx < SIZE && cy < SIZE && board[cy][cx] === null) open++
-  const base = SCORE[Math.min(count, 5)] ?? 0
-  // 两端皆堵死（死棋）且未成五：几乎无价值；两端皆空（活）：大幅加权（活三/活四威胁极大）。
-  return open === 0 && count < 5 ? base * 0.05 : base * (open === 2 ? 5 : 1)
-}
+// 棋型分值：拉开量级，让“先手连杀 / 封堵关键威胁”的优先级远高于普通出子。
+// 五连 > 活四 > 冲四 > 活三 > 眠三 > 活二 > 眠二
+const SCORE = {
+  FIVE: 10_000_000, // 连五（已胜/一步可胜）
+  LIVE_FOUR: 500_000, // 活四：双端皆空，对手无法阻止
+  RUSH_FOUR: 100_000, // 冲四：仅一端可成五，逼对手应
+  LIVE_THREE: 5_000, // 活三：可发展为活四
+  SLEEP_THREE: 1_000, // 眠三：仅一端可发展
+  DEAD_FOUR: 500, // 两端堵死的四，基本无价值
+  LIVE_TWO: 500, // 活二
+  SLEEP_TWO: 100, // 眠二
+  SINGLE: 10, // 孤立一子（避免空盘时全零、无法排序）
+} as const
 
-// 站在 color 的视角评估整个棋盘：己方得分 - 对方得分（对方略微加权以偏向防守）
-export function evaluate(board: Board, color: Color): number {
-  let self = 0, other = 0
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
-      const c = board[y][x]
-      if (!c) continue
-      for (const [dx, dy] of DIRS) {
-        const s = lineScore(board, x, y, dx, dy, c)
-        if (c === color) self += s
-        else other += s
+// 分叉加成：同一方同时存在 ≥2 个“活威胁”（三/四/五）时，说明对手一次只能堵一个，
+// 是必胜的连杀结构（双三、四三、双四…），价值直逼活四。
+const FORK = 250_000
+
+// 防御加权：对方威胁略高估，让 AI 偏向防守（可调）。
+// 注意：必须保持 1.0——任何 >1 的偏置都会让 Lv3(深度6) 在镜像对局里退化成互相封堵、
+// 拖到填盘（既成和棋又让搜索在满盘时节点爆炸、奇慢）。深层搜索本身已能自然处理防守。
+const DEFENSE = 1.0
+
+// 统计 color 全盘的威胁总分。
+//
+// 方法：沿四个方向滑动长度 5 的窗口；只统计“窗口起点恰好是该色棋子、且起点前一格不是同色”的窗口，
+// 即以每段棋型的左端为锚点，避免同一条线上的同一棋型被重复计分。
+// 窗口内的空位天然支持跳三/跳四等带间隔棋型；两端开放性按该色棋子的实际首末子外侧一格计算，
+// 据此区分活/眠（冲四 `X_XXX`、活三 `_XXX_`、跳三 `_X_XX_` 等均能被正确识别）。
+//
+// 注意：本函数在搜索里会被调用数十万次（多数用于走法排序），
+// 因此完全内联（不做子函数调用、尽量少做数组/乘法运算），是整盘棋的性能热点。
+function colorScore(board: Board, color: Color): number {
+  const S = SIZE
+  const b = board
+  let score = 0
+  let threats = 0 // 活威胁（三/四/五）数量，用于分叉加成
+  for (let y = 0; y < S; y++) {
+    const row = b[y]
+    for (let x = 0; x < S; x++) {
+      if (row[x] !== color) continue
+      for (let d = 0; d < 4; d++) {
+        const dx = DXS[d], dy = DYS[d]
+        // 锚点：起点前一格不是同色，否则交由更靠左的起点统计
+        const px = x - dx, py = y - dy
+        if (px >= 0 && py >= 0 && px < S && py < S && b[py][px] === color) continue
+        // 窗口必须完整落在棋盘内（窗口内五格已保证不越界）
+        const ex = x + dx * 4, ey = y + dy * 4
+        if (ex < 0 || ey < 0 || ex >= S || ey >= S) continue
+        // 扫描窗口：cnt(同色数)、opp(对方数)、ls(最后一个同色子的相对位置)
+        let cnt = 1, opp = 0, ls = 0
+        let nx = x + dx, ny = y + dy
+        for (let k = 1; k < 5; k++) {
+          const c = b[ny][nx]
+          if (c === color) {
+            cnt++
+            ls = k
+          } else if (c !== null) {
+            opp++
+          }
+          nx += dx
+          ny += dy
+        }
+        // 窗口内混入对方棋子 => 不可能连成五，跳过
+        if (opp > 0) continue
+        // 两端开放性：起点前一格（必非同色，只可能是空/被堵）与末子后一格
+        const openL = px >= 0 && py >= 0 && px < S && py < S && b[py][px] === null
+        const rx = x + (ls + 1) * dx, ry = y + (ls + 1) * dy
+        const openR = rx >= 0 && ry >= 0 && rx < S && ry < S && b[ry][rx] === null
+        // 棋型分值（内联分类）
+        if (cnt >= 5) {
+          score += SCORE.FIVE
+          threats++
+        } else if (cnt === 4) {
+          if (openL && openR) {
+            score += SCORE.LIVE_FOUR
+            threats++
+          } else if (openL || openR) {
+            score += SCORE.RUSH_FOUR
+            threats++
+          } else {
+            score += SCORE.DEAD_FOUR
+          }
+        } else if (cnt === 3) {
+          if (openL && openR) {
+            score += SCORE.LIVE_THREE
+            threats++
+          } else if (openL || openR) {
+            // 眠三不构成“必须应”的威胁，不计入分叉
+            score += SCORE.SLEEP_THREE
+          }
+        } else if (cnt === 2) {
+          if (openL && openR) score += SCORE.LIVE_TWO
+          else if (openL || openR) score += SCORE.SLEEP_TWO
+        } else if (openL && openR) {
+          score += SCORE.SINGLE
+        }
       }
     }
   }
-  return self - other * 1.1
+  // 分叉加成：两个及以上活威胁 => 连杀结构
+  if (threats >= 2) score += FORK * (threats - 1)
+  return score
+}
+
+// 站在 color 的视角评估整个棋盘：己方得分 - 对方得分（对方加权以偏向防守）
+export function evaluate(board: Board, color: Color): number {
+  return colorScore(board, color) - colorScore(board, color === 'black' ? 'white' : 'black') * DEFENSE
 }

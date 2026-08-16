@@ -19,11 +19,13 @@ const WIN_FLASH = 1000 // 齐闪阶段总时长（ms）
 const WIN_GOLD = '#ffd24a'
 
 // 棋盘覆盖标记：提示/预演用。color 为 CSS 颜色，label 可选（如预演步序号）。
+// labelColor 可指定数字颜色（默认与 color 同色）；渲染时数字带深色描边保证可读。
 export interface Overlay {
   x: number
   y: number
   color: string
   label?: string
+  labelColor?: string
 }
 
 // 预加载古风玉石棋子贴图（模块级，只加载一次）。贴图未就绪则回退圆形绘制。
@@ -211,10 +213,14 @@ export function BoardCanvas({
           ctx.lineWidth = 3
           ctx.stroke()
           if (o.label) {
-            ctx.fillStyle = o.color
             ctx.font = `bold ${CELL * 0.5}px sans-serif`
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
+            // 深色描边 + 指定颜色填充，确保序号在任意棋盘底色上都清晰。
+            ctx.lineWidth = Math.max(2, Math.round(CELL * 0.12))
+            ctx.strokeStyle = 'rgba(50,30,5,0.8)'
+            ctx.strokeText(o.label, cx, cy)
+            ctx.fillStyle = o.labelColor ?? o.color
             ctx.fillText(o.label, cx, cy)
           }
         }

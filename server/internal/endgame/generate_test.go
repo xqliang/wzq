@@ -144,7 +144,7 @@ func TestGenerateLevels(t *testing.T) {
 	if os.Getenv("GEN") == "" {
 		t.Skip("set GEN=1 to run the level generator")
 	}
-	need := map[int]int{2: 6, 3: 6, 4: 4, 5: 3}
+	need := map[int]int{2: 9, 3: 9, 4: 6, 5: 6, 6: 4}
 	got := map[int]int{}
 	found := map[string]genCand{}
 	enough := func() bool {
@@ -156,7 +156,7 @@ func TestGenerateLevels(t *testing.T) {
 		return true
 	}
 
-	const maxSeeds = 40000
+	const maxSeeds = 80000
 	for seed := int64(1); seed <= maxSeeds && !enough(); seed++ {
 		rng := rand.New(rand.NewSource(seed))
 		var g grid
@@ -173,10 +173,10 @@ func TestGenerateLevels(t *testing.T) {
 			if hasAnyFive(&g) {
 				break // 出现五连，本局结束
 			}
-			// 每次白方落子后，轮到黑方：检查黑方是否 2..5 步必胜。
-			if color == gomoku.White && len(stones) >= 8 && len(stones) <= 22 {
-				d := minMateDepth(&g, gomoku.Black, 5)
-				if d >= 2 && d <= 5 {
+			// 每次白方落子后，轮到黑方：检查黑方是否 2..maxMateSteps 步必胜。
+			if color == gomoku.White && len(stones) >= 8 && len(stones) <= 24 {
+				d := minMateDepth(&g, gomoku.Black, maxMateSteps)
+				if d >= 2 && d <= maxMateSteps {
 					key := canon(stones)
 					if _, ok := found[key]; !ok {
 						found[key] = genCand{append([]Stone(nil), stones...), d}
@@ -200,7 +200,7 @@ func TestGenerateLevels(t *testing.T) {
 		return len(cands[i].stones) < len(cands[j].stones)
 	})
 
-	nameByDepth := map[int]string{2: "活三杀", 3: "四三杀", 4: "连环杀", 5: "胜势残局"}
+	nameByDepth := map[int]string{2: "活三杀", 3: "四三杀", 4: "连环杀", 5: "胜势残局", 6: "步步紧逼"}
 	t.Logf("generated: d2=%d d3=%d d4=%d d5=%d (total %d)", got[2], got[3], got[4], got[5], len(cands))
 
 	idx := 0

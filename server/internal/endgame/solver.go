@@ -6,6 +6,10 @@ import "github.com/wzq/gomoku/internal/gomoku"
 
 const size = gomoku.Size
 
+// maxMateSteps 是残局解算支持的最大必胜步数（VCF 连续冲四），
+// 决定 MinSteps/AcceptedAnswers/HintLine 的搜索上限。
+const maxMateSteps = 6
+
 type grid [size][size]gomoku.Color
 
 func inBounds(x, y int) bool { return x >= 0 && y >= 0 && x < size && y < size }

@@ -144,7 +144,7 @@ func TestGenerateLevels(t *testing.T) {
 	if os.Getenv("GEN") == "" {
 		t.Skip("set GEN=1 to run the level generator")
 	}
-	need := map[int]int{2: 9, 3: 9, 4: 6, 5: 6, 6: 4}
+	need := map[int]int{2: 9, 3: 9, 4: 6, 5: 6, 6: 4, 7: 3}
 	got := map[int]int{}
 	found := map[string]genCand{}
 	enough := func() bool {
@@ -200,7 +200,7 @@ func TestGenerateLevels(t *testing.T) {
 		return len(cands[i].stones) < len(cands[j].stones)
 	})
 
-	nameByDepth := map[int]string{2: "活三杀", 3: "四三杀", 4: "连环杀", 5: "胜势残局", 6: "步步紧逼"}
+	nameByDepth := map[int]string{2: "活三杀", 3: "四三杀", 4: "连环杀", 5: "胜势残局", 6: "步步紧逼", 7: "绝处逢生"}
 	t.Logf("generated: d2=%d d3=%d d4=%d d5=%d (total %d)", got[2], got[3], got[4], got[5], len(cands))
 
 	idx := 0

@@ -8,7 +8,7 @@ const size = gomoku.Size
 
 // maxMateSteps 是残局解算支持的最大必胜步数（VCF 连续冲四），
 // 决定 MinSteps/AcceptedAnswers/HintLine 的搜索上限。
-const maxMateSteps = 6
+const maxMateSteps = 7
 
 type grid [size][size]gomoku.Color
 

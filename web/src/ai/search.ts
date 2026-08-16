@@ -99,7 +99,9 @@ function negamax(board: Board, color: Color, depth: number, alpha: number, beta:
 }
 
 // 顶层决策：根据难度决定搜索深度与随机扰动，返回最佳落子。
-export function bestMove(board: Board, color: Color, level: number): Move {
+// opts.tieRandom=true 时，最高分并列的候选点随机取一（提示用，避免总指同一点）；
+// AI 实际落子不传该选项，保持确定性。
+export function bestMove(board: Board, color: Color, level: number, opts?: { tieRandom?: boolean }): Move {
   const depth = level >= 3 ? 8 : level === 2 ? 6 : 4
   const noise = level === 1 ? 0.2 : 0 // 简单档加入随机性，让 AI 偶尔“走歪”
   const opp: Color = color === 'black' ? 'white' : 'black'
@@ -138,11 +140,22 @@ export function bestMove(board: Board, color: Color, level: number): Move {
   // 5. 常规搜索：对（排序后的）候选点做负极大值 + α-β 搜索取最优。
   let best = -Infinity
   let choice = cands[0] ?? { x: 7, y: 7 }
+  const ties: { x: number; y: number }[] = []
   for (const c of orderedCandidates(board, color, CAP)) {
     const nb = applyMove(board, { x: c.x, y: c.y, color })
     let score = -negamax(nb, opp, depth - 1, -Infinity, Infinity, c.x, c.y)
     if (noise) score += (Math.random() - 0.5) * Math.abs(score || 1) * noise
-    if (score > best) { best = score; choice = c }
+    if (score > best) {
+      best = score
+      choice = c
+      ties.length = 0
+      ties.push(c)
+    } else if (score === best) {
+      ties.push(c)
+    }
+  }
+  if (opts?.tieRandom && ties.length > 1) {
+    choice = ties[Math.floor(Math.random() * ties.length)]
   }
   return { ...choice, color }
 }

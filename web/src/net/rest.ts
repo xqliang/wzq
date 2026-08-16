@@ -86,13 +86,17 @@ export async function login(username: string, password: string): Promise<User> {
 }
 
 // 上报人机对局结果，服务端返回本局经验增量、最新用户信息与段位结算。moves 为总手数（可选）。
-export const reportAiResult = (level: number, win: boolean, moves = 0) =>
-  req('/api/ai/result', 'POST', { level, win, moves }) as Promise<{
+// 返回的最新用户信息会同步进 currentUser 缓存，保证后续段位显示是最新的。
+export async function reportAiResult(level: number, win: boolean, moves = 0) {
+  const r = (await req('/api/ai/result', 'POST', { level, win, moves })) as {
     expDelta: number
     coinDelta: number
     user: User
     rank: RankSettle
-  }>
+  }
+  currentUser = r.user
+  return r
+}
 
 // 模拟「看广告双倍」：发放一笔金币奖励（服务端限额防刷），返回本次发放量与最新余额。
 export const adBonus = (coins: number) =>

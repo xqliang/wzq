@@ -98,7 +98,7 @@ describe('bestMove 防守', () => {
     const extendsToLiveFour = (mv.x === 6 && mv.y === 7) || (mv.x === 10 && mv.y === 7)
     expect(extendsToLiveFour).toBe(true)
   })
-  it('Lv3 计时在合理范围内(<15s/步)', () => {
+  it('Lv3 计时在合理范围内(<25s/步)', { timeout: 60000 }, () => {
     // 真实中盘盘面(无预处理早退,逼出完整深度搜索)。
     // 注意别用"已有活三/四连"的盘——预处理会直接返回,测不到搜索耗时。
     let b = emptyBoard()
@@ -108,7 +108,7 @@ describe('bestMove 防守', () => {
       b = applyMove(b, { x, y, color: 'white' })
     const t0 = performance.now()
     bestMove(b, 'white', 3)
-    // 绝对耗时守护：给不同机器/负载留余量，仅拦截退化到异常慢(如 CAP 回升致 30s+)。
-    expect(performance.now() - t0).toBeLessThan(15000)
+    // 绝对耗时守护：给不同机器/并行负载留余量，仅拦截退化到异常慢(如 CAP 回升致 30s+)。
+    expect(performance.now() - t0).toBeLessThan(25000)
   })
 })

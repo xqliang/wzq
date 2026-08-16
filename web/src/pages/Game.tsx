@@ -144,11 +144,11 @@ export function Game() {
   // 预演双方各再走 3 步（共 6 手）的分步配色（绿/蓝/紫，深浅区分先后）。
   const PREVIEW_COLORS = ['#2ecc71', '#3498db', '#9b59b6', '#27ae60', '#2980b9', '#8e44ad']
 
-  // 💡提示：用 AI 为我方算一手推荐并高亮。
+  // 💡提示：用 AI 为我方算一手推荐并高亮；最高分并列时随机取一，避免总指同一点。
   const onHint = () => {
     const store = useGame.getState()
     if (store.winner || store.turn !== store.myColor) return
-    const mv = bestMove(store.board, store.myColor, 3)
+    const mv = bestMove(store.board, store.myColor, 3, { tieRandom: true })
     setHint({ x: mv.x, y: mv.y })
     playSfx('button')
   }
@@ -387,7 +387,12 @@ export function Game() {
   return (
     <div className="game screen">
       <PlayerBar
-        me={{ nickname: '我', avatar: 'avatar_01', rankLabel: rankLabel(preTierRef.current), color: g.myColor } as PlayerInfo}
+        me={{
+          nickname: '我',
+          avatar: 'avatar_01',
+          rankLabel: rankLabel(rankResult?.tier ?? preTierRef.current),
+          color: g.myColor,
+        } as PlayerInfo}
         opp={{
           nickname: st.mode === 'ai' ? 'AI大师' : '对手',
           avatar: 'avatar_02',

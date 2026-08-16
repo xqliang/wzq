@@ -109,61 +109,26 @@ var Levels = []Level{
 	{
 		ID: "1-4", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
 		Stones: []Stone{
-			{7, 7, gomoku.Black}, {5, 5, gomoku.Black}, {6, 4, gomoku.Black}, {4, 6, gomoku.Black},
-			{6, 6, gomoku.White}, {6, 5, gomoku.White}, {5, 6, gomoku.White}, {8, 7, gomoku.White},
-		},
-	},
-	{
-		ID: "1-5", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
-		Stones: []Stone{
-			{7, 7, gomoku.Black}, {7, 8, gomoku.Black}, {7, 9, gomoku.Black}, {8, 7, gomoku.Black},
-			{5, 6, gomoku.White}, {6, 6, gomoku.White}, {8, 8, gomoku.White}, {9, 7, gomoku.White},
-		},
-	},
-	{
-		ID: "1-6", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
-		Stones: []Stone{
 			{6, 6, gomoku.Black}, {7, 7, gomoku.Black}, {7, 8, gomoku.Black}, {8, 8, gomoku.Black},
 			{6, 5, gomoku.White}, {6, 7, gomoku.White}, {6, 8, gomoku.White}, {6, 9, gomoku.White},
 		},
 	},
 	{
-		ID: "1-7", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
-		Stones: []Stone{
-			{6, 7, gomoku.Black}, {7, 5, gomoku.Black}, {7, 6, gomoku.Black}, {7, 7, gomoku.Black},
-			{5, 7, gomoku.White}, {6, 6, gomoku.White}, {6, 8, gomoku.White}, {8, 8, gomoku.White},
-		},
-	},
-	{
-		ID: "1-8", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
-		Stones: []Stone{
-			{6, 8, gomoku.Black}, {7, 7, gomoku.Black}, {7, 8, gomoku.Black}, {8, 8, gomoku.Black},
-			{5, 7, gomoku.White}, {6, 6, gomoku.White}, {7, 9, gomoku.White}, {8, 6, gomoku.White},
-		},
-	},
-	{
-		ID: "1-9", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
-		Stones: []Stone{
-			{5, 6, gomoku.Black}, {6, 5, gomoku.Black}, {7, 4, gomoku.Black}, {7, 7, gomoku.Black},
-			{4, 5, gomoku.White}, {6, 6, gomoku.White}, {6, 7, gomoku.White}, {8, 7, gomoku.White},
-		},
-	},
-	{
-		ID: "1-10", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
+		ID: "1-5", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
 		Stones: []Stone{
 			{4, 6, gomoku.Black}, {6, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 7, gomoku.Black}, {8, 5, gomoku.Black},
 			{3, 7, gomoku.White}, {5, 7, gomoku.White}, {6, 6, gomoku.White}, {7, 5, gomoku.White}, {7, 8, gomoku.White},
 		},
 	},
 	{
-		ID: "1-11", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
+		ID: "1-6", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
 		Stones: []Stone{
 			{7, 7, gomoku.Black}, {8, 7, gomoku.Black}, {7, 8, gomoku.Black}, {7, 9, gomoku.Black}, {7, 5, gomoku.Black}, {9, 6, gomoku.Black},
 			{8, 8, gomoku.White}, {9, 7, gomoku.White}, {6, 6, gomoku.White}, {5, 6, gomoku.White}, {5, 7, gomoku.White}, {7, 6, gomoku.White},
 		},
 	},
 	{
-		ID: "1-12", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
+		ID: "1-7", Chapter: 1, Name: "活三杀", Difficulty: 2, ToMove: gomoku.Black,
 		Stones: []Stone{
 			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 5, gomoku.Black}, {6, 5, gomoku.Black}, {8, 7, gomoku.Black}, {8, 8, gomoku.Black}, {9, 6, gomoku.Black}, {9, 7, gomoku.Black},
 			{6, 6, gomoku.White}, {5, 7, gomoku.White}, {7, 4, gomoku.White}, {8, 5, gomoku.White}, {5, 4, gomoku.White}, {6, 3, gomoku.White}, {7, 8, gomoku.White}, {5, 6, gomoku.White},
@@ -187,68 +152,47 @@ var Levels = []Level{
 	{
 		ID: "2-3", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
 		Stones: []Stone{
-			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 5, gomoku.Black}, {6, 5, gomoku.Black}, {8, 7, gomoku.Black}, {9, 6, gomoku.Black},
-			{6, 6, gomoku.White}, {5, 7, gomoku.White}, {7, 4, gomoku.White}, {8, 5, gomoku.White}, {5, 4, gomoku.White}, {9, 4, gomoku.White},
-		},
-	},
-	{
-		ID: "2-4", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
-		Stones: []Stone{
-			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 5, gomoku.Black}, {6, 7, gomoku.Black}, {5, 6, gomoku.Black}, {8, 5, gomoku.Black},
-			{6, 6, gomoku.White}, {5, 7, gomoku.White}, {7, 4, gomoku.White}, {6, 3, gomoku.White}, {5, 2, gomoku.White}, {9, 4, gomoku.White},
-		},
-	},
-	{
-		ID: "2-5", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
-		Stones: []Stone{
-			{5, 6, gomoku.Black}, {6, 6, gomoku.Black}, {6, 8, gomoku.Black}, {7, 6, gomoku.Black}, {7, 7, gomoku.Black},
-			{4, 6, gomoku.White}, {5, 7, gomoku.White}, {5, 8, gomoku.White}, {6, 7, gomoku.White}, {7, 8, gomoku.White},
-		},
-	},
-	{
-		ID: "2-6", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
-		Stones: []Stone{
 			{5, 6, gomoku.Black}, {5, 7, gomoku.Black}, {6, 8, gomoku.Black}, {7, 7, gomoku.Black}, {8, 6, gomoku.Black},
 			{6, 5, gomoku.White}, {6, 6, gomoku.White}, {6, 7, gomoku.White}, {8, 8, gomoku.White}, {9, 5, gomoku.White},
 		},
 	},
 	{
-		ID: "2-7", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
+		ID: "2-4", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
 		Stones: []Stone{
 			{5, 4, gomoku.Black}, {5, 6, gomoku.Black}, {6, 7, gomoku.Black}, {7, 5, gomoku.Black}, {7, 6, gomoku.Black}, {7, 7, gomoku.Black},
 			{4, 3, gomoku.White}, {6, 3, gomoku.White}, {6, 5, gomoku.White}, {6, 6, gomoku.White}, {7, 4, gomoku.White}, {8, 5, gomoku.White},
 		},
 	},
 	{
-		ID: "2-8", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
+		ID: "2-5", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
 		Stones: []Stone{
 			{6, 4, gomoku.Black}, {6, 8, gomoku.Black}, {7, 5, gomoku.Black}, {7, 7, gomoku.Black}, {8, 6, gomoku.Black}, {8, 7, gomoku.Black},
 			{5, 3, gomoku.White}, {6, 6, gomoku.White}, {7, 6, gomoku.White}, {7, 9, gomoku.White}, {8, 5, gomoku.White}, {9, 5, gomoku.White},
 		},
 	},
 	{
-		ID: "2-9", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
+		ID: "2-6", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
 		Stones: []Stone{
 			{5, 5, gomoku.Black}, {6, 2, gomoku.Black}, {6, 3, gomoku.Black}, {6, 6, gomoku.Black}, {7, 7, gomoku.Black}, {8, 5, gomoku.Black},
 			{4, 2, gomoku.White}, {4, 3, gomoku.White}, {4, 4, gomoku.White}, {5, 3, gomoku.White}, {6, 7, gomoku.White}, {7, 6, gomoku.White},
 		},
 	},
 	{
-		ID: "2-10", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
+		ID: "2-7", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
 		Stones: []Stone{
 			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {6, 7, gomoku.Black}, {8, 4, gomoku.Black}, {9, 5, gomoku.Black}, {10, 5, gomoku.Black}, {10, 6, gomoku.Black}, {9, 7, gomoku.Black},
 			{6, 6, gomoku.White}, {7, 5, gomoku.White}, {5, 7, gomoku.White}, {8, 5, gomoku.White}, {8, 6, gomoku.White}, {5, 6, gomoku.White}, {7, 3, gomoku.White}, {9, 6, gomoku.White},
 		},
 	},
 	{
-		ID: "2-11", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
+		ID: "2-8", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
 		Stones: []Stone{
 			{7, 7, gomoku.Black}, {5, 5, gomoku.Black}, {4, 6, gomoku.Black}, {6, 4, gomoku.Black}, {3, 6, gomoku.Black}, {4, 7, gomoku.Black}, {7, 8, gomoku.Black}, {3, 8, gomoku.Black},
 			{6, 6, gomoku.White}, {5, 6, gomoku.White}, {6, 5, gomoku.White}, {7, 3, gomoku.White}, {6, 7, gomoku.White}, {4, 5, gomoku.White}, {7, 6, gomoku.White}, {5, 8, gomoku.White},
 		},
 	},
 	{
-		ID: "2-12", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
+		ID: "2-9", Chapter: 2, Name: "四三杀", Difficulty: 3, ToMove: gomoku.Black,
 		Stones: []Stone{
 			{7, 7, gomoku.Black}, {5, 6, gomoku.Black}, {4, 5, gomoku.Black}, {6, 5, gomoku.Black}, {8, 4, gomoku.Black}, {7, 3, gomoku.Black}, {6, 3, gomoku.Black}, {5, 3, gomoku.Black}, {5, 4, gomoku.Black},
 			{6, 7, gomoku.White}, {6, 6, gomoku.White}, {7, 5, gomoku.White}, {5, 7, gomoku.White}, {7, 4, gomoku.White}, {6, 2, gomoku.White}, {7, 1, gomoku.White}, {8, 3, gomoku.White}, {7, 2, gomoku.White},

@@ -72,6 +72,24 @@ describe('bestMove 防守', () => {
     const blocks = (mv.x === 4 && mv.y === 7) || (mv.x === 8 && mv.y === 7)
     expect(blocks).toBe(true)
   })
+  it('Lv1 应堵对方活三（己方无更快胜招）', () => {
+    // 用户盘面：黑竖活三 (2,2)(2,3)(2,4) 两端 (2,1)(2,5) 空，白另有横眠三
+    let b = emptyBoard()
+    for (const [x, y] of [[2, 2], [2, 3], [2, 4], [4, 3], [3, 4]] as const) b = applyMove(b, { x, y, color: 'black' })
+    for (const [x, y] of [[3, 2], [4, 2], [5, 2], [5, 3]] as const) b = applyMove(b, { x, y, color: 'white' })
+    const mv = bestMove(b, 'white', 1)
+    const blocks = (mv.x === 2 && mv.y === 1) || (mv.x === 2 && mv.y === 5)
+    expect(blocks).toBe(true)
+  })
+  it('Lv1 己方活四机会优先于堵对方活三', () => {
+    // 白活三 (3,4)(4,4)(5,4) 两端空，同时黑竖活三 (1,1)(1,2)(1,3)
+    let b = emptyBoard()
+    for (const [x, y] of [[1, 1], [1, 2], [1, 3]] as const) b = applyMove(b, { x, y, color: 'black' })
+    for (const [x, y] of [[3, 4], [4, 4], [5, 4]] as const) b = applyMove(b, { x, y, color: 'white' })
+    const mv = bestMove(b, 'white', 1)
+    const makesLiveFour = (mv.x === 2 && mv.y === 4) || (mv.x === 6 && mv.y === 4)
+    expect(makesLiveFour).toBe(true)
+  })
   it('Lv1 己方活三应延成活四(而非跳四)', () => {
     // 白活三 (7,7)(7,8)(7,9)：应下 (7,6)/(7,10) 成连活四，而不是 (7,5) 成跳四
     let b = emptyBoard()

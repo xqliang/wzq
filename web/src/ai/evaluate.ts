@@ -54,22 +54,26 @@ function colorScore(board: Board, color: Color): number {
         // 窗口必须完整落在棋盘内（窗口内五格已保证不越界）
         const ex = x + dx * 4, ey = y + dy * 4
         if (ex < 0 || ey < 0 || ex >= S || ey >= S) continue
-        // 扫描窗口：cnt(同色数)、opp(对方数)、ls(最后一个同色子的相对位置)
-        let cnt = 1, opp = 0, ls = 0
+        // 扫描窗口：cnt(同色数)、oppIn(窗口内部[第1~3格]的对方数)、ls(最后一个同色子的相对位置)
+        let cnt = 1, oppIn = 0, ls = 0
         let nx = x + dx, ny = y + dy
         for (let k = 1; k < 5; k++) {
           const c = b[ny][nx]
           if (c === color) {
             cnt++
             ls = k
-          } else if (c !== null) {
-            opp++
+          } else if (c !== null && k < 4) {
+            // 第4格(右端)为对方只代表右端被堵，不算“打断线段”
+            oppIn++
           }
           nx += dx
           ny += dy
         }
-        // 窗口内混入对方棋子 => 不可能连成五，跳过
-        if (opp > 0) continue
+        // 窗口内部混入对方棋子 => 该段不可能连成五，跳过。
+        // 注意不能把“右端被堵”一并跳过：窗口锚定在左端，白活四 `_WWWW_` 被黑堵住
+        // 右端后，左端仍是冲四成五点；若整窗跳过，白方四会凭空“消失”，AI 会低估
+        // 甚至错失成四/成五的着法（左端被堵则仍由 openR 正确识别）。
+        if (oppIn > 0) continue
         // 两端开放性：起点前一格（必非同色，只可能是空/被堵）与末子后一格
         const openL = px >= 0 && py >= 0 && px < S && py < S && b[py][px] === null
         const rx = x + (ls + 1) * dx, ry = y + (ls + 1) * dy

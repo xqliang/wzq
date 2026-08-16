@@ -30,6 +30,14 @@ describe('evaluate', () => {
     // 修复后每个只值眠三 1000；若被误判为活三分叉，会额外 +250000
     expect(evaluate(b, 'black')).toBeLessThan(50000)
   })
+  it('连四右端被堵仍算冲四(左端可成五)，不得凭空消失', () => {
+    // 白活四 _WWWW_ 被黑堵住右端(7,10)：左端(7,5)仍是冲四成五点
+    let b = emptyBoard()
+    for (const x of [6, 7, 8, 9]) b = applyMove(b, { x, y: 7, color: 'white' })
+    b = applyMove(b, { x: 10, y: 7, color: 'black' })
+    // 修复前该窗口整窗跳过 => 白方四“消失”，评估接近 0
+    expect(evaluate(b, 'white')).toBeGreaterThan(50000)
+  })
 })
 
 import { bestMove } from './search'
@@ -63,6 +71,14 @@ describe('bestMove 防守', () => {
     const mv = bestMove(b, 'white', 1)
     const blocks = (mv.x === 4 && mv.y === 7) || (mv.x === 8 && mv.y === 7)
     expect(blocks).toBe(true)
+  })
+  it('Lv1 己方活三应延成活四(而非跳四)', () => {
+    // 白活三 (7,7)(7,8)(7,9)：应下 (7,6)/(7,10) 成连活四，而不是 (7,5) 成跳四
+    let b = emptyBoard()
+    for (const x of [7, 8, 9]) b = applyMove(b, { x, y: 7, color: 'white' })
+    const mv = bestMove(b, 'white', 1)
+    const extendsToLiveFour = (mv.x === 6 && mv.y === 7) || (mv.x === 10 && mv.y === 7)
+    expect(extendsToLiveFour).toBe(true)
   })
   it('Lv3 计时在合理范围内(<3.5s/步)', () => {
     let b = emptyBoard()

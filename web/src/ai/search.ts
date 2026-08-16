@@ -36,7 +36,7 @@ function orderedCandidates(board: Board, color: Color, cap: number): { x: number
   return scored.slice(0, cap).map((o) => o.c)
 }
 
-const CAP = 12 // 每个节点最多考虑的候选点数
+const CAP = 6 // 每个节点最多考虑的候选点数
 
 // 判断 (x,y) 刚落下的 color 子是否构成"活四"：四连且两端皆空。
 // 活四是必胜（对手一手只能堵一端），浅层搜索常停在"双方各一活四"的叶子而漏判，
@@ -100,7 +100,7 @@ function negamax(board: Board, color: Color, depth: number, alpha: number, beta:
 
 // 顶层决策：根据难度决定搜索深度与随机扰动，返回最佳落子。
 export function bestMove(board: Board, color: Color, level: number): Move {
-  const depth = level >= 3 ? 6 : level === 2 ? 4 : 3
+  const depth = level >= 3 ? 8 : level === 2 ? 6 : 4
   const noise = level === 1 ? 0.2 : 0 // 简单档加入随机性，让 AI 偶尔“走歪”
   const opp: Color = color === 'black' ? 'white' : 'black'
   const cands = candidates(board)

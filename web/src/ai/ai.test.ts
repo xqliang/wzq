@@ -98,13 +98,17 @@ describe('bestMove 防守', () => {
     const extendsToLiveFour = (mv.x === 6 && mv.y === 7) || (mv.x === 10 && mv.y === 7)
     expect(extendsToLiveFour).toBe(true)
   })
-  it('Lv3 计时在合理范围内(<3.5s/步)', () => {
+  it('Lv3 计时在合理范围内(<15s/步)', () => {
+    // 真实中盘盘面(无预处理早退,逼出完整深度搜索)。
+    // 注意别用"已有活三/四连"的盘——预处理会直接返回,测不到搜索耗时。
     let b = emptyBoard()
-    for (const [x, y] of [[7, 7], [8, 8], [7, 8], [8, 7], [6, 6]] as const)
-      b = applyMove(b, { x, y, color: (x + y) % 2 ? 'black' : 'white' })
+    for (const [x, y] of [[4, 4], [7, 7], [9, 3], [6, 9], [12, 7], [3, 10], [8, 11], [10, 5], [2, 6], [7, 12], [13, 8], [5, 2]] as const)
+      b = applyMove(b, { x, y, color: 'black' })
+    for (const [x, y] of [[3, 3], [5, 8], [8, 4], [10, 9], [6, 6], [11, 5], [4, 11]] as const)
+      b = applyMove(b, { x, y, color: 'white' })
     const t0 = performance.now()
     bestMove(b, 'white', 3)
-    // 绝对耗时守护：给不同机器/负载留余量，仅拦截退化到秒级以上的异常慢。
-    expect(performance.now() - t0).toBeLessThan(3500)
+    // 绝对耗时守护：给不同机器/负载留余量，仅拦截退化到异常慢(如 CAP 回升致 30s+)。
+    expect(performance.now() - t0).toBeLessThan(15000)
   })
 })

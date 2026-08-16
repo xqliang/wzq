@@ -128,6 +128,55 @@ var Levels = []Level{
 			{6, 6, gomoku.White}, {7, 5, gomoku.White}, {6, 8, gomoku.White}, {8, 7, gomoku.White}, {8, 5, gomoku.White}, {5, 9, gomoku.White}, {9, 6, gomoku.White}, {7, 4, gomoku.White},
 		},
 	},
+	{
+		ID: "3-4", Chapter: 3, Name: "连环杀", Difficulty: 4, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 5, gomoku.Black}, {6, 7, gomoku.Black}, {8, 9, gomoku.Black}, {8, 7, gomoku.Black}, {6, 5, gomoku.Black}, {6, 8, gomoku.Black},
+			{6, 6, gomoku.White}, {8, 8, gomoku.White}, {7, 8, gomoku.White}, {8, 4, gomoku.White}, {8, 5, gomoku.White}, {9, 8, gomoku.White}, {9, 7, gomoku.White}, {7, 9, gomoku.White},
+		},
+	},
+	{
+		ID: "3-5", Chapter: 3, Name: "连环杀", Difficulty: 4, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {6, 8, gomoku.Black}, {8, 6, gomoku.Black}, {10, 8, gomoku.Black}, {6, 5, gomoku.Black}, {9, 5, gomoku.Black}, {8, 5, gomoku.Black}, {8, 7, gomoku.Black}, {9, 4, gomoku.Black},
+			{6, 6, gomoku.White}, {5, 5, gomoku.White}, {9, 7, gomoku.White}, {9, 6, gomoku.White}, {7, 4, gomoku.White}, {10, 4, gomoku.White}, {10, 5, gomoku.White}, {8, 4, gomoku.White}, {5, 9, gomoku.White},
+		},
+	},
+	{
+		ID: "3-6", Chapter: 3, Name: "连环杀", Difficulty: 4, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {6, 6, gomoku.Black}, {5, 7, gomoku.Black}, {8, 5, gomoku.Black}, {6, 8, gomoku.Black}, {8, 6, gomoku.Black}, {7, 8, gomoku.Black}, {8, 8, gomoku.Black}, {7, 9, gomoku.Black},
+			{7, 6, gomoku.White}, {6, 7, gomoku.White}, {5, 8, gomoku.White}, {4, 8, gomoku.White}, {9, 4, gomoku.White}, {9, 5, gomoku.White}, {8, 4, gomoku.White}, {5, 5, gomoku.White}, {4, 6, gomoku.White},
+		},
+	},
+	{
+		ID: "3-7", Chapter: 3, Name: "连环杀", Difficulty: 4, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 5, gomoku.Black}, {6, 7, gomoku.Black}, {8, 9, gomoku.Black}, {8, 7, gomoku.Black}, {6, 5, gomoku.Black}, {6, 8, gomoku.Black}, {7, 10, gomoku.Black},
+			{6, 6, gomoku.White}, {8, 8, gomoku.White}, {7, 8, gomoku.White}, {8, 4, gomoku.White}, {8, 5, gomoku.White}, {9, 8, gomoku.White}, {9, 7, gomoku.White}, {7, 9, gomoku.White}, {10, 9, gomoku.White},
+		},
+	},
+	{
+		ID: "3-8", Chapter: 3, Name: "连环杀", Difficulty: 4, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {7, 5, gomoku.Black}, {6, 7, gomoku.Black}, {8, 9, gomoku.Black}, {8, 7, gomoku.Black}, {6, 5, gomoku.Black}, {6, 8, gomoku.Black}, {7, 10, gomoku.Black}, {6, 10, gomoku.Black},
+			{6, 6, gomoku.White}, {8, 8, gomoku.White}, {7, 8, gomoku.White}, {8, 4, gomoku.White}, {8, 5, gomoku.White}, {9, 8, gomoku.White}, {9, 7, gomoku.White}, {7, 9, gomoku.White}, {10, 9, gomoku.White}, {5, 4, gomoku.White},
+		},
+	},
+	{
+		ID: "3-9", Chapter: 3, Name: "连环杀", Difficulty: 4, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {8, 6, gomoku.Black}, {6, 9, gomoku.Black}, {6, 8, gomoku.Black}, {5, 9, gomoku.Black}, {5, 6, gomoku.Black}, {9, 8, gomoku.Black}, {4, 9, gomoku.Black}, {5, 10, gomoku.Black},
+			{8, 7, gomoku.White}, {7, 8, gomoku.White}, {9, 6, gomoku.White}, {8, 9, gomoku.White}, {6, 7, gomoku.White}, {9, 5, gomoku.White}, {9, 7, gomoku.White}, {4, 10, gomoku.White}, {3, 9, gomoku.White}, {5, 11, gomoku.White},
+		},
+	},
+	{
+		ID: "3-10", Chapter: 3, Name: "连环杀", Difficulty: 4, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {6, 8, gomoku.Black}, {8, 6, gomoku.Black}, {10, 8, gomoku.Black}, {6, 5, gomoku.Black}, {9, 5, gomoku.Black}, {8, 5, gomoku.Black}, {8, 7, gomoku.Black}, {9, 4, gomoku.Black}, {4, 5, gomoku.Black},
+			{6, 6, gomoku.White}, {5, 5, gomoku.White}, {9, 7, gomoku.White}, {9, 6, gomoku.White}, {7, 4, gomoku.White}, {10, 4, gomoku.White}, {10, 5, gomoku.White}, {8, 4, gomoku.White}, {5, 9, gomoku.White}, {10, 3, gomoku.White},
+		},
+	},
 	// —— 第四章 · 胜势残局（黑方 5 步必胜）——
 	{
 		ID: "4-1", Chapter: 4, Name: "胜势残局", Difficulty: 5, ToMove: gomoku.Black,
@@ -141,6 +190,20 @@ var Levels = []Level{
 		Stones: []Stone{
 			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {6, 7, gomoku.Black}, {9, 8, gomoku.Black}, {6, 8, gomoku.Black}, {5, 8, gomoku.Black}, {4, 8, gomoku.Black}, {9, 7, gomoku.Black}, {6, 9, gomoku.Black},
 			{6, 6, gomoku.White}, {7, 5, gomoku.White}, {8, 7, gomoku.White}, {5, 7, gomoku.White}, {10, 8, gomoku.White}, {8, 5, gomoku.White}, {7, 8, gomoku.White}, {9, 6, gomoku.White}, {8, 9, gomoku.White},
+		},
+	},
+	{
+		ID: "4-3", Chapter: 4, Name: "胜势残局", Difficulty: 5, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {8, 4, gomoku.Black}, {8, 5, gomoku.Black}, {9, 4, gomoku.Black}, {8, 3, gomoku.Black}, {7, 4, gomoku.Black}, {6, 5, gomoku.Black},
+			{6, 6, gomoku.White}, {7, 5, gomoku.White}, {9, 5, gomoku.White}, {5, 7, gomoku.White}, {6, 7, gomoku.White}, {8, 6, gomoku.White}, {6, 4, gomoku.White}, {5, 6, gomoku.White},
+		},
+	},
+	{
+		ID: "4-4", Chapter: 4, Name: "胜势残局", Difficulty: 5, ToMove: gomoku.Black,
+		Stones: []Stone{
+			{7, 7, gomoku.Black}, {7, 6, gomoku.Black}, {6, 7, gomoku.Black}, {9, 8, gomoku.Black}, {6, 8, gomoku.Black}, {5, 8, gomoku.Black}, {4, 8, gomoku.Black}, {9, 7, gomoku.Black}, {6, 9, gomoku.Black}, {6, 5, gomoku.Black},
+			{6, 6, gomoku.White}, {7, 5, gomoku.White}, {8, 7, gomoku.White}, {5, 7, gomoku.White}, {10, 8, gomoku.White}, {8, 5, gomoku.White}, {7, 8, gomoku.White}, {9, 6, gomoku.White}, {8, 9, gomoku.White}, {9, 9, gomoku.White},
 		},
 	},
 }

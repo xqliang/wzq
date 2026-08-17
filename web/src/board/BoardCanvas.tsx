@@ -192,22 +192,9 @@ export function BoardCanvas({
         const cx = PAD + last.x * CELL
         const cy = PAD + last.y * CELL
         const k = Math.max(0, 1 - elapsed / 200)
-        drawStone(ctx, last.x, last.y, board[last.y][last.x]!, 1, 1 + 0.45 * k * k, theme)
-        if (elapsed < 380) {
-          // 触地双冲击环：亮金主环 + 滞后淡环，扩得更大更醒目（所有特效通用的"砸实"反馈）。
-          for (let i = 0; i < 2; i++) {
-            const e = elapsed - i * 80
-            if (e < 0) continue
-            const q = Math.min(1, e / 380)
-            ctx.beginPath()
-            ctx.arc(cx, cy, CELL * (0.42 + q * 1.05), 0, PI2)
-            ctx.strokeStyle = i === 0 ? `rgba(255,226,150,${0.75 * (1 - q)})` : `rgba(110,72,30,${0.45 * (1 - q)})`
-            ctx.lineWidth = (i === 0 ? 4.5 : 2.5) * (1 - q) + 0.6
-            ctx.stroke()
-          }
-        }
-        // 落子特效（叠加在落下动画之上）：水波纹 / 灰尘 / 无。
+        // 落子水波纹（画在棋子下面）：桌面上从落点向外逐圈扩大的同心圆环，细描边、渐隐，像石子入水。
         drawEffect(ctx, effect, dustRef.current, cx, cy, elapsed, theme.accent)
+        drawStone(ctx, last.x, last.y, board[last.y][last.x]!, 1, 1 + 0.45 * k * k, theme)
         // 最近一手静态标记：白子=描边黄点，黑子=靶心，清晰不刺眼（参考竞品）。
         drawLastMark(ctx, cx, cy, board[last.y][last.x]!)
       }
@@ -446,8 +433,7 @@ function drawLastMark(ctx: CanvasRenderingContext2D, cx: number, cy: number, col
   ctx.restore()
 }
 
-// 落子特效（更炫，配合落子音效）：约 520ms。
-// ripple=中心闪光 + 冲击波双环 + 放射火花；dust=迸屑粒子（重力下坠）+ 亮火花。none=无。
+// 落子特效：桌面上从落点绽开的视觉反馈（水波/火花/墨韵/星星/流焰/爱心），画在棋子下面。
 function drawEffect(
   ctx: CanvasRenderingContext2D,
   effect: Effect,
@@ -458,189 +444,137 @@ function drawEffect(
   accent: string,
 ) {
   const DUR = 700
+  if (elapsed > DUR) return
+  const p = elapsed / DUR
+  ctx.save()
+  ctx.lineCap = 'round'
   if (effect === 'ripple') {
-    ctx.save()
-    ctx.globalCompositeOperation = 'lighter' // 叠加发光：重叠处更亮，冲击更炫目
-    // 中心闪光（前 ~180ms 一瞬，更大更亮）。
-    if (elapsed < 180) {
-      const p = elapsed / 180
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, CELL * 0.85)
-      g.addColorStop(0, `rgba(255,250,220,${0.95 * (1 - p)})`)
-      g.addColorStop(0.5, `rgba(255,205,90,${0.55 * (1 - p)})`)
-      g.addColorStop(1, 'rgba(255,205,90,0)')
-      ctx.fillStyle = g
-      ctx.beginPath()
-      ctx.arc(cx, cy, CELL * 0.85, 0, PI2)
-      ctx.fill()
-    }
-    // 冲击波三环（金 + 主题色），扩得更大更粗。
+    // 水波：三圈同心圆环依次向外扩大、渐隐，像石子入水。
     for (let i = 0; i < 3; i++) {
-      const e = elapsed - i * 80
-      if (e < 0 || e > DUR) continue
-      const p = e / DUR
-      ctx.globalAlpha = (1 - p) * 0.8
-      ctx.strokeStyle = i === 1 ? accent : '#ffd24a'
-      ctx.lineWidth = 4 * (1 - p) + 0.8
+      const e = elapsed - i * 150
+      if (e < 0) continue
+      const q = e / DUR
+      if (q >= 1) continue
+      ctx.globalAlpha = (1 - q) * 0.55
+      ctx.strokeStyle = accent
+      ctx.lineWidth = 2.6 * (1 - q) + 0.6
       ctx.beginPath()
-      ctx.arc(cx, cy, CELL * (0.25 + p * 1.5), 0, PI2)
+      ctx.arc(cx, cy, CELL * (0.16 + q * 1.05), 0, PI2)
       ctx.stroke()
     }
-    // 放射火花（前 ~320ms 迸出，更多更长）。
-    if (elapsed < 320) {
-      const p = elapsed / 320
-      ctx.globalAlpha = 1 - p
-      ctx.strokeStyle = '#fff0b0'
-      ctx.lineWidth = 2.6 * (1 - p) + 0.4
-      ctx.lineCap = 'round'
-      for (let i = 0; i < 12; i++) {
-        const a = (i / 12) * PI2
-        const r0 = CELL * (0.35 + p * 0.7)
-        const r1 = r0 + CELL * 0.34 * (1 - p)
-        ctx.beginPath()
-        ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0)
-        ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
-        ctx.stroke()
-      }
-    }
-    ctx.restore()
   } else if (effect === 'dust') {
-    if (elapsed > DUR) return
-    const p = elapsed / DUR
-    ctx.save()
-    // 初始迸射闪光（更大更亮，叠加发光）。
-    if (elapsed < 130) {
-      ctx.save()
-      ctx.globalCompositeOperation = 'lighter'
-      ctx.globalAlpha = (1 - elapsed / 130) * 0.85
-      ctx.fillStyle = '#fff2c0'
-      ctx.beginPath()
-      ctx.arc(cx, cy, CELL * 0.44, 0, PI2)
-      ctx.fill()
-      ctx.restore()
-    }
-    // 木屑/金光粒子：向外飞散 + 重力下坠 + 渐隐（更多更大飞得更远）。
+    // 火花：迸射的亮点(带重力下坠) + 一圈放射火花线，暖金色。
     for (const d of dust) {
-      const dist = d.sp * elapsed * 0.2
+      const dist = d.sp * elapsed * 0.18
       const px = cx + Math.cos(d.a) * dist
-      const py = cy + Math.sin(d.a) * dist + 0.0011 * elapsed * elapsed * 0.5
-      ctx.globalAlpha = (1 - p) * 0.95
+      const py = cy + Math.sin(d.a) * dist + 0.0009 * elapsed * elapsed * 0.5
+      ctx.globalAlpha = (1 - p) * 0.9
       ctx.fillStyle = d.col
       ctx.beginPath()
-      ctx.arc(px, py, Math.max(0.5, d.r0 * (1 - p * 0.5)), 0, PI2)
+      ctx.arc(px, py, Math.max(0.6, d.r0 * (1 - p * 0.5)), 0, PI2)
       ctx.fill()
     }
-    // 亮火花放射线（叠加发光，更多更长更粗）。
-    ctx.save()
-    ctx.globalCompositeOperation = 'lighter'
-    ctx.globalAlpha = (1 - p) * 0.95
-    ctx.strokeStyle = '#ffe9a0'
-    ctx.lineWidth = 2.4 * (1 - p) + 0.3
-    ctx.lineCap = 'round'
-    for (let i = 0; i < 9; i++) {
-      const a = (i / 9) * PI2 + 0.3
-      const r0 = CELL * (0.2 + p * 0.9)
-      const r1 = r0 + CELL * 0.42 * (1 - p)
+    ctx.globalAlpha = (1 - p) * 0.85
+    ctx.strokeStyle = '#ffd98a'
+    ctx.lineWidth = 2 * (1 - p) + 0.4
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * PI2
+      const r0 = CELL * (0.25 + p * 0.6)
+      const r1 = r0 + CELL * 0.28 * (1 - p)
       ctx.beginPath()
       ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0)
       ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
       ctx.stroke()
     }
-    ctx.restore()
-    ctx.restore()
   } else if (effect === 'ink') {
-    // 墨韵：柔和墨晕扩散渐隐 + 墨点飞溅（水墨风，更浓更大铺得更开）。
-    if (elapsed > DUR) return
-    const p = elapsed / DUR
-    ctx.save()
-    const rr = CELL * (0.34 + p * 0.98)
+    // 墨韵：深色墨晕扩散 + 墨点飞溅（水墨风）。
+    const rr = CELL * (0.3 + p * 0.9)
     const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rr)
-    g.addColorStop(0, `rgba(18,16,24,${0.5 * (1 - p)})`)
-    g.addColorStop(0.6, `rgba(28,24,38,${0.3 * (1 - p)})`)
-    g.addColorStop(1, 'rgba(28,24,38,0)')
+    g.addColorStop(0, `rgba(20,18,28,${0.44 * (1 - p)})`)
+    g.addColorStop(0.65, `rgba(30,26,40,${0.24 * (1 - p)})`)
+    g.addColorStop(1, 'rgba(30,26,40,0)')
     ctx.fillStyle = g
     ctx.beginPath()
     ctx.arc(cx, cy, rr, 0, PI2)
     ctx.fill()
-    ctx.fillStyle = `rgba(12,10,18,${0.6 * (1 - p)})`
-    for (let i = 0; i < 11; i++) {
-      const a = (i / 11) * PI2 + 0.5
-      const d = CELL * (0.2 + p * 1.0)
-      const rDot = Math.max(0.6, 3.2 * (1 - p))
+    ctx.fillStyle = `rgba(14,12,20,${0.55 * (1 - p)})`
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * PI2 + 0.5
+      const d = CELL * (0.25 + p * 0.85)
       ctx.beginPath()
-      ctx.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, rDot, 0, PI2)
+      ctx.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, Math.max(0.6, 2.8 * (1 - p)), 0, PI2)
       ctx.fill()
     }
-    ctx.restore()
   } else if (effect === 'star') {
-    // 星芒：中心闪光 + 旋转星芒（长短交替）+ 迸出的小星点，金光炫目（叠加发光）。
-    if (elapsed > DUR) return
-    const p = elapsed / DUR
-    ctx.save()
-    ctx.globalCompositeOperation = 'lighter'
-    if (elapsed < 180) {
-      const q = elapsed / 180
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, CELL * 0.8)
-      g.addColorStop(0, `rgba(255,250,220,${1 * (1 - q)})`)
-      g.addColorStop(1, 'rgba(255,210,74,0)')
-      ctx.fillStyle = g
-      ctx.beginPath()
-      ctx.arc(cx, cy, CELL * 0.8, 0, PI2)
-      ctx.fill()
+    // 星星：几颗五角星在子周围绽放、缓旋、渐隐。
+    ctx.globalAlpha = (1 - p) * 0.95
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * PI2 + p * 0.7
+      const d = CELL * (0.32 + p * 0.7)
+      const sx = cx + Math.cos(a) * d
+      const sy = cy + Math.sin(a) * d
+      const sr = Math.max(0.5, CELL * 0.18 * (1 - p * 0.45))
+      ctx.fillStyle = i % 2 ? '#fff0b0' : accent
+      drawStar5(ctx, sx, sy, sr, a)
     }
-    ctx.strokeStyle = `rgba(255,230,140,${1 - p})`
-    ctx.lineCap = 'round'
-    const rot = p * 0.8
-    for (let i = 0; i < 12; i++) {
-      const a = rot + (i / 12) * PI2
-      const long = i % 2 === 0
-      const r1 = CELL * 0.15
-      const r2 = CELL * (long ? 0.7 + p * 0.7 : 0.4 + p * 0.35)
-      ctx.lineWidth = long ? 3 * (1 - p) + 0.5 : 1.8 * (1 - p) + 0.3
-      ctx.beginPath()
-      ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
-      ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2)
-      ctx.stroke()
-    }
-    ctx.fillStyle = `rgba(255,245,190,${1 - p})`
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * PI2 + 0.7
-      const d = CELL * (0.4 + p * 0.95)
-      ctx.beginPath()
-      ctx.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, Math.max(0.5, 2.4 * (1 - p)), 0, PI2)
-      ctx.fill()
-    }
-    ctx.restore()
   } else if (effect === 'flame') {
-    // 流焰：暖光核 + 向上飘散的火舌粒子（橙红金），热烈灵动（叠加发光更炽烈）。
-    if (elapsed > DUR) return
-    const p = elapsed / DUR
-    ctx.save()
-    ctx.globalCompositeOperation = 'lighter'
-    const gr = CELL * (0.5 + p * 0.45)
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, gr)
-    g.addColorStop(0, `rgba(255,210,110,${0.85 * (1 - p)})`)
-    g.addColorStop(0.5, `rgba(255,120,40,${0.5 * (1 - p)})`)
-    g.addColorStop(1, 'rgba(255,90,30,0)')
-    ctx.fillStyle = g
-    ctx.beginPath()
-    ctx.arc(cx, cy, gr, 0, PI2)
-    ctx.fill()
-    const cols = ['#ffd24a', '#ff9a3c', '#ff5a2a', '#ffe9a0']
-    for (let i = 0; i < 18; i++) {
-      const a = (i / 18) * PI2
-      const spread = CELL * (0.18 + p * 0.65)
-      const px = cx + Math.cos(a) * spread * 0.6
-      const py = cy + Math.sin(a) * spread * 0.6 - p * CELL * 0.95 // 整体上飘更高
-      const r = Math.max(0.6, (3.4 - (i % 3)) * (1 - p))
-      ctx.globalAlpha = (1 - p) * 0.95
+    // 流焰：几束暖色火舌向上升腾、渐隐。
+    const cols = ['#ffd24a', '#ff9a3c', '#ff5a2a']
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * PI2
+      const spread = CELL * (0.12 + p * 0.4)
+      const px = cx + Math.cos(a) * spread
+      const py = cy + Math.sin(a) * spread - p * CELL * 0.85
+      const r = Math.max(0.6, CELL * 0.13 * (1 - p))
+      ctx.globalAlpha = (1 - p) * 0.9
       ctx.fillStyle = cols[i % cols.length]
       ctx.beginPath()
       ctx.arc(px, py, r, 0, PI2)
       ctx.fill()
     }
-    ctx.restore()
+  } else if (effect === 'heart') {
+    // 爱心：几颗小爱心向上飘散、渐隐（粉红）。
+    const cols = ['#ff6d8e', '#ff9db4', '#ff4d73']
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * PI2 + 0.3
+      const spread = CELL * (0.12 + p * 0.45)
+      const hx = cx + Math.cos(a) * spread
+      const hy = cy + Math.sin(a) * spread - p * CELL * 0.9
+      const hr = Math.max(0.5, CELL * 0.17 * (1 - p * 0.4))
+      ctx.globalAlpha = (1 - p) * 0.9
+      ctx.fillStyle = cols[i % cols.length]
+      drawHeart(ctx, hx, hy, hr)
+    }
   }
   // 'none'：不额外绘制。
+  ctx.restore()
+}
+
+// 五角星（填充）：中心 (cx,cy)、外径 r、旋转 rot。
+function drawStar5(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, rot: number) {
+  const inner = r * 0.45
+  ctx.beginPath()
+  for (let i = 0; i < 10; i++) {
+    const rr = i % 2 === 0 ? r : inner
+    const a = rot + (i / 10) * PI2 - Math.PI / 2
+    const x = cx + Math.cos(a) * rr
+    const y = cy + Math.sin(a) * rr
+    if (i === 0) ctx.moveTo(x, y)
+    else ctx.lineTo(x, y)
+  }
+  ctx.closePath()
+  ctx.fill()
+}
+
+// 爱心（填充）：中心 (cx,cy)、尺寸 r。
+function drawHeart(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  const top = cy - r * 0.3
+  ctx.beginPath()
+  ctx.moveTo(cx, cy + r * 0.7)
+  ctx.bezierCurveTo(cx - r * 1.1, cy - r * 0.2, cx - r * 0.55, top - r * 0.9, cx, top)
+  ctx.bezierCurveTo(cx + r * 0.55, top - r * 0.9, cx + r * 1.1, cy - r * 0.2, cx, cy + r * 0.7)
+  ctx.closePath()
+  ctx.fill()
 }
 
 // 程序化棋子：径向渐变（高光→主体→外缘）+ 可选描边/高光点。

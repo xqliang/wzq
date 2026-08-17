@@ -1276,7 +1276,19 @@ button:disabled {
   box-shadow: 0 0 0 2px rgba(200, 145, 47, 0.5);
 }
 .shop-card-name { font-size: 15px; font-weight: 700; color: #5c360f; }
-.shop-card-foot { margin-top: 2px; }
+.shop-card-foot {
+  margin-top: 2px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+/* 底部控件（价格/装备/已装备）统一等宽、居中、不换行——避免"已装备"被折成两行、各卡片按钮参差。 */
+.shop-card-foot > * {
+  min-width: 84px;
+  justify-content: center;
+  white-space: nowrap;
+  text-align: center;
+}
 .price-btn {
   display: inline-flex;
   align-items: center;
@@ -1441,8 +1453,10 @@ button:disabled {
 .gp-currency span {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 12px 3px 6px;
+  justify-content: center;
+  gap: 6px;
+  min-width: 92px;
+  padding: 2px 16px 2px 6px;
   font-weight: 700;
   font-size: 15px;
   color: #5c360f;
@@ -1450,7 +1464,7 @@ button:disabled {
   border: 2px solid var(--gold);
   border-radius: 999px;
 }
-.gp-currency img { width: 40px; height: 40px; }
+.gp-currency img { width: 34px; height: 34px; }
 .gp-content {
   display: flex;
   flex-direction: column;

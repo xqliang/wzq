@@ -32,18 +32,20 @@ export function Room() {
       <div className="room-invite">
         <p className="room-id">房间号：{roomId || '创建中…'}</p>
         {inviteUrl && <p className="invite-link">{inviteUrl}</p>}
+      </div>
+      <div className="invite-actions">
         <button className="op-btn" disabled={!inviteUrl} onClick={() => navigator.clipboard?.writeText(inviteUrl)}>
           复制邀请链接
         </button>
+        <button
+          className="op-btn"
+          disabled={!roomId}
+          onClick={() => nav('/game', { state: { mode: 'pvp', roomId } })}
+        >
+          进入对局
+        </button>
+        <button className="op-btn ghost" onClick={() => nav('/')}>退出</button>
       </div>
-      <button
-        className="entry primary"
-        disabled={!roomId}
-        onClick={() => nav('/game', { state: { mode: 'pvp', roomId } })}
-      >
-        进入对局
-      </button>
-      <button className="back-btn" onClick={() => nav('/')}>退出</button>
     </div>
   )
 }

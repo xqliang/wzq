@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { img } from '../lib/asset'
 import { useNavigate } from 'react-router-dom'
 import { shopState, shopBuy, shopEquip } from '../net/rest'
@@ -24,10 +24,18 @@ export function Shop() {
   const [state, setState] = useState<ShopState | null>(null)
   const [slot, setSlot] = useState<SlotKey>('board')
   const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState('')
+  const [loadErr, setLoadErr] = useState('')
+  // 购买/装备失败用飘动 toast 提示，避免 inline 文本撑出滚动条。
+  const [toast, setToast] = useState('')
+  const toastTimer = useRef<number | undefined>(undefined)
+  const showToast = (m: string) => {
+    window.clearTimeout(toastTimer.current)
+    setToast(m)
+    toastTimer.current = window.setTimeout(() => setToast(''), 2000)
+  }
 
   useEffect(() => {
-    shopState().then(setState).catch(() => setErr('加载商店失败'))
+    shopState().then(setState).catch(() => setLoadErr('加载商店失败'))
   }, [])
 
   // 应用最新商店状态，并把已装备的棋盘皮肤/落子动效同步到本地设置（即时生效）。
@@ -37,16 +45,14 @@ export function Shop() {
   }
   const buy = (it: ShopItem) => {
     setBusy(true)
-    setErr('')
-    shopBuy(it.slot, it.id).then(apply).catch(() => setErr('金币/卷轴不足或已拥有')).finally(() => setBusy(false))
+    shopBuy(it.slot, it.id).then(apply).catch(() => showToast('金币/卷轴不足或已拥有')).finally(() => setBusy(false))
   }
   const equip = (it: ShopItem) => {
     setBusy(true)
-    setErr('')
-    shopEquip(it.slot, it.id).then(apply).catch(() => setErr('装备失败')).finally(() => setBusy(false))
+    shopEquip(it.slot, it.id).then(apply).catch(() => showToast('装备失败')).finally(() => setBusy(false))
   }
 
-  if (!state) return <div className="loading">{err || '加载中…'}</div>
+  if (!state) return <div className="loading">{loadErr || '加载中…'}</div>
   const items = state.items.filter((i) => i.slot === slot)
 
   return (
@@ -80,7 +86,7 @@ export function Shop() {
           ))}
         </div>
       </div>
-      {err && <p className="warn">{err}</p>}
+      {toast && <div className="toast">{toast}</div>}
     </GamePanel>
   )
 }

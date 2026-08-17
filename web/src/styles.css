@@ -74,6 +74,9 @@ body {
 .endgame {
   background-image: url('./assets/img/bg_home.jpg');
 }
+.stats {
+  background-image: url('./assets/img/bg_home.jpg');
+}
 .loading {
   min-height: 100vh;
   display: flex;
@@ -129,10 +132,14 @@ button:disabled {
     0 3px 0 rgba(124, 74, 30, 0.32),
     var(--shadow);
 }
-/* 昵称+段位列：占据中间可伸缩空间，内容过长省略而非换行/顶出按钮。 */
+/* 昵称+段位列：占据中间可伸缩空间，左对齐，内容过长省略而非换行/顶出按钮。 */
 .profile-meta {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
 }
 .avatar {
   width: 60px;
@@ -287,12 +294,31 @@ button:disabled {
 /* 房间等待页。 */
 .room {
   justify-content: center;
-  gap: 14px;
+  gap: 16px;
+  background-image: url('./assets/img/bg_home.jpg');
 }
 .room .room-id {
   font-size: 24px;
   letter-spacing: 3px;
   color: var(--accent);
+}
+/* 邀请卡：房间号/链接 + 一组等宽统一按钮（复制/进入/退出），风格与全站一致。 */
+.invite-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: min(88vw, 320px);
+  margin-top: 4px;
+}
+.invite-actions .op-btn {
+  width: 100%;
+  text-align: center;
+}
+.invite-actions .op-btn.ghost {
+  background: linear-gradient(180deg, rgba(240, 232, 214, 0.9), rgba(214, 200, 170, 0.85));
+  color: #6b451c;
+  text-shadow: none;
 }
 
 /* 残局闯关：列表页与对局页。 */
@@ -565,6 +591,20 @@ button:disabled {
   margin: 0 0 4px;
   color: var(--accent);
 }
+/* 设置弹窗行列表：每行留白 + 细分隔线，避免各行(尤其“落子特效/棋盘主题”)黏在一起。 */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 2px;
+}
+.settings-list .setting-row {
+  padding: 13px 6px;
+  border-bottom: 1px solid rgba(120, 80, 30, 0.18);
+}
+.settings-list .setting-row:last-child {
+  border-bottom: none;
+}
 .setting-row {
   display: flex;
   align-items: center;
@@ -805,18 +845,18 @@ button:disabled {
 .profile .currency span {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 9px;
-  font-size: 14px;
-  font-weight: 700;
+  gap: 5px;
+  padding: 2px 10px 2px 4px;
+  font-size: 13px;
+  font-weight: 500;
   color: #5c360f;
   background: rgba(255, 242, 208, 0.72);
   border: 1px solid rgba(184, 121, 27, 0.55);
   border-radius: 999px;
 }
 .profile .currency img {
-  width: 22px;
-  height: 22px;
+  width: 40px;
+  height: 40px;
 }
 .ops-row {
   display: flex;
@@ -1194,11 +1234,12 @@ button:disabled {
   flex: none;
 }
 .shop-tab {
-  width: 48px;
+  width: 64px;
   padding: 14px 6px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1.2;
+  white-space: nowrap;
   color: #fff5e6;
   background: linear-gradient(180deg, #d0714a, #a8471f);
   border: 2px solid #7c3a1e;
@@ -1287,16 +1328,38 @@ button:disabled {
   border: 2px solid #cba76a;
 }
 
-/* 头像框皮肤变体（无贴图时用彩环表现）。 */
-.avatar-box.frame-bronze {
-  overflow: visible;
-  border: 3px solid #b5793f;
-  box-shadow: 0 0 0 2px #7c4a1e;
+/* 无头像框（默认）：仅一圈细中性描边，不喧宾夺主。 */
+.avatar-box.frame-none {
+  border: 2px solid rgba(120, 90, 50, 0.45);
 }
+/* 头像框皮肤变体：统一用 ::after 环形贴合头像（inset 与描金环一致，不留空隙）。 */
+.avatar-box.frame-bronze,
 .avatar-box.frame-jade {
   overflow: visible;
+  border: none;
+  background: transparent;
+}
+.avatar-box.frame-bronze .avatar-img,
+.avatar-box.frame-jade .avatar-img {
+  border-radius: 50%;
+}
+.avatar-box.frame-bronze::after {
+  content: '';
+  position: absolute;
+  inset: -7%;
+  border-radius: 50%;
+  border: 3px solid #b5793f;
+  box-shadow: inset 0 0 0 1.5px #7c4a1e, 0 1px 3px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+.avatar-box.frame-jade::after {
+  content: '';
+  position: absolute;
+  inset: -7%;
+  border-radius: 50%;
   border: 3px solid #6fae86;
-  box-shadow: 0 0 0 2px #2e7d4f;
+  box-shadow: inset 0 0 0 1.5px #2e7d4f, 0 1px 3px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
 }
 
 /* ===== 竞品风格通用面板 GamePanel（商店/签到/转盘共用）===== */
@@ -1327,15 +1390,15 @@ button:disabled {
   border-image: url('./assets/img/panel_frame.png') 72 / 20px / 0 round;
   background: linear-gradient(180deg, #fbf1d8, #efe0bd);
 }
-/* 顶部孔明灯装饰（放大并上移，居中叠在上沿、标题之后）。 */
+/* 顶部孔明灯装饰（放大约 1.5 倍并上移，居中叠在上沿、标题之后）。 */
 .gp-panel::before {
   content: '';
   position: absolute;
-  top: -58px;
+  top: -100px;
   left: 50%;
   transform: translateX(-50%);
-  width: 68%;
-  height: 96px;
+  width: 96%;
+  height: 150px;
   z-index: 1;
   pointer-events: none;
   background: url('./assets/img/panel_top.png') center / contain no-repeat;
@@ -1378,15 +1441,16 @@ button:disabled {
 .gp-currency span {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 16px;
+  gap: 5px;
+  padding: 3px 12px 3px 6px;
   font-weight: 700;
+  font-size: 15px;
   color: #5c360f;
   background: linear-gradient(180deg, #fbeecb, #e6cf9a);
   border: 2px solid var(--gold);
-  border-radius: 16px;
+  border-radius: 999px;
 }
-.gp-currency img { width: 30px; height: 30px; }
+.gp-currency img { width: 40px; height: 40px; }
 .gp-content {
   display: flex;
   flex-direction: column;
@@ -1439,6 +1503,7 @@ button:disabled {
 /* ===== 幸运转盘 ===== */
 .wheel-wrap {
   position: relative;
+  margin-top: 20px;
   width: min(54vw, 208px);
   height: min(54vw, 208px);
   display: flex;

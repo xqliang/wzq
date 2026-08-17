@@ -162,8 +162,10 @@ export function bestMove(board: Board, color: Color, level: number): Move {
   if (selfWinThreat) return { ...selfWinThreat, color }
   // 4. 对手可形成必胜威胁 → 提前封堵，破坏其杀棋。
   if (oppWinThreat) return { ...oppWinThreat, color }
-  // 5. 己方强制进攻点（冲四/双活三）→ 中高级主动扩大优势；简单档留给搜索，保持“可赢但不碾压”。
-  if (level >= 2 && selfPush) return { ...selfPush, color }
+  // 5. 己方强制进攻点（冲四/双活三）→ 中高级主动扩大优势；普通(lv1)以 50% 概率主动进攻，
+  //    其余时候留给搜索，保持“可赢但偶尔手软”的手感。
+  const aggressive = level >= 2 || (level === 1 && Math.random() < 0.5)
+  if (aggressive && selfPush) return { ...selfPush, color }
   // 6. 对手强制点（含双活三）→ 封堵，避免被对方先手连续威胁压制（即“避免对方出现双三”）。
   if (oppPush) return { ...oppPush, color }
 

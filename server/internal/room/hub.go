@@ -59,7 +59,8 @@ type Hub struct {
 	mu         sync.Mutex
 	rooms      map[string]*Room
 	up         websocket.Upgrader
-	onGameOver func(GameOver) // 对局结束时的全局结算钩子（可选）。
+	onGameOver func(GameOver)     // 对局结束时的全局结算钩子（可选）。
+	metaOf     func(int64) PlayerMeta // 查询玩家资料（段位/头像/框/特效），用于开局下发对手信息（可选）。
 
 	// 随机匹配池：不为独自等待者预建房，两人真正配上才建房。
 	// matchMu 串行化 waiters/matched 的读写；建房走 Hub.Create（独立锁 h.mu，无嵌套死锁）。
@@ -79,6 +80,25 @@ func NewHub() *Hub {
 
 // SetOnGameOver 注册对局结束回调（用于结算 PvP 经验与落库战绩）。
 func (h *Hub) SetOnGameOver(f func(GameOver)) { h.onGameOver = f }
+
+// PlayerMeta 是开局下发给对手的玩家资料（段位阶/头像/头像框/落子特效）。
+type PlayerMeta struct {
+	Tier   int
+	Avatar string
+	Frame  string
+	Effect string
+}
+
+// SetPlayerMeta 注册玩家资料查询函数（开局时给每位玩家下发对手资料）。
+func (h *Hub) SetPlayerMeta(f func(int64) PlayerMeta) { h.metaOf = f }
+
+// meta 安全查询玩家资料；未注册则返回零值。
+func (h *Hub) meta(uid int64) PlayerMeta {
+	if h.metaOf == nil {
+		return PlayerMeta{}
+	}
+	return h.metaOf(uid)
+}
 
 // Create 创建一个新房间并返回 8 位房间号。
 func (h *Hub) Create(owner int64) string {
@@ -183,8 +203,9 @@ func (h *Hub) ServeWS(w http.ResponseWriter, req *http.Request, roomID string, u
 	bothConnected := len(r.players) == 2 && r.clients[r.players[0]] != nil && r.clients[r.players[1]] != nil
 	if bothConnected && (r.game == nil || r.game.over) {
 		r.game = NewGame(r.players[0], r.players[1])
-		r.sendTo(r.players[0], ServerMsg{Type: "start", Color: "black"})
-		r.sendTo(r.players[1], ServerMsg{Type: "start", Color: "white"})
+		m0, m1 := r.hub.meta(r.players[0]), r.hub.meta(r.players[1])
+		r.sendTo(r.players[0], ServerMsg{Type: "start", Color: "black", OppTier: m1.Tier, OppAvatar: m1.Avatar, OppFrame: m1.Frame, OppEffect: m1.Effect})
+		r.sendTo(r.players[1], ServerMsg{Type: "start", Color: "white", OppTier: m0.Tier, OppAvatar: m0.Avatar, OppFrame: m0.Frame, OppEffect: m0.Effect})
 		r.startTurnTimer()
 	}
 	r.mu.Unlock()

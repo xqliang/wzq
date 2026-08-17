@@ -1,8 +1,8 @@
-// 头像 + 外框容器。默认叠古风金环（复刻竞品）；frame 可切换其它头像框皮肤（阶段 C）。
+// 头像 + 外框容器。默认无框（frame-none，仅细描边）；frame 可切换其它头像框皮肤（阶段 C）。
 export function Avatar({
   src,
   size = 56,
-  frame = 'gold',
+  frame = 'none',
 }: {
   src: string
   size?: number

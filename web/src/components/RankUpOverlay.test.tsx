@@ -6,7 +6,7 @@ describe('RankUpOverlay', () => {
   it('显示旧->新段位并点击继续', () => {
     const onContinue = vi.fn()
     render(
-      <RankUpOverlay fromLabel="业余2级" toLabel="业余3级" group="ji" coins={120} onContinue={onContinue} />,
+      <RankUpOverlay fromLabel="业余2级" toLabel="业余3级" group="ji" onContinue={onContinue} />,
     )
     expect(screen.getByText('业余2级')).toBeTruthy()
     expect(screen.getByText('业余3级')).toBeTruthy()

@@ -23,7 +23,7 @@ import { SettingsModal } from '../components/SettingsModal'
 // 对局页：人机模式驱动 AI Web Worker；真人模式持有唯一的 WebSocket 连接。
 export function Game() {
   const loc = useLocation() as {
-    state?: { mode: string; level?: number; roomId?: string }
+    state?: { mode: string; level?: number; roomId?: string; matched?: boolean }
   }
   const nav = useNavigate()
   const st = loc.state ?? { mode: 'ai', level: 1 }
@@ -54,6 +54,10 @@ export function Game() {
 
   // 段位（阶段B）：进对局前我的段位阶（用于对阵条展示与晋级前后对比）。
   const preTierRef = useRef(getCurrentUser()?.rankTier ?? 0)
+  // 对手资料：AI 固定；PvP 由服务端 start 消息下发真实值（段位/头像/框/落子特效）。
+  const [oppTier, setOppTier] = useState(st.mode === 'ai' ? 18 : 3)
+  const [oppAvatar, setOppAvatar] = useState('avatar_02')
+  const [oppFrame, setOppFrame] = useState<string>('none')
   // 本局段位结算结果（AI 由 /api/ai/result 返回，PvP 结束后 refetch me 计算）。
   const [rankResult, setRankResult] = useState<{
     tier: number
@@ -72,6 +76,8 @@ export function Game() {
   // 悔棋：undoPick=我方选择悔几步；undoAsk=对手请求待我审批；toast=飘动通知。
   const [undoPick, setUndoPick] = useState(false)
   const [undoAsk, setUndoAsk] = useState<{ from: number; steps: number } | null>(null)
+  // 认输二次确认弹窗（替代 window.confirm，风格与悔棋弹窗统一）。
+  const [resignAsk, setResignAsk] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const toastTimer = useRef<number | undefined>(undefined)
   const showToast = (msg: string) => {
@@ -116,12 +122,19 @@ export function Game() {
         .catch(() => {})
     }
     if (!useGame.getState().winLine) setShowModal(true)
+    // 对手认输：胜方在结算界面收到"对方认输"飘窗提示。
+    if (win && reason === 'resign') showToast('对方认输')
   }
 
-  // 再来一局：按模式重开（导航到 /game，借 location.key 触发重挂载得到全新对局）。
+  // 再来一局：AI 按难度重开；随机匹配重新进入匹配；好友房复用房间号重连。
   const rematch = () => {
-    if (st.mode === 'pvp' && st.roomId) nav('/game', { state: { mode: 'pvp', roomId: st.roomId } })
-    else nav('/game', { state: { mode: 'ai', level: st.level ?? 1 } })
+    if (st.mode === 'pvp') {
+      if (st.matched) nav('/', { state: { autoMatch: true } })
+      else if (st.roomId) nav('/game', { state: { mode: 'pvp', roomId: st.roomId } })
+      else nav('/')
+    } else {
+      nav('/game', { state: { mode: 'ai', level: st.level ?? 1 } })
+    }
   }
 
   // 看广告双倍（模拟）：播放约 1.8s 假广告后，再发放一份等额金币奖励，本局仅一次。
@@ -200,8 +213,12 @@ export function Game() {
     const myUid = getCurrentUser()?.id
     switch (m.type) {
       case 'start': {
-        // 服务端指派我方颜色，据此重置对局。
+        // 服务端指派我方颜色，据此重置对局；并记录对手资料（段位/头像/框/落子特效）。
         store.reset(m.color ?? 'black')
+        if (m.oppTier != null) setOppTier(m.oppTier)
+        if (m.oppAvatar) setOppAvatar(m.oppAvatar)
+        setOppFrame(m.oppFrame || 'none')
+        useGame.getState().setOppEffect(m.oppEffect || 'ripple')
         setStarted(true)
         break
       }
@@ -282,12 +299,12 @@ export function Game() {
 
   // 胜负音效由 settleAi/服务端 game_over 负责，这里不再用响应式 effect（避免残留 winner 触发跳转）。
 
-  // 人机模式：轮到我方时开启 60s 倒计时；AI 思考时不计时。
+  // 人机模式：轮到我方且开局 3-2-1 已结束时才开启 30s 倒计时；AI 思考/开局动画期间不计时。
   useEffect(() => {
-    if (st.mode !== 'ai' || !started) return
+    if (st.mode !== 'ai' || !started || !introDone) return
     if (!g.winner && g.turn === g.myColor) setDeadline(Date.now() + 30000)
     else setDeadline(null)
-  }, [g.turn, g.winner, started, st.mode, g.myColor])
+  }, [g.turn, g.winner, started, introDone, st.mode, g.myColor])
 
   // 回合倒计时：每 250ms 计算剩余秒；≤5s 滴答提示；归零处理超时
   // （人机模式判我方负；真人模式由服务端裁决，客户端仅展示）。
@@ -326,9 +343,10 @@ export function Game() {
     if (w) finish(w === useGame.getState().myColor)
   }
 
-  // 认输/退出：真人模式上报服务端认输（由服务端 game_over 驱动结算）；人机模式判我方负并结算。
-  const onResign = () => {
-    if (!window.confirm('确定认输并结束本局？')) return
+  // 认输：先弹二次确认弹窗（与悔棋风格统一）。确认后：真人上报服务端认输；人机判我方负并结算。
+  const onResign = () => setResignAsk(true)
+  const doResign = () => {
+    setResignAsk(false)
     if (st.mode === 'pvp' && wsRef.current) {
       sendResign(wsRef.current)
       return
@@ -368,12 +386,16 @@ export function Game() {
           <div className="room-invite">
             <p className="room-id">房间号：{st.roomId}</p>
             <p className="invite-link">{inviteUrl}</p>
+          </div>
+        )}
+        <div className="invite-actions">
+          {st.roomId && (
             <button className="op-btn" onClick={() => navigator.clipboard?.writeText(inviteUrl).catch(() => {})}>
               复制邀请链接
             </button>
-          </div>
-        )}
-        <button className="back-btn" onClick={() => nav('/')}>退出</button>
+          )}
+          <button className="op-btn ghost" onClick={() => nav('/')}>退出</button>
+        </div>
       </div>
     )
   }
@@ -390,13 +412,14 @@ export function Game() {
         me={{ nickname: '我', avatar: 'avatar_01', rankLabel: rankLabel(preTierRef.current), color: g.myColor } as PlayerInfo}
         opp={{
           nickname: st.mode === 'ai' ? 'AI大师' : '对手',
-          avatar: 'avatar_02',
-          rankLabel: st.mode === 'ai' ? rankLabel(18) : rankLabel(3),
+          avatar: st.mode === 'ai' ? 'avatar_02' : oppAvatar,
+          rankLabel: rankLabel(oppTier),
           color: g.myColor === 'black' ? 'white' : 'black',
+          frame: st.mode === 'ai' ? 'none' : oppFrame,
         } as PlayerInfo}
         turn={g.turn}
         timer={
-          deadline != null
+          deadline != null && introDone
             ? {
                 remain,
                 progress: remain / 30,
@@ -420,7 +443,6 @@ export function Game() {
           fromLabel={rankLabel(rankResult.fromTier)}
           toLabel={rankLabel(rankResult.tier)}
           group={rankGroup(rankResult.tier)}
-          coins={0}
           onContinue={() => setRankupDone(true)}
         />
       )}
@@ -436,7 +458,7 @@ export function Game() {
             threshold: rankResult?.threshold ?? rankThreshold(preTierRef.current),
             delta: rankResult?.delta ?? (result.win ? 10 : -10),
           }}
-          opp={{ nickname: st.mode === 'ai' ? 'AI大师' : '对手', avatar: 'avatar_02', rankLabel: st.mode === 'ai' ? rankLabel(18) : rankLabel(3), points: 20, threshold: 30, delta: result.win ? -10 : 10 }}
+          opp={{ nickname: st.mode === 'ai' ? 'AI大师' : '对手', avatar: st.mode === 'ai' ? 'avatar_02' : oppAvatar, rankLabel: rankLabel(oppTier), points: 0, threshold: rankThreshold(oppTier), delta: result.win ? -10 : 10, frame: st.mode === 'ai' ? 'none' : oppFrame }}
           onRematch={rematch}
           onHome={() => nav('/')}
           onShare={() => alert('分享（后续接入）')}
@@ -485,6 +507,17 @@ export function Game() {
             <div className="mini-actions">
               <button className="op-btn" onClick={() => replyUndo(true)}>同意</button>
               <button className="back-btn" onClick={() => replyUndo(false)}>拒绝</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {resignAsk && (
+        <div className="mini-mask" onClick={() => setResignAsk(false)}>
+          <div className="mini-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="mini-title">确定认输并结束本局？</div>
+            <div className="mini-actions">
+              <button className="op-btn" onClick={doResign}>确定认输</button>
+              <button className="back-btn" onClick={() => setResignAsk(false)}>取消</button>
             </div>
           </div>
         </div>

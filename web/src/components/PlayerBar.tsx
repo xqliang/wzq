@@ -9,6 +9,7 @@ export interface PlayerInfo {
   avatar: string // 图片文件名（不含扩展）
   rankLabel: string
   color: 'black' | 'white'
+  frame?: string // 头像框皮肤 id（缺省无框）
 }
 
 export function PlayerBar({
@@ -37,7 +38,7 @@ export function PlayerBar({
 function PlayerSide({ p, active, side }: { p: PlayerInfo; active: boolean; side: 'left' | 'right' }) {
   return (
     <div className={`player-side ${side} ${active ? 'active' : ''}`}>
-      <Avatar src={img(`${p.avatar}`)} size={36} />
+      <Avatar src={img(`${p.avatar}`)} size={36} frame={p.frame} />
       <div className="player-meta">
         <div className="player-nick">{p.nickname}</div>
         <div className="player-rank">{p.rankLabel}</div>

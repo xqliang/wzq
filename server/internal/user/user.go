@@ -69,8 +69,8 @@ func (svc *Service) CreateGuest() (*User, error) {
 	now := time.Now()
 	u := &User{GuestID: uuid.NewString(), Nickname: randomNick(), Avatar: "avatar_01", Level: 1}
 	res, err := svc.s.DB.Exec(
-		`INSERT INTO user (guest_id, nickname, avatar, exp, level, created_at, last_login) VALUES (?,?,?,?,?,?,?)`,
-		u.GuestID, u.Nickname, u.Avatar, 0, 1, now, now)
+		`INSERT INTO user (guest_id, nickname, avatar, exp, level, created_at, last_login, equipped_frame) VALUES (?,?,?,?,?,?,?,?)`,
+		u.GuestID, u.Nickname, u.Avatar, 0, 1, now, now, "none")
 	if err != nil {
 		return nil, err
 	}

@@ -3,8 +3,8 @@
 import bgmUrl from '../assets/audio/bgm.mp3'
 type Sfx = 'place' | 'win' | 'lose' | 'button' | 'undo' | 'tick' | 'timeout'
 
-// 落子特效类型：无 / 水波纹 / 灰尘。
-export type Effect = 'none' | 'ripple' | 'dust'
+// 落子特效类型：无 / 水波纹 / 灰尘 / 墨韵 / 星芒 / 流焰。
+export type Effect = 'none' | 'ripple' | 'dust' | 'ink' | 'star' | 'flame'
 
 interface Settings {
   bgm: boolean

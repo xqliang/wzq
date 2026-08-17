@@ -158,9 +158,9 @@ func TestBuyConcurrent(t *testing.T) {
 	if c := coinsOf(t, s, uid); c != 0 {
 		t.Fatalf("coins after concurrent buy = %d want 0 (charged once)", c)
 	}
-	// 恰好拥有一条 blue 记录。
+	// 恰好拥有一条 blue 记录（存储键为 slot:id）。
 	var n int
-	s.DB.QueryRow(`SELECT COUNT(*) FROM user_item WHERE uid=? AND item_id='blue'`, uid).Scan(&n)
+	s.DB.QueryRow(`SELECT COUNT(*) FROM user_item WHERE uid=? AND item_id='board:blue'`, uid).Scan(&n)
 	if n != 1 {
 		t.Fatalf("owned blue rows=%d want 1", n)
 	}

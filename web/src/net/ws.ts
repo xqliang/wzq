@@ -15,6 +15,10 @@ export type ServerMsg = {
   agree?: boolean
   n?: number
   players?: number
+  oppTier?: number // 开局下发的对手段位阶
+  oppAvatar?: string // 对手头像
+  oppFrame?: string // 对手头像框
+  oppEffect?: string // 对手落子特效
 }
 
 // 连接房间：把 http(s) 基址替换为 ws(s)，带上 room 与 token 查询参数。

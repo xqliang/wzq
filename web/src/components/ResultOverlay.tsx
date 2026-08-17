@@ -11,6 +11,7 @@ export interface ResultPlayer {
   points: number
   threshold: number
   delta: number // +10 / -10
+  frame?: string // 头像框皮肤 id
 }
 
 export function ResultOverlay({
@@ -68,7 +69,7 @@ function ResultSide({ p }: { p: ResultPlayer }) {
   const pct = Math.max(0, Math.min(100, (p.points / p.threshold) * 100))
   return (
     <div className="result-side">
-      <Avatar src={img(`${p.avatar}`)} size={64} />
+      <Avatar src={img(`${p.avatar}`)} size={64} frame={p.frame} />
       <div className="result-rank">{p.rankLabel}</div>
       <div className="result-nick">{p.nickname}</div>
       <div className="rank-bar">

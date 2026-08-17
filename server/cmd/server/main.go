@@ -49,6 +49,14 @@ func main() {
 	}
 	// 对局结束回调：结算真人对战经验并落库战绩。
 	srv.Hub.SetOnGameOver(srv.SettlePvP)
+	// 玩家资料查询：开局时给每位玩家下发对手真实段位/头像/头像框/落子特效。
+	srv.Hub.SetPlayerMeta(func(uid int64) room.PlayerMeta {
+		u, err := srv.Users.Get(uid)
+		if err != nil {
+			return room.PlayerMeta{}
+		}
+		return room.PlayerMeta{Tier: u.RankTier, Avatar: u.Avatar, Frame: u.EquippedFrame, Effect: u.EquippedEffect}
+	})
 	log.Printf("listening %s", cfg.Addr)
 	log.Fatal(http.ListenAndServe(cfg.Addr, srv.Routes()))
 }

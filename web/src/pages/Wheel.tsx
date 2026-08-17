@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { img } from '../lib/asset'
 import { useNavigate } from 'react-router-dom'
 import { wheelState, wheelSpin } from '../net/rest'
@@ -15,6 +15,14 @@ export function Wheel() {
   const [rot, setRot] = useState(0)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  // 金币不足用飘动 toast，避免 inline 文本撑出滚动条。
+  const [toast, setToast] = useState('')
+  const toastTimer = useRef<number | undefined>(undefined)
+  const showToast = (m: string) => {
+    window.clearTimeout(toastTimer.current)
+    setToast(m)
+    toastTimer.current = window.setTimeout(() => setToast(''), 2000)
+  }
 
   useEffect(() => {
     wheelState()
@@ -29,7 +37,7 @@ export function Wheel() {
   const spin = () => {
     if (!st || busy) return
     if (coins < st.cost) {
-      setMsg('金币不足')
+      showToast('金币不足')
       return
     }
     setBusy(true)
@@ -51,7 +59,7 @@ export function Wheel() {
         }, 3200)
       })
       .catch(() => {
-        setMsg('金币不足')
+        showToast('金币不足')
         setBusy(false)
       })
   }
@@ -80,6 +88,7 @@ export function Wheel() {
       </div>
       {msg && <p className="tip">{msg}</p>}
       <button className="ad-double" disabled={busy} onClick={spin}>{busy ? '抽奖中…' : '抽奖'}</button>
+      {toast && <div className="toast">{toast}</div>}
     </GamePanel>
   )
 }

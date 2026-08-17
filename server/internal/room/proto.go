@@ -23,4 +23,9 @@ type ServerMsg struct {
 	Agree    bool   `json:"agree,omitempty"`
 	N        int    `json:"n,omitempty"` // 悔棋撤销的手数（客户端据此回退同步）
 	Players  int    `json:"players,omitempty"`
+	// 开局下发对手资料，供对阵条/结算展示真实段位/头像/头像框，以及按落子方渲染对手落子特效。
+	OppTier   int    `json:"oppTier,omitempty"`
+	OppAvatar string `json:"oppAvatar,omitempty"`
+	OppFrame  string `json:"oppFrame,omitempty"`
+	OppEffect string `json:"oppEffect,omitempty"`
 }

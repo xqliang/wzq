@@ -114,6 +114,13 @@ func (s *Store) Migrate() error {
 	if err := s.addColumnIfMissing("user", "equipped_effect", "VARCHAR(32) NOT NULL DEFAULT 'ripple'"); err != nil {
 		return err
 	}
+	// 头像框默认改为「无」：把仍停留在旧默认 'gold' 且未购买描金环(frame:gold)的用户重置为 none。
+	// 加 NOT IN 子查询守护，避免把已购买并装备描金环的用户在每次重启时误重置。幂等。
+	if _, err := s.DB.Exec(
+		`UPDATE user SET equipped_frame='none' WHERE equipped_frame='gold' AND id NOT IN (SELECT uid FROM user_item WHERE item_id='frame:gold')`,
+	); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -85,6 +85,7 @@ export function BoardCanvas({
   const preview = useGame((s) => s.preview)
   const winLine = useGame((s) => s.winLine)
   const undoMark = useGame((s) => s.undoMark)
+  const oppEffect = useGame((s) => s.oppEffect)
   // 保证胜利动画结束回调只触发一次。
   const firedRef = useRef(false)
   // 用 ref 持有最新回调，避免其变化导致绘制 effect 重启（打断动画计时）。
@@ -118,7 +119,9 @@ export function BoardCanvas({
     const ctx = cv.getContext('2d')!
     // 仅当最新一手坐标变化时，重置落下动画起点并重新生成粒子（避免上一子重播）。
     const lastKey = last ? `${last.x},${last.y}` : ''
-    const effect: Effect = getSettings().effect
+    // 落子特效：我方/AI 用本地设置；PvP 对手的落子用对手下发的特效（oppEffect）。
+    const lastColor = last ? board[last.y]?.[last.x] : null
+    const effect: Effect = lastColor && lastColor !== myColor && oppEffect ? (oppEffect as Effect) : getSettings().effect
     if (lastKey && lastKey !== lastKeyRef.current) {
       dropStartRef.current = performance.now()
       dustRef.current =
@@ -232,7 +235,7 @@ export function BoardCanvas({
     }
     raf = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(raf)
-  }, [board, pending, last, myColor, overlays, disp, winLine, undoMark])
+  }, [board, pending, last, myColor, overlays, disp, winLine, undoMark, oppEffect])
 
   const onClick = (e: ReactMouseEvent) => {
     if (!interactive) return
@@ -281,36 +284,70 @@ function roundRectPath(
   ctx.closePath()
 }
 
-// 立体外框：把整块盘面(PX×PX)与底部立体厚度(LIP)一起裁剪成一个圆角木盘。
-// 底部圆角半径比顶部更大，模拟厚木盘被磨圆的“前下缘”，让底部转角自然过渡（弧线衔接），
-// 而不是被 CSS 直角圆角硬切出突兀的缺口；配合 .board-wrap 的落地阴影，像厚木盘坐在桌面上。
-const R_TOP = 16 // 顶部圆角
-const R_BOT = 22 // 底部圆角（更圆润，前下缘弧线更明显）
+// 立体外框：整块「盘面 + 底部厚度」裁成同半径圆角木盘，底部深木厚度自然沿圆角包裹，
+// 前下缘转角平滑（弧线衔接）。深色底座颜色取自主题(baseShadow/frameDark)，故各皮肤 3D 面随之变化。
+// 配合 .board-wrap 的落地阴影，像厚木盘坐在桌面上。
+const FRAME_R = 14 // 圆角半径（顶/底一致，避免底部弧线切入盘面）
 function drawFrame(ctx: CanvasRenderingContext2D, theme: Theme) {
+  // 1) 深色立体底座（含底部厚度 LIP）：整块裁圆角，铺深木竖向渐变（上浅下深）。
   ctx.save()
-  // 先把绘制区域裁剪为整块圆角木盘，之后的盘面贴图与底部厚度都被裁进圆角内，转角平滑。
-  roundRectPath(ctx, 0, 0, PX, PXH, R_TOP, R_TOP, R_BOT, R_BOT)
+  roundRectPath(ctx, 0, 0, PX, PXH, FRAME_R, FRAME_R, FRAME_R, FRAME_R)
   ctx.clip()
-  // 正方形盘面铺满上方 PX×PX（网格四边留白等宽，居中对称）。
+  const dark = ctx.createLinearGradient(0, PX, 0, PXH)
+  dark.addColorStop(0, theme.baseShadow ?? theme.frameDark)
+  dark.addColorStop(1, theme.frameDark)
+  ctx.fillStyle = dark
+  ctx.fillRect(0, 0, PX, PXH)
+  ctx.restore()
+  // 2) 盘面：上方正方形，裁成同半径圆角（底角亦圆，与底座同半径 => 前下缘等宽包裹）。
+  ctx.save()
+  roundRectPath(ctx, 0, 0, PX, PX, FRAME_R, FRAME_R, FRAME_R, FRAME_R)
+  ctx.clip()
   ctx.fillStyle = theme.boardFace
   ctx.fillRect(0, 0, PX, PX)
   const face = faceImage(theme.faceImage)
   if (face) ctx.drawImage(face, 0, 0, PX, PX)
-  // 底部立体厚度：画在盘面之下的额外 LIP 高度里（不占盘面），深木渐变（上浅下深）。
-  const baseColor = theme.baseShadow ?? theme.frameDark
-  const bg = ctx.createLinearGradient(0, PX, 0, PXH)
-  bg.addColorStop(0, baseColor)
-  bg.addColorStop(1, theme.frameDark)
-  ctx.fillStyle = bg
-  ctx.fillRect(0, PX, PX, LIP)
+  else drawBoardPattern(ctx, theme) // 非贴图皮肤：绘制古风花纹提升质感
   ctx.restore()
-  // 盘面/厚度交界处的高光缝：只画中段、避开两侧圆角转角，接缝更自然不突兀。
+  // 3) 盘面/厚度交界高光缝：只画中段、避开两侧圆角转角，接缝自然不突兀。
   ctx.strokeStyle = theme.frameLight
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(R_TOP, PX + 0.5)
-  ctx.lineTo(PX - R_TOP, PX + 0.5)
+  ctx.moveTo(FRAME_R, PX + 0.5)
+  ctx.lineTo(PX - FRAME_R, PX + 0.5)
   ctx.stroke()
+}
+
+// 非木纹皮肤（纯色盘面）的古风花纹装饰：内细描边 + 四角祥云卷。
+// 花纹画在盘面留白区（网格 PAD=30 之内的边距），不与棋子/网格重叠；颜色取自主题(star/line)，随皮肤变化。
+function drawBoardPattern(ctx: CanvasRenderingContext2D, theme: Theme) {
+  ctx.save()
+  // 内描边（细，低透明度）。
+  ctx.strokeStyle = theme.line
+  ctx.globalAlpha = 0.3
+  ctx.lineWidth = 1.5
+  roundRectPath(ctx, 13, 13, PX - 26, PX - 26, 10, 10, 10, 10)
+  ctx.stroke()
+  // 四角祥云卷曲（镜像到四个角）。
+  ctx.globalAlpha = 0.5
+  ctx.strokeStyle = theme.star
+  ctx.lineWidth = 2
+  ctx.lineCap = 'round'
+  for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]] as const) {
+    const cx = sx > 0 ? 23 : PX - 23
+    const cy = sy > 0 ? 23 : PX - 23
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.scale(sx, sy)
+    ctx.beginPath()
+    ctx.arc(0, 0, 13, PI2 * 0.03, PI2 * 0.24) // 外弧
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(7, 7, 5, PI2 * 0.5, PI2 * 1.05) // 内卷
+    ctx.stroke()
+    ctx.restore()
+  }
+  ctx.restore()
 }
 
 // 四角准心：围绕交叉点的四个 L 形转角括号（相机对焦框风格），带轻微呼吸。
@@ -490,6 +527,96 @@ function drawEffect(
       ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0)
       ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
       ctx.stroke()
+    }
+    ctx.restore()
+  } else if (effect === 'ink') {
+    // 墨韵：柔和墨晕扩散渐隐 + 墨点飞溅（水墨风）。
+    if (elapsed > DUR) return
+    const p = elapsed / DUR
+    ctx.save()
+    const rr = CELL * (0.3 + p * 0.7)
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rr)
+    g.addColorStop(0, `rgba(20,18,26,${0.34 * (1 - p)})`)
+    g.addColorStop(0.6, `rgba(30,26,40,${0.2 * (1 - p)})`)
+    g.addColorStop(1, 'rgba(30,26,40,0)')
+    ctx.fillStyle = g
+    ctx.beginPath()
+    ctx.arc(cx, cy, rr, 0, PI2)
+    ctx.fill()
+    ctx.fillStyle = `rgba(15,12,20,${0.5 * (1 - p)})`
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * PI2 + 0.5
+      const d = CELL * (0.2 + p * 0.8)
+      const rDot = Math.max(0.5, 2.4 * (1 - p))
+      ctx.beginPath()
+      ctx.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, rDot, 0, PI2)
+      ctx.fill()
+    }
+    ctx.restore()
+  } else if (effect === 'star') {
+    // 星芒：中心闪光 + 旋转十字星芒（长短交替）+ 迸出的小星点，金光炫目。
+    if (elapsed > DUR) return
+    const p = elapsed / DUR
+    ctx.save()
+    if (elapsed < 160) {
+      const q = elapsed / 160
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, CELL * 0.6)
+      g.addColorStop(0, `rgba(255,246,210,${0.9 * (1 - q)})`)
+      g.addColorStop(1, 'rgba(255,210,74,0)')
+      ctx.fillStyle = g
+      ctx.beginPath()
+      ctx.arc(cx, cy, CELL * 0.6, 0, PI2)
+      ctx.fill()
+    }
+    ctx.strokeStyle = `rgba(255,225,130,${1 - p})`
+    ctx.lineCap = 'round'
+    const rot = p * 0.6
+    for (let i = 0; i < 8; i++) {
+      const a = rot + (i / 8) * PI2
+      const long = i % 2 === 0
+      const r1 = CELL * 0.15
+      const r2 = CELL * (long ? 0.55 + p * 0.5 : 0.3 + p * 0.25)
+      ctx.lineWidth = long ? 2.4 * (1 - p) + 0.4 : 1.4 * (1 - p) + 0.3
+      ctx.beginPath()
+      ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
+      ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2)
+      ctx.stroke()
+    }
+    ctx.fillStyle = `rgba(255,240,180,${1 - p})`
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * PI2 + 0.7
+      const d = CELL * (0.4 + p * 0.7)
+      ctx.beginPath()
+      ctx.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, Math.max(0.4, 1.8 * (1 - p)), 0, PI2)
+      ctx.fill()
+    }
+    ctx.restore()
+  } else if (effect === 'flame') {
+    // 流焰：暖光核 + 向上飘散的火舌粒子（橙红金），热烈灵动。
+    if (elapsed > DUR) return
+    const p = elapsed / DUR
+    ctx.save()
+    const gr = CELL * (0.4 + p * 0.3)
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, gr)
+    g.addColorStop(0, `rgba(255,200,90,${0.7 * (1 - p)})`)
+    g.addColorStop(0.5, `rgba(255,120,40,${0.4 * (1 - p)})`)
+    g.addColorStop(1, 'rgba(255,90,30,0)')
+    ctx.fillStyle = g
+    ctx.beginPath()
+    ctx.arc(cx, cy, gr, 0, PI2)
+    ctx.fill()
+    const cols = ['#ffd24a', '#ff9a3c', '#ff5a2a', '#ffe9a0']
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * PI2
+      const spread = CELL * (0.15 + p * 0.5)
+      const px = cx + Math.cos(a) * spread * 0.6
+      const py = cy + Math.sin(a) * spread * 0.6 - p * CELL * 0.7 // 整体上飘
+      const r = Math.max(0.5, (2.6 - (i % 3)) * (1 - p))
+      ctx.globalAlpha = (1 - p) * 0.9
+      ctx.fillStyle = cols[i % cols.length]
+      ctx.beginPath()
+      ctx.arc(px, py, r, 0, PI2)
+      ctx.fill()
     }
     ctx.restore()
   }

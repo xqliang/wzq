@@ -30,14 +30,18 @@ var Catalog = []Item{
 	{ID: "jade", Name: "玉石", Slot: "board", Price: 800, Currency: "coins", Preview: "jade"},
 	{ID: "blue", Name: "青蓝", Slot: "board", Price: 1000, Currency: "coins", Preview: "blue"},
 	{ID: "gold", Name: "流金岁月", Slot: "board", Price: 30, Currency: "scrolls", Preview: "gold"},
-	// 头像框
-	{ID: "gold", Name: "描金环", Slot: "frame", Price: 0, Currency: "coins", Preview: "gold"},
+	// 头像框（默认「无」，描金环需购买）
+	{ID: "none", Name: "无", Slot: "frame", Price: 0, Currency: "coins", Preview: "none"},
+	{ID: "gold", Name: "描金环", Slot: "frame", Price: 500, Currency: "coins", Preview: "gold"},
 	{ID: "bronze", Name: "古铜环", Slot: "frame", Price: 300, Currency: "coins", Preview: "bronze"},
 	{ID: "jade", Name: "青玉环", Slot: "frame", Price: 800, Currency: "coins", Preview: "jade"},
 	// 落子动效
 	{ID: "ripple", Name: "水波", Slot: "effect", Price: 0, Currency: "coins", Preview: "ripple"},
-	{ID: "dust", Name: "尘屑", Slot: "effect", Price: 200, Currency: "coins", Preview: "dust"},
 	{ID: "none", Name: "无", Slot: "effect", Price: 0, Currency: "coins", Preview: "none"},
+	{ID: "dust", Name: "尘屑", Slot: "effect", Price: 200, Currency: "coins", Preview: "dust"},
+	{ID: "ink", Name: "墨韵", Slot: "effect", Price: 200, Currency: "coins", Preview: "ink"},
+	{ID: "star", Name: "星芒", Slot: "effect", Price: 300, Currency: "coins", Preview: "star"},
+	{ID: "flame", Name: "流焰", Slot: "effect", Price: 300, Currency: "coins", Preview: "flame"},
 }
 
 // 错误集合。
@@ -58,6 +62,11 @@ func find(slot, id string) (Item, bool) {
 	}
 	return Item{}, false
 }
+
+// itemKey 生成 user_item 的存储键（slot:id）。
+// 拥有关系必须按「槽位+id」区分，否则 board 与 frame 同名(如均有 gold/jade)会串号——
+// 买了描金环(frame:gold)会误判为已拥有流金岁月棋盘(board:gold)。
+func itemKey(slot, id string) string { return slot + ":" + id }
 
 // validSlot 校验槽位并返回对应的 user 表已装备列名（白名单，避免 SQL 注入）。
 func equippedCol(slot string) (string, bool) {
@@ -139,7 +148,7 @@ func (svc *Service) State(uid int64) (State, error) {
 	}
 	items := make([]StateItem, 0, len(Catalog))
 	for _, it := range Catalog {
-		isOwned := it.Price == 0 || own[it.ID]
+		isOwned := it.Price == 0 || own[itemKey(it.Slot, it.ID)]
 		items = append(items, StateItem{
 			Item:     it,
 			Owned:    isOwned,
@@ -167,9 +176,10 @@ func (svc *Service) Buy(uid int64, slot, id string) error {
 		return err
 	}
 	defer tx.Rollback()
+	key := itemKey(it.Slot, it.ID)
 	// 已拥有则拒绝（避免重复扣费）。
 	var n int
-	if err := tx.QueryRow(`SELECT COUNT(*) FROM user_item WHERE uid=? AND item_id=?`, uid, it.ID).Scan(&n); err != nil {
+	if err := tx.QueryRow(`SELECT COUNT(*) FROM user_item WHERE uid=? AND item_id=?`, uid, key).Scan(&n); err != nil {
 		return err
 	}
 	if n > 0 {
@@ -183,7 +193,7 @@ func (svc *Service) Buy(uid int64, slot, id string) error {
 	if aff, _ := res.RowsAffected(); aff == 0 {
 		return ErrInsufficient
 	}
-	if _, err := tx.Exec(`INSERT INTO user_item (uid, item_id) VALUES (?,?)`, uid, it.ID); err != nil {
+	if _, err := tx.Exec(`INSERT INTO user_item (uid, item_id) VALUES (?,?)`, uid, key); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -201,7 +211,7 @@ func (svc *Service) Equip(uid int64, slot, id string) error {
 	}
 	if it.Price != 0 {
 		var n int
-		if err := svc.s.DB.QueryRow(`SELECT COUNT(*) FROM user_item WHERE uid=? AND item_id=?`, uid, id).Scan(&n); err != nil {
+		if err := svc.s.DB.QueryRow(`SELECT COUNT(*) FROM user_item WHERE uid=? AND item_id=?`, uid, itemKey(slot, id)).Scan(&n); err != nil {
 			return err
 		}
 		if n == 0 {

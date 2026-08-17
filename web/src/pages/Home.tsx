@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { img } from '../lib/asset'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { me, matchJoin, matchCancel } from '../net/rest'
 import type { User } from '../net/rest'
 import { rankLabel } from '../theme/ranks'
@@ -10,6 +10,7 @@ import { SettingsModal } from '../components/SettingsModal'
 // 首页：LOGO + 资料/货币占位条 + 对战入口 + 运营入口（商店/签到/转盘占位）。
 export function Home({ user }: { user: User }) {
   const nav = useNavigate()
+  const loc = useLocation() as { state?: { autoMatch?: boolean } }
   const [u, setU] = useState<User>(user)
   // 随机匹配「匹配中」浮层：进入后轮询后端匹配池，配上对手再进对局。
   const [matching, setMatching] = useState(false)
@@ -30,7 +31,7 @@ export function Home({ user }: { user: User }) {
           if (!r.waiting && r.roomId) {
             window.clearTimeout(pollRef.current)
             setMatching(false)
-            nav('/game', { state: { mode: 'pvp', roomId: r.roomId } })
+            nav('/game', { state: { mode: 'pvp', roomId: r.roomId, matched: true } })
           } else {
             pollRef.current = window.setTimeout(tick, 1500) // 仍在等待，稍后再轮询
           }
@@ -48,11 +49,17 @@ export function Home({ user }: { user: User }) {
     matchCancel().catch(() => {})
   }
 
+  // 从对局"再来一盘"(随机匹配)返回时携带 autoMatch，自动重新进入匹配。仅触发一次。
+  useEffect(() => {
+    if (loc.state?.autoMatch) startMatch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <div className="home screen">
       <img src={img('logo_title')} alt="五子棋" className="home-logo" />
       <header className="profile">
-        <Avatar src={img(`${u.avatar}`)} size={60} frame={u.equippedFrame || 'gold'} />
+        <Avatar src={img(`${u.avatar}`)} size={60} frame={u.equippedFrame || 'none'} />
         <div className="profile-meta">
           <div className="nick">{u.nickname}</div>
           <div className="rank-tag">{rankLabel(u.rankTier ?? 0)}</div>

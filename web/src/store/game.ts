@@ -22,6 +22,7 @@ interface GameState {
   winLine: { x: number; y: number }[] | null
   history: Move[]
   undoMark: { x: number; y: number } | null // 悔棋位置标记（下一手落子后清除）
+  oppEffect: string | null // 对手的落子特效 id（PvP 由服务端下发；null=用本地设置，用于我方/AI）
   reset: (myColor: Color) => void
   preview: (x: number, y: number) => void
   cancel: () => void
@@ -29,6 +30,7 @@ interface GameState {
   place: (x: number, y: number, color: Color) => void // 用于对手落子/回放
   undo: (n: number) => void // 悔棋：撤销最近 n 手，重建棋盘/回合，标记悔棋位置
   setup: (board: Board, toMove: Color) => void // 用于残局：注入预置局面并指定轮次
+  setOppEffect: (e: string | null) => void // 设置对手落子特效（PvP start 时）
 }
 
 export const useGame = create<GameState>((set, get) => ({
@@ -41,6 +43,7 @@ export const useGame = create<GameState>((set, get) => ({
   winLine: null,
   history: [],
   undoMark: null,
+  oppEffect: null,
   // 重置整局，指定我方执子颜色（黑先）。
   reset: (myColor) =>
     set({
@@ -117,4 +120,6 @@ export const useGame = create<GameState>((set, get) => ({
       history: [],
       undoMark: null,
     }),
+  // 设置对手落子特效（PvP 开局服务端下发）。
+  setOppEffect: (e) => set({ oppEffect: e }),
 }))

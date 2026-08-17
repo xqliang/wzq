@@ -20,6 +20,10 @@ import { RankUpOverlay } from '../components/RankUpOverlay'
 import { rankLabel, rankGroup, rankThreshold } from '../theme/ranks'
 import { SettingsModal } from '../components/SettingsModal'
 
+// 人机对战时 AI 的落子特效：每局开局从可见特效中随机挑一个（不含“无”），与玩家自己的设置相互独立。
+const AI_EFFECTS = ['ripple', 'dust', 'ink', 'star', 'flame'] as const
+const randomAiEffect = () => AI_EFFECTS[Math.floor(Math.random() * AI_EFFECTS.length)]
+
 // 对局页：人机模式驱动 AI Web Worker；真人模式持有唯一的 WebSocket 连接。
 export function Game() {
   const loc = useLocation() as {
@@ -266,6 +270,8 @@ export function Game() {
     startBgm() // 进入对局自动播放背景音乐（用户点击进入即为交互手势，满足自动播放策略）。
     if (st.mode === 'ai') {
       g.reset('black')
+      // AI 落子特效每局随机（与玩家本地设置独立）；BoardCanvas 对对手方(白/AI)的落子用 oppEffect 渲染。
+      useGame.getState().setOppEffect(randomAiEffect())
       workerRef.current = new Worker(new URL('../ai/worker.ts', import.meta.url), { type: 'module' })
       workerRef.current.onmessage = (e: MessageEvent<{ x: number; y: number; color: Color }>) => {
         // 让 AI「思考」总时长落在 1~2s 随机区间（扣除真实运算耗时），避免落子过快。

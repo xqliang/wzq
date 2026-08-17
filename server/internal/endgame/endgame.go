@@ -193,13 +193,14 @@ func (svc *Service) Complete(uid int64, id string, win bool) error {
 	return nil
 }
 
-// Hint 返回一个可接受落子并累加该用户该关的 hints 计数；无可接受落子时返回 nil。
-func (svc *Service) Hint(uid int64, id string) (*[2]int, error) {
+// Hint 返回从初始局面开始的完整逼杀线（多步提示，固定/确定性），
+// 并累加该用户该关的 hints 计数；无解时返回 nil。
+func (svc *Service) Hint(uid int64, id string) ([][2]int, error) {
 	l, ok := findLevel(id)
 	if !ok {
 		return nil, sql.ErrNoRows
 	}
-	answers := l.AcceptedAnswers()
+	line := l.HintLine()
 	// 读-改-写 hints 计数。
 	_, attempts, hints, exists, err := svc.readProgress(uid, id)
 	if err != nil {
@@ -218,9 +219,8 @@ func (svc *Service) Hint(uid int64, id string) (*[2]int, error) {
 		return nil, err
 	}
 	_ = attempts
-	if len(answers) == 0 {
+	if len(line) == 0 {
 		return nil, nil
 	}
-	cell := answers[0]
-	return &cell, nil
+	return line, nil
 }

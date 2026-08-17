@@ -26,11 +26,11 @@ func TestAllLevelsValid(t *testing.T) {
 				break
 			}
 		}
-		// 4) 存在 2-5 步必胜（多步残局，须≥2 步），且有可接受首着。
+		// 4) 存在 2..maxMateSteps 步必胜（多步残局，须≥2 步），且有可接受首着。
 		steps := l.MinSteps()
 		ans := l.AcceptedAnswers()
-		if steps < 2 || steps > 5 {
-			t.Errorf("level %s 无 2-5 步必胜（MinSteps=%d）", l.ID, steps)
+		if steps < 2 || steps > maxMateSteps {
+			t.Errorf("level %s 无 2-%d 步必胜（MinSteps=%d）", l.ID, maxMateSteps, steps)
 		}
 		if len(ans) == 0 {
 			t.Errorf("level %s 无可接受首着", l.ID)
@@ -66,11 +66,12 @@ func TestAcceptedFirstMovesKeepForcedWin(t *testing.T) {
 				t.Errorf("level %s 首着 %v 未形成冲四威胁", l.ID, mv)
 				continue
 			}
-			// 防守方堵住任一取胜点后，攻击方仍应必胜。
+			// 防守方堵住任一取胜点后，攻击方仍应必胜（剩余步数 = maxMateSteps-1，
+			// 覆盖所有可接受首着在解算上限内的必胜，而不只最小步解）。
 			def := other(l.ToMove)
 			t0 := threats[0]
 			gg[t0[1]][t0[0]] = def
-			if !forcedWin(&gg, l.ToMove, 4) {
+			if !forcedWin(&gg, l.ToMove, maxMateSteps-1) {
 				t.Errorf("level %s 首着 %v 堵 %v 后攻击方失去必胜", l.ID, mv, t0)
 			}
 		}

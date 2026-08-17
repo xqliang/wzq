@@ -88,7 +88,11 @@ echo "==> 部署目标: $HOST  (环境: $ENV, 端口: $PORT, 目录: $REMOTE_DIR
 # 1. 交叉编译 Linux/amd64 纯静态二进制
 # ---------------------------------------------------------------------------
 echo "==> [1/7] 交叉编译 wzq-server (linux/amd64, CGO_ENABLED=0) ..."
-( cd "$SERVER_DIR" && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o "$LOCAL_BIN" ./cmd/server )
+# 国内网络直连 proxy.golang.org 常被墙/超时(工具链 + modernc 大模块都下不动)，
+# 默认走 goproxy.cn(direct 兜底)；若已在环境变量显式设置 GOPROXY 则尊重用户配置。
+( cd "$SERVER_DIR" && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+  GOPROXY="${GOPROXY:-https://goproxy.cn,direct}" \
+  go build -ldflags="-s -w" -o "$LOCAL_BIN" ./cmd/server )
 echo "    编译完成: $LOCAL_BIN ($(du -h "$LOCAL_BIN" | cut -f1))"
 
 # ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { BoardCanvas } from '../board/BoardCanvas'
 import type { Overlay } from '../board/BoardCanvas'
@@ -29,7 +29,9 @@ export function EndgamePlay() {
   const [detail, setDetail] = useState<EndgameDetail | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [done, setDone] = useState<Done>(null)
-  const [overlays, setOverlays] = useState<Overlay[] | undefined>(undefined)
+  // 提示线（从初始局面求得的完整逼杀线）与已揭示步数：按顺序一个一个出。
+  const [hintLine, setHintLine] = useState<[number, number][] | null>(null)
+  const [hintRevealed, setHintRevealed] = useState(0)
   const [nextId, setNextId] = useState<string | null>(null)
   // AI Web Worker：在后台线程计算防守方落子，避免卡顿主线程。
   const workerRef = useRef<Worker | null>(null)
@@ -41,6 +43,18 @@ export function EndgamePlay() {
   // 订阅轮次与胜负，驱动 AI 落子与结算。
   const turn = useGame((s) => s.turn)
   const winner = useGame((s) => s.winner)
+  const board = useGame((s) => s.board)
+
+  // 提示覆盖标记：仅显示已揭示的逼杀线前缀；已落子的跳过，保留原步序号。
+  const hintOverlays = useMemo<Overlay[] | undefined>(() => {
+    if (!hintLine) return undefined
+    const out: Overlay[] = []
+    for (let i = 0; i < hintRevealed && i < hintLine.length; i++) {
+      const [x, y] = hintLine[i]
+      if (board[y][x] === null) out.push({ x, y, color: '#f1c40f', labelColor: '#ffffff', label: String(i + 1) })
+    }
+    return out
+  }, [hintLine, hintRevealed, board])
 
   // 创建 AI Worker（仅一次）：收到落子后延时到 1~2s 再以防守方颜色落子并播放音效。
   useEffect(() => {
@@ -66,7 +80,8 @@ export function EndgamePlay() {
     setErr(null)
     setDone(null)
     pendingDoneRef.current = null
-    setOverlays(undefined)
+    setHintLine(null)
+    setHintRevealed(0)
     endgameLevel(id)
       .then((d) => {
         useGame.getState().setup(buildBoard(d.stones), d.toMove)
@@ -110,12 +125,20 @@ export function EndgamePlay() {
     playSfx('place')
   }
 
-  // 💡 提示：高亮推荐落子（当前局面的一个可接受首着）。
+  // 💡 提示：按顺序一个一个出——每次点击多揭示逼杀线的一步（已揭示的保留）。
   const onHint = () => {
     playSfx('button')
-    endgameHint(id)
-      .then((h) => setOverlays([{ x: h.x, y: h.y, color: '#f1c40f', label: '★' }]))
-      .catch((e) => setErr(String(e)))
+    const reveal = (line: [number, number][]) => {
+      setHintLine(line)
+      setHintRevealed((n) => Math.min(n + 1, line.length))
+    }
+    if (hintLine) {
+      reveal(hintLine)
+    } else {
+      endgameHint(id)
+        .then((h) => reveal(h.line))
+        .catch((e) => setErr(String(e)))
+    }
   }
 
   // 重试：恢复初始局面、清除结果与提示。
@@ -125,7 +148,8 @@ export function EndgamePlay() {
     useGame.getState().setup(buildBoard(detail.stones), detail.toMove)
     setDone(null)
     pendingDoneRef.current = null
-    setOverlays(undefined)
+    setHintLine(null)
+    setHintRevealed(0)
   }
 
   if (err) {
@@ -153,7 +177,7 @@ export function EndgamePlay() {
       </div>
       <BoardCanvas
         onConfirm={onConfirm}
-        overlays={overlays}
+        overlays={hintOverlays}
         interactive={!done}
         onWinAnimationEnd={() => setDone(pendingDoneRef.current)}
       />

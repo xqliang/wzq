@@ -681,16 +681,17 @@ func (s *Server) handleEndgameHint(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad request"})
 		return
 	}
-	cell, err := s.Endgame.Hint(uid, body.ID)
+	line, err := s.Endgame.Hint(uid, body.ID)
 	if err != nil {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
 		return
 	}
-	if cell == nil {
-		writeJSON(w, http.StatusOK, map[string]any{"cell": nil})
+	if line == nil {
+		writeJSON(w, http.StatusOK, map[string]any{"line": nil})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"cell": cell, "x": cell[0], "y": cell[1]})
+	// 返回完整逼杀线（执子方各手坐标），前端按序号标出。
+	writeJSON(w, http.StatusOK, map[string]any{"line": line})
 }
 
 // handleEndgameAnswer 返回该关全部可接受落子（看答案）；?id= 指定关卡。

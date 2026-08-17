@@ -174,19 +174,52 @@ func TestProgressAndExp(t *testing.T) {
 	}
 }
 
-// TestHintCounts 校验 Hint 返回一个属于可接受答案集合的落子。
+// TestHintCounts 校验 Hint 返回完整的逼杀线,且线首着属于可接受答案集合。
 func TestHintCounts(t *testing.T) {
 	svc, _, uid := newSvc(t)
 	id := Levels[0].ID
-	cell, err := svc.Hint(uid, id)
+	line, err := svc.Hint(uid, id)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cell == nil {
-		t.Fatal("hint 应返回非空落子")
+	if len(line) == 0 {
+		t.Fatal("hint 应返回非空逼杀线")
 	}
 	l, _ := findLevel(id)
-	if !contains(l.AcceptedAnswers(), cell[0], cell[1]) {
-		t.Fatalf("hint 落子 %v 不在可接受答案集合内", *cell)
+	if !contains(l.AcceptedAnswers(), line[0][0], line[0][1]) {
+		t.Fatalf("hint 首着 %v 不在可接受答案集合内", line[0])
+	}
+}
+
+// TestHintLine 校验每关的提示线：长度恰为最小必胜步数，且按线走（对手被迫堵成五点）
+// 能真正取胜——确保按提示可在规定步数内破局。
+func TestHintLine(t *testing.T) {
+	for _, l := range Levels {
+		line := l.HintLine()
+		steps := l.MinSteps()
+		if len(line) != steps {
+			t.Errorf("level %s 提示线长度 %d != 最小步数 %d", l.ID, len(line), steps)
+			continue
+		}
+		g := gridFromStones(l.Stones)
+		won := false
+		for i, mv := range line {
+			g[mv[1]][mv[0]] = l.ToMove
+			if winAt(&g, mv[0], mv[1], l.ToMove) {
+				won = true
+				break
+			}
+			threats := immediateWins(&g, l.ToMove)
+			if len(threats) == 0 {
+				t.Errorf("level %s 提示线第 %d 手 (%d,%d) 未形成冲四", l.ID, i+1, mv[0], mv[1])
+				break
+			}
+			// 白被迫堵任一成五点(取第一个)；双冲四则白堵一个、黑下一手走另一个成五。
+			g[threats[0][1]][threats[0][0]] = other(l.ToMove)
+		}
+		if !won {
+			t.Errorf("level %s 按提示线未能取胜", l.ID)
+		}
+		t.Logf("level %s 提示线(%d步): %v", l.ID, steps, line)
 	}
 }

@@ -106,7 +106,7 @@ echo "    前端产物: $WEB_DIR/dist ($(du -sh "$WEB_DIR/dist" | cut -f1))"
 # 3. 确保远端 MariaDB 就绪 + 建库建账号
 # ---------------------------------------------------------------------------
 echo "==> [3/7] 确保远端 MariaDB 已安装并运行 ..."
-ssh "$HOST" 'command -v mariadbd >/dev/null 2>&1 || command -v mysqld >/dev/null 2>&1 || \
+ssh "$HOST" 'systemctl is-active --quiet mariadb || systemctl is-active --quiet mysql || command -v mariadbd >/dev/null 2>&1 || command -v mysqld >/dev/null 2>&1 || \
   (apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server); \
   systemctl enable --now mariadb'
 

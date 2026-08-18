@@ -1237,16 +1237,18 @@ button:disabled {
   gap: 18px;
   padding-top: 18px;
 }
-/* 顶部云纹 + 垂下的金色挂线（灯笼挂在云纹上）。 */
+/* 顶部云纹 + 垂下的金色绳串（拧绳纹理 + 每节灯笼间的绳结小球）。 */
 .shop-tabs::before {
   content: '';
   position: absolute;
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
-  width: 2px;
+  width: 4px;
   height: calc(100% - 12px);
-  background: linear-gradient(#d8a63c, rgba(216, 166, 60, 0.25));
+  background:
+    radial-gradient(circle at 50% 50%, #f4d47b 0 3.2px, rgba(150, 100, 36, 0.9) 3.6px, transparent 4.2px) 50% 84px / 12px 96px repeat-y,
+    repeating-linear-gradient(180deg, #e6b94e 0 4px, #a9792a 4px 8px);
   z-index: -1;
 }
 .shop-tabs::after {
@@ -1269,10 +1271,11 @@ button:disabled {
   justify-content: center;
   writing-mode: vertical-rl;
   text-orientation: upright;
+  white-space: nowrap;
   padding: 10px 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   color: #ffe9c9;
   /* 未点亮：偏暗红球 + 两条肋线 */
   background:
@@ -1504,29 +1507,27 @@ button:disabled {
   position: relative;
   z-index: 2;
 }
-/* 顶部屋檐（屋顶样式）：青绿出檐横梁，两侧略出挑，标题匾坐落其上（参考竞品）。 */
+/* 顶部飞檐屋顶：SVG 曲线绘制两端上翘的檐口（clip-path 折线做不出平滑上翘）。 */
 .gp-roof {
   position: absolute;
-  top: -15px;
-  left: -16px;
-  right: -16px;
-  height: 26px;
+  top: -22px;
+  left: -24px;
+  right: -24px;
+  height: 34px;
   z-index: 1;
-  background: linear-gradient(180deg, #3ea0a2 0%, #2b8082 52%, #1d6467 100%);
-  clip-path: polygon(4% 0, 96% 0, 100% 62%, 93% 100%, 7% 100%, 0 62%);
-  border-radius: 12px 12px 0 0;
-  box-shadow: 0 4px 7px rgba(0, 0, 0, 0.38), inset 0 2px 0 rgba(255, 255, 255, 0.28), inset 0 -3px 5px rgba(0, 60, 62, 0.4);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 34' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='r' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%2345abac'/%3E%3Cstop offset='.55' stop-color='%232d8385'/%3E%3Cstop offset='1' stop-color='%231b5f62'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M60 3 C44 3 33 7 23 15 C16 20 8 22 3 16 C0 27 9 33 19 33 L101 33 C111 33 120 27 117 16 C112 22 104 20 97 15 C87 7 76 3 60 3 Z' fill='url(%23r)'/%3E%3C/svg%3E") center/100% 100% no-repeat;
+  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.4));
 }
-/* 屋脊高光线。 */
+/* 屋脊高光。 */
 .gp-roof::after {
   content: '';
   position: absolute;
-  top: 6px;
-  left: 12%;
-  right: 12%;
-  height: 2px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.35);
+  top: 4px;
+  left: 27%;
+  right: 27%;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.3);
 }
 .gp-titlebar {
   position: absolute;
@@ -1551,8 +1552,11 @@ button:disabled {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, #f4dfb0 0%, #e7c487 55%, #d6a961 100%);
-  clip-path: polygon(7% 0, 93% 0, 85% 100%, 15% 100%);
+  background: linear-gradient(180deg, #f9e7bd 0%, #eecb8c 40%, #dcb069 72%, #ca995a 100%);
+  /* 倒梯形四角各切一小刀→八边形，斜边过渡更平滑不生硬。 */
+  clip-path: polygon(9% 0, 91% 0, 89% 24%, 85% 100%, 15% 100%, 11% 24%);
+  /* 顶部高光 + 底部内阴影＝匾面凸起立体感。 */
+  box-shadow: inset 0 3px 0 rgba(255, 248, 225, 0.75), inset 0 -6px 8px rgba(150, 95, 35, 0.42);
   filter: drop-shadow(2px 0 0 #9c6b2e) drop-shadow(-2px 0 0 #9c6b2e) drop-shadow(0 2px 0 #9c6b2e) drop-shadow(0 -2px 0 #9c6b2e);
 }
 .gp-titlebar .banner::after {
@@ -1562,10 +1566,11 @@ button:disabled {
   z-index: -1;
   pointer-events: none;
   background-repeat: no-repeat;
-  background-position: 20px center, right 20px center;
+  background-position: 14px center, right 14px center;
+  /* 两端卷草纹（描边曲线＋端头螺旋卷）：左侧一枚，右侧镜像。 */
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='14'%3E%3Cellipse cx='8' cy='9' rx='6' ry='3.4' fill='%23c9902f'/%3E%3Cellipse cx='14' cy='7' rx='4.5' ry='3.2' fill='%23c9902f'/%3E%3Cellipse cx='4' cy='8' rx='3.2' ry='2.6' fill='%23c9902f'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='14'%3E%3Cellipse cx='16' cy='9' rx='6' ry='3.4' fill='%23c9902f'/%3E%3Cellipse cx='10' cy='7' rx='4.5' ry='3.2' fill='%23c9902f'/%3E%3Cellipse cx='20' cy='8' rx='3.2' ry='2.6' fill='%23c9902f'/%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='18' fill='none' stroke='%23b07f2a' stroke-width='1.7' stroke-linecap='round'%3E%3Cpath d='M4 9 C4 5 8.5 4 10 7 C11 9 8.5 10.5 7.5 8.6'/%3E%3Cpath d='M10 7 C16 3.5 23 4.5 28 8.5 C30.5 10.5 34 9.5 34.5 6.5'/%3E%3Cpath d='M28 8.5 C26 12 30.5 14 32 11'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='18' fill='none' stroke='%23b07f2a' stroke-width='1.7' stroke-linecap='round'%3E%3Cg transform='translate(36,0) scale(-1,1)'%3E%3Cpath d='M4 9 C4 5 8.5 4 10 7 C11 9 8.5 10.5 7.5 8.6'/%3E%3Cpath d='M10 7 C16 3.5 23 4.5 28 8.5 C30.5 10.5 34 9.5 34.5 6.5'/%3E%3Cpath d='M28 8.5 C26 12 30.5 14 32 11'/%3E%3C/g%3E%3C/svg%3E");
 }
 .gp-titlebar .banner-text {
   font-size: 30px;

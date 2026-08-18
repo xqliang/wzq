@@ -1222,34 +1222,102 @@ button:disabled {
 .shop-currency img { width: 20px; height: 20px; }
 /* 主面板：青蓝描边 + 绢帛底，内含左侧分类与卡片网格。 */
 .shop-body {
-  display: flex;
-  gap: 10px;
   width: 100%;
   min-height: 0;
+  padding-left: 46px;
 }
 .shop-tabs {
+  position: absolute;
+  left: -4px;
+  top: 116px;
+  z-index: 6;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  flex: none;
+  align-items: center;
+  gap: 18px;
+  padding-top: 18px;
 }
+/* 顶部云纹 + 垂下的金色挂线（灯笼挂在云纹上）。 */
+.shop-tabs::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: calc(100% - 12px);
+  background: linear-gradient(#d8a63c, rgba(216, 166, 60, 0.25));
+  z-index: -1;
+}
+.shop-tabs::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 20px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 20'%3E%3Cpath d='M6 17 Q0 10 7 9 Q7 3 15 5 Q20 0 25 5 Q33 3 33 9 Q40 10 34 17 Z' fill='%23ecc25a' stroke='%239c6b2e' stroke-width='1.4'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+/* 分类标签＝红灯笼：红球灯身 + 竖向肋线 + 金色上下托 + 挂线小结 + 白字；区分点亮/未点亮。 */
 .shop-tab {
-  width: 64px;
-  padding: 14px 6px;
-  font-size: 15px;
+  position: relative;
+  width: 46px;
+  height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  padding: 10px 0;
+  font-size: 16px;
   font-weight: 700;
-  line-height: 1.2;
-  white-space: nowrap;
-  color: #fff5e6;
-  background: linear-gradient(180deg, #d0714a, #a8471f);
-  border: 2px solid #7c3a1e;
-  border-radius: 12px;
-  text-shadow: 0 1px 0 rgba(80, 30, 10, 0.6);
+  letter-spacing: 3px;
+  color: #ffe9c9;
+  /* 未点亮：偏暗红球 + 两条肋线 */
+  background:
+    linear-gradient(90deg, transparent 27%, rgba(90, 14, 8, 0.5) 28%, rgba(90, 14, 8, 0.5) 30%, transparent 31%, transparent 69%, rgba(90, 14, 8, 0.5) 70%, rgba(90, 14, 8, 0.5) 72%, transparent 73%),
+    radial-gradient(62% 60% at 50% 42%, #bb3c28 0%, #97281a 66%, #741d13 100%);
+  border: 2px solid #c8923a;
+  border-radius: 50% / 45%;
+  box-shadow: inset 0 -4px 9px rgba(50, 8, 4, 0.55);
+  text-shadow: 0 1px 2px rgba(50, 8, 4, 0.85);
+  filter: saturate(0.8) brightness(0.72);
 }
+/* 金色上下灯托。 */
+.shop-tab::before,
+.shop-tab::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #f6cf6c, #c1902f);
+}
+.shop-tab::before { top: -4px; }
+.shop-tab::after { bottom: -4px; }
+/* 最下面的灯笼：金结 + 红流苏穗条。 */
+.shop-tab:last-child::after {
+  top: auto;
+  bottom: -26px;
+  width: 16px;
+  height: 26px;
+  border-radius: 0 0 3px 3px;
+  background:
+    linear-gradient(180deg, #f6cf6c, #cc9a34) top center / 18px 6px no-repeat,
+    repeating-linear-gradient(90deg, #d63c1f 0 2px, #a02414 2px 4px) center 7px / 13px 19px no-repeat;
+}
+/* 点亮（当前选中）：暖亮发光红灯 + 外发光。 */
 .shop-tab.active {
-  background: linear-gradient(180deg, #f0b24a, #d4881f);
-  color: #5c360f;
-  box-shadow: 0 0 0 2px rgba(240, 210, 122, 0.7);
+  color: #fff8e6;
+  background:
+    linear-gradient(90deg, transparent 27%, rgba(150, 40, 20, 0.4) 28%, rgba(150, 40, 20, 0.4) 30%, transparent 31%, transparent 69%, rgba(150, 40, 20, 0.4) 70%, rgba(150, 40, 20, 0.4) 72%, transparent 73%),
+    radial-gradient(56% 56% at 50% 40%, #ffdf92 0%, #ff8a44 38%, #ec4a20 72%, #c1301a 100%);
+  border-color: #ffe28c;
+  box-shadow: inset 0 0 12px rgba(255, 230, 170, 0.95), 0 0 22px 5px rgba(255, 175, 70, 0.9);
+  filter: none;
 }
 .shop-grid {
   display: grid;
@@ -1261,6 +1329,7 @@ button:disabled {
   align-content: start;
 }
 .shop-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1270,6 +1339,20 @@ button:disabled {
   background: linear-gradient(180deg, #fffaf0, #f0e4c8);
   border: 2px solid #cba76a;
   border-radius: 12px;
+}
+/* 卡片四角 L 形括号（参考竞品）。 */
+.shop-card::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: top left, top right, bottom left, bottom right;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M1 7V1H7' fill='none' stroke='%238a5a24' stroke-width='2'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M13 7V1H7' fill='none' stroke='%238a5a24' stroke-width='2'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M1 7V13H7' fill='none' stroke='%238a5a24' stroke-width='2'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M13 7V13H7' fill='none' stroke='%238a5a24' stroke-width='2'/%3E%3C/svg%3E");
 }
 .shop-card.equipped {
   border-color: var(--gold);
@@ -1394,8 +1477,9 @@ button:disabled {
   align-items: center;
   gap: 10px;
   width: 100%;
-  max-width: 440px;
-  max-height: 86vh;
+  max-width: 404px;
+  min-height: 524px;
+  max-height: 88vh;
   padding: 26px 18px 18px;
   /* 青绿(teal)厚描边圆角框 + 内侧浅色线 + 落地阴影（参考竞品配色）。 */
   border: 11px solid #2f8688;
@@ -1495,6 +1579,17 @@ button:disabled {
   min-width: 0;
 }
 .gp-currency img { width: 30px; height: 30px; }
+/* 金币与卷轴之间的红宝石分隔（参考竞品）。 */
+.gp-currency .coin::after {
+  content: '';
+  width: 15px;
+  height: 15px;
+  margin-left: 14px;
+  background: linear-gradient(135deg, #e2503a, #b52c17);
+  border: 1.5px solid #f0b24a;
+  border-radius: 3px;
+  transform: rotate(45deg);
+}
 .gp-content {
   display: flex;
   flex-direction: column;

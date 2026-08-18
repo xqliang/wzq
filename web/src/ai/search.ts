@@ -80,6 +80,42 @@ function pickBest(board: Board, color: Color, pts: { x: number; y: number }[]): 
   return choice
 }
 
+// —— 对方"一手做成双威胁(4-3/双三/双四)"的识别：过某落点有 ≥2 条线同时成"必须应"威胁 ——
+// s：以落点为中心、沿某方向 ±4 的 9 格窗口串（o=同色, .=空, x=对方/界外）。
+// makesFive：某空格补成 o 后出现连五（=该线为冲四/活四）。
+function makesFive(s: string): boolean {
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] !== '.') continue
+    if ((s.slice(0, i) + 'o' + s.slice(i + 1)).includes('ooooo')) return true
+  }
+  return false
+}
+// makesOpenFour：某空格补成 o 后出现活四 `.oooo.`（=该线为活三，含可成活四的跳三）。
+function makesOpenFour(s: string): boolean {
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] !== '.') continue
+    if ((s.slice(0, i) + 'o' + s.slice(i + 1)).includes('.oooo.')) return true
+  }
+  return false
+}
+const FORK_DIRS = [[1, 0], [0, 1], [1, 1], [1, -1]] as const
+// 统计在 (x,y) 落子后，过该点四条线中「必须应」威胁（活三/冲四/活四）的数量。≥2 即杀招双威胁。
+function forkThreatsAt(board: Board, x: number, y: number): number {
+  const color = board[y][x]
+  if (!color) return 0
+  let n = 0
+  for (const [dx, dy] of FORK_DIRS) {
+    let s = ''
+    for (let k = -4; k <= 4; k++) {
+      const nx = x + dx * k, ny = y + dy * k
+      if (nx < 0 || ny < 0 || nx >= SIZE || ny >= SIZE) s += 'x'
+      else { const c = board[ny][nx]; s += c === color ? 'o' : c === null ? '.' : 'x' }
+    }
+    if (s.includes('ooooo') || makesFive(s) || makesOpenFour(s)) n++
+  }
+  return n
+}
+
 // 负极大值搜索 + α-β 剪枝。lastX/lastY 为对手刚落子的位置，用于快速判定是否已经形成五连。
 function negamax(board: Board, color: Color, depth: number, alpha: number, beta: number, lastX: number, lastY: number): number {
   // 对手上一手已经连五 => 当前视角是必败局面，深度越浅（越早败）惩罚越重
@@ -135,6 +171,16 @@ export function bestMove(board: Board, color: Color, level: number, opts?: { tie
       const blocks = oppFour.filter((c) => liveFourPoints(applyMove(board, { x: c.x, y: c.y, color }), opp).length === 0)
       if (blocks.length) return { ...pickBest(board, color, blocks), color }
     }
+  }
+
+  // 4.5. 对方一步可成"杀招双威胁"(4-3 / 双三 / 双四)：过对方落点有 ≥2 条线同时成必应威胁。
+  //      这类点浅层搜索看不到、且其"四"多为冲四(createsLiveFour 识别不到)，第4步会漏掉，必须显式抢占。
+  //      仅 Lv1；命中即确定性封堵（不加噪声），白占对方关键双威胁点。
+  if (level === 1) {
+    const forks = cands.filter(
+      (c) => forkThreatsAt(applyMove(board, { x: c.x, y: c.y, color: opp }), c.x, c.y) >= 2,
+    )
+    if (forks.length) return { ...pickBest(board, color, forks), color }
   }
 
   // 5. 常规搜索：对（排序后的）候选点做负极大值 + α-β 搜索取最优。

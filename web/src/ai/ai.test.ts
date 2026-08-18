@@ -98,6 +98,15 @@ describe('bestMove 防守', () => {
     const extendsToLiveFour = (mv.x === 6 && mv.y === 7) || (mv.x === 10 && mv.y === 7)
     expect(extendsToLiveFour).toBe(true)
   })
+  it('Lv1 必须抢占对方"4-3"双威胁点(冲四+活三；浅搜索会漏、createsLiveFour 识别不到冲四)', () => {
+    // 黑若落 (7,7)：横向 (4,7)(5,7)(6,7)+(7,7) 成冲四（左端 (3,7) 被白堵、右端 (8,7) 可成五），
+    // 同时纵向 (7,5)(7,6)+(7,7) 成活三 => 4-3 双威胁。白不抢占 (7,7) 则黑下一手必成杀。
+    let b = emptyBoard()
+    for (const [x, y] of [[4, 7], [5, 7], [6, 7], [7, 5], [7, 6]] as const) b = applyMove(b, { x, y, color: 'black' })
+    b = applyMove(b, { x: 3, y: 7, color: 'white' })
+    const mv = bestMove(b, 'white', 1)
+    expect(mv.x === 7 && mv.y === 7).toBe(true)
+  })
   it('Lv3 计时在合理范围内(<25s/步)', { timeout: 60000 }, () => {
     // 真实中盘盘面(无预处理早退,逼出完整深度搜索)。
     // 注意别用"已有活三/四连"的盘——预处理会直接返回,测不到搜索耗时。

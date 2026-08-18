@@ -1,3 +1,9 @@
 # Python 脚本缓存（scripts/ 下用 uv 跑生图脚本时产生）
 __pycache__/
 *.pyc
+
+# 本地 UI 截图调试临时物（Playwright 无头浏览器验收用，勿提交）
+.uivenv/
+.shots/
+/uishot.py
+/shot_top.py

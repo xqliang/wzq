@@ -20,6 +20,7 @@ export function GamePanel({
   return (
     <div className="gp-mask">
       <div className="gp-panel">
+        <div className="gp-roof" aria-hidden="true" />
         <div className="gp-titlebar">
           <Banner text={title} tone="gold" />
           <button className="gp-close" onClick={onClose} aria-label="关闭">✕</button>

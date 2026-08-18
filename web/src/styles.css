@@ -1397,21 +1397,21 @@ button:disabled {
   max-width: 440px;
   max-height: 86vh;
   padding: 26px 18px 18px;
-  /* 生成的均匀雕花边框：border-image 九宫格裁切 + round 平铺，永远贴边不错位。
-     border-image 不遵循 border-radius，故不设圆角，避免边框方而底色圆导致的空角。 */
-  border: 20px solid transparent;
-  border-image: url('./assets/img/panel_frame.png') 72 / 20px / 0 round;
+  /* 青绿(teal)厚描边圆角框 + 内侧浅色线 + 落地阴影（参考竞品配色）。 */
+  border: 11px solid #2f8688;
+  border-radius: 22px;
   background: linear-gradient(180deg, #fbf1d8, #efe0bd);
+  box-shadow: inset 0 0 0 3px #6cb6b1, inset 0 0 0 4px rgba(255, 255, 255, 0.4), 0 14px 34px rgba(0, 0, 0, 0.5);
 }
 /* 顶部孔明灯装饰（放大约 1.5 倍并上移，居中叠在上沿、标题之后）。 */
 .gp-panel::before {
   content: '';
   position: absolute;
-  top: -100px;
+  top: -134px;
   left: 50%;
   transform: translateX(-50%);
-  width: 96%;
-  height: 150px;
+  width: 92%;
+  height: 140px;
   z-index: 1;
   pointer-events: none;
   background: url('./assets/img/panel_top.png') center / contain no-repeat;
@@ -1422,50 +1422,79 @@ button:disabled {
 }
 .gp-titlebar {
   position: absolute;
-  top: -20px;
+  top: -22px;
   left: 0;
   right: 0;
   display: flex;
+  align-items: center;
   justify-content: center;
+}
+/* 顶部标题匾：米金木质圆角横匾 + 深棕描边，红字（参考竞品配色）。 */
+.gp-titlebar .banner {
+  min-width: 148px;
+  height: auto;
+  padding: 7px 44px;
+  background: linear-gradient(180deg, #f3dcab 0%, #e6c184 55%, #d7ab66 100%);
+  border: 3px solid #9c6b2e;
+  border-radius: 13px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -2px 4px rgba(120, 80, 30, 0.35), 0 3px 7px rgba(0, 0, 0, 0.4);
+}
+.gp-titlebar .banner-text {
+  font-size: 30px;
+  letter-spacing: 5px;
+  background-image: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  -webkit-text-fill-color: #a2371a;
+  color: #a2371a;
+  filter: none;
+  text-shadow: 0 1px 0 rgba(255, 240, 205, 0.6);
 }
 .gp-close {
   position: absolute;
-  top: -2px;
-  right: -10px;
+  top: 50%;
+  right: -2px;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border-radius: 50%;
-  font-size: 18px;
-  color: #5c360f;
-  background: radial-gradient(circle at 40% 35%, #f4d989, #cf9a34 70%, #8a5a1c);
-  border: 3px solid #fbeecb;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  font-size: 19px;
+  font-weight: 700;
+  color: #8a3410;
+  background: radial-gradient(circle at 42% 34%, #ffbf6b, #ef8330 62%, #c25f14);
+  border: 3px solid #ffe6c2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
   z-index: 3;
 }
 .gp-currency {
   display: flex;
-  gap: 10px;
-  margin-top: 4px;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px 20px;
+  background: linear-gradient(180deg, #e7cfa2, #cba976);
+  border: 2px solid #9c6b2e;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -2px 4px rgba(120, 80, 30, 0.3);
 }
 .gp-currency span {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 6px;
-  min-width: 92px;
-  padding: 2px 16px 2px 6px;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 16px;
   color: #5c360f;
-  background: linear-gradient(180deg, #fbeecb, #e6cf9a);
-  border: 2px solid var(--gold);
-  border-radius: 999px;
+  background: none;
+  border: none;
+  padding: 0;
+  min-width: 0;
 }
-.gp-currency img { width: 34px; height: 34px; }
+.gp-currency img { width: 30px; height: 30px; }
 .gp-content {
   display: flex;
   flex-direction: column;

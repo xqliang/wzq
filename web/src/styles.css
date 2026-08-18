@@ -1325,23 +1325,25 @@ button:disabled {
 .shop-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   align-content: start;
 }
+/* 商品卡：绢帛底 + 深棕描边 + 四角括号，名称带/大预览/底部价格按钮（参考竞品）。 */
 .shop-card {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 8px 6px;
+  gap: 4px;
+  padding: 6px 6px 8px;
   min-width: 0;
-  background: linear-gradient(180deg, #fffaf0, #f0e4c8);
-  border: 2px solid #cba76a;
+  background: linear-gradient(180deg, #fff7e6, #f1e2c2);
+  border: 2px solid #c7a05a;
   border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 /* 卡片四角 L 形括号（参考竞品）。 */
 .shop-card::after {
@@ -1361,50 +1363,86 @@ button:disabled {
   border-color: var(--gold);
   box-shadow: 0 0 0 2px rgba(200, 145, 47, 0.5);
 }
-.shop-card-name { font-size: 15px; font-weight: 700; color: #5c360f; }
+/* 名称带：略深的米底 + 下边线，与预览区分。 */
+.shop-card-name {
+  width: 100%;
+  padding: 4px 4px 5px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #6b3f12;
+  text-align: center;
+  letter-spacing: 1px;
+  border-bottom: 1px solid rgba(150, 110, 50, 0.3);
+}
+/* 预览区：撑满把价格按钮顶到底部；右下角放大镜由 .preview-zoom::after 挂上。 */
+.shop-card-preview {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+}
 .shop-card-foot {
-  margin-top: 2px;
+  margin-top: auto;
   display: flex;
   justify-content: center;
   width: 100%;
 }
 /* 底部控件（价格/装备/已装备）统一等宽、居中、不换行——避免"已装备"被折成两行、各卡片按钮参差。 */
 .shop-card-foot > * {
-  min-width: 84px;
+  min-width: 92px;
   justify-content: center;
   white-space: nowrap;
   text-align: center;
 }
+/* 价格按钮：金圆角胶囊 + 内嵌金币图标 + 数字（参考竞品）。 */
 .price-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 16px;
+  padding: 5px 14px 5px 8px;
   font-weight: 700;
-  color: #5c360f;
-  background: linear-gradient(180deg, #ffe6a0, #e0a52f);
-  border: 2px solid #a86b32;
-  border-radius: 16px;
+  font-size: 14px;
+  color: #6b3a0e;
+  background: linear-gradient(180deg, #ffe9a6, #e8b23c);
+  border: 2px solid #b97d2c;
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 2px rgba(120, 80, 20, 0.35);
 }
-.price-btn img { width: 26px; height: 26px; }
+.price-btn img { width: 20px; height: 20px; }
+/* 已装备标签：绿色胶囊。 */
 .tag-equipped {
   display: inline-block;
-  padding: 6px 16px;
+  padding: 5px 16px;
   font-weight: 700;
-  color: #2e7d4f;
-  background: #e4f3e8;
-  border: 2px solid #6fae86;
-  border-radius: 16px;
+  font-size: 14px;
+  color: #fff;
+  background: linear-gradient(180deg, #5fbf78, #2f9b52);
+  border: 2px solid #1f7a3c;
+  border-radius: 18px;
 }
 /* 棋盘皮肤迷你预览：主题色矩形盘 + 十字线 + 黑白子。 */
 .board-swatch {
   position: relative;
-  width: 58px;
-  height: 58px;
+  width: 84px;
+  height: 84px;
   box-sizing: border-box;
   border-width: 4px;
   border-style: solid;
   border-radius: 8px;
+}
+/* 预览右下角放大镜小标（参考竞品）。 */
+.preview-zoom::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 22px;
+  height: 22px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='10' cy='10' r='6.5' fill='%23f4a23a' stroke='%238a4a12' stroke-width='2'/%3E%3Cline x1='14.8' y1='14.8' x2='21' y2='21' stroke='%238a4a12' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
 }
 .sw-line { position: absolute; opacity: 0.7; }
 .sw-line.h { left: 8%; right: 8%; top: 50%; height: 1.5px; }
@@ -1413,18 +1451,27 @@ button:disabled {
 .sw-stone.b { left: 26%; top: 28%; background: radial-gradient(circle at 35% 35%, #555, #111); }
 .sw-stone.w { right: 22%; bottom: 24%; background: radial-gradient(circle at 35% 35%, #fff, #cfc7b5); }
 .effect-swatch {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 8px;
+  width: 84px;
+  height: 84px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 700;
   color: #5c360f;
   background: radial-gradient(circle at 50% 40%, #fff2cf, #e6cf9a);
   border: 2px solid #cba76a;
 }
+/* 各落子特效预览色块（区分不同特效的色相）。 */
+.effect-none { background: radial-gradient(circle at 50% 40%, #fff8e8, #e8d8b4); }
+.effect-ripple { background: radial-gradient(circle at 50% 40%, #bfeefc, #4aa9c9); color: #0d4a5c; }
+.effect-dust { background: radial-gradient(circle at 50% 40%, #ffe9b0, #e0a83a); }
+.effect-ink { background: radial-gradient(circle at 50% 40%, #d8d2c4, #6f6a5c); color: #fff; }
+.effect-star { background: radial-gradient(circle at 50% 40%, #fff0a8, #f0c020); }
+.effect-flame { background: radial-gradient(circle at 50% 40%, #ffd9a0, #e8521c); color: #5a1a06; }
+.effect-heart { background: radial-gradient(circle at 50% 40%, #ffd0dc, #e84a72); color: #6a1230; }
 
 /* 无头像框（默认）：仅一圈细中性描边，不喧宾夺主。 */
 .avatar-box.frame-none {
@@ -1606,38 +1653,53 @@ button:disabled {
 .gp-currency {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 14px;
   width: 100%;
   margin-top: 6px;
-  padding: 5px 20px;
-  background: linear-gradient(180deg, #e7cfa2, #cba976);
-  border: 2px solid #9c6b2e;
-  border-radius: 999px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -2px 4px rgba(120, 80, 30, 0.3);
-}
-.gp-currency span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 700;
-  font-size: 16px;
-  color: #5c360f;
+  padding: 0;
   background: none;
   border: none;
-  padding: 0;
-  min-width: 0;
+  box-shadow: none;
 }
-.gp-currency img { width: 30px; height: 30px; }
-/* 金币与卷轴之间的红宝石分隔（参考竞品）。 */
-.gp-currency .coin::after {
+/* 金币 / 卷轴各占一格：米金圆角底 + 内部图标与数字（参考竞品双货币条）。 */
+.gp-currency span {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 1;
+  gap: 6px;
+  padding: 6px 12px 6px 34px;
+  font-weight: 700;
+  font-size: 17px;
+  color: #5a3410;
+  background: linear-gradient(180deg, #efd29a, #d8b061);
+  border: 2px solid #9c6b2e;
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -2px 4px rgba(120, 80, 30, 0.3);
+}
+/* 两个货币格之间的红宝石加号分隔。 */
+.gp-currency span + span::before {
   content: '';
-  width: 15px;
-  height: 15px;
-  margin-left: 14px;
-  background: linear-gradient(135deg, #e2503a, #b52c17);
-  border: 1.5px solid #f0b24a;
-  border-radius: 3px;
-  transform: rotate(45deg);
+  position: absolute;
+  left: -13px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #ef6a4e, #c8341c);
+  border: 2px solid #f3b04a;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px #c98a3c, 0 1px 3px rgba(0, 0, 0, 0.35);
+  z-index: 2;
+}
+/* 货币图标固定在格内左侧圆形凹槽。 */
+.gp-currency img {
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
 }
 .gp-content {
   display: flex;

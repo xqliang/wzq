@@ -69,7 +69,9 @@ export function Shop() {
           {items.map((it) => (
             <div key={it.slot + it.id} className={`shop-card${it.equipped ? ' equipped' : ''}`}>
               <div className="shop-card-name">{it.name}</div>
-              <ItemPreview item={it} />
+              <div className={`shop-card-preview${it.slot === 'frame' ? '' : ' preview-zoom'}`}>
+                <ItemPreview item={it} />
+              </div>
               <div className="shop-card-foot">
                 {it.equipped ? (
                   <span className="tag-equipped">已装备</span>
@@ -95,9 +97,9 @@ export function Shop() {
 function ItemPreview({ item }: { item: ShopItem }) {
   if (item.slot === 'board') {
     const t = getTheme(item.preview)
-    const size = 72
+    const size = 84
     const n = 5 // 5x5 网格
-    const m = 10 // 四边留白
+    const m = 12 // 四边留白
     const step = (size - 2 * m) / (n - 1)
     const at = (i: number) => m + i * step
     const lines = Array.from({ length: n }, (_, i) => i)
@@ -116,7 +118,7 @@ function ItemPreview({ item }: { item: ShopItem }) {
     )
   }
   if (item.slot === 'frame') {
-    return <Avatar src={img('avatar_01')} size={64} frame={item.preview} />
+    return <Avatar src={img('avatar_01')} size={74} frame={item.preview} />
   }
-  return <div className={`effect-swatch effect-${item.preview}`}>{item.name}</div>
+  return <div className={`effect-swatch effect-${item.preview}`} />
 }

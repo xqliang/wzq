@@ -265,12 +265,16 @@ export function Game() {
     }
   }
 
+  // 人机对战：随机决定 AI 执黑还是执白（黑先落子）。玩家执另一色；每局重挂载时重新随机。
+  const aiColorRef = useRef<Color>(Math.random() < 0.5 ? 'black' : 'white')
+  const aiColor = aiColorRef.current
+  const myAiColor: Color = aiColor === 'black' ? 'white' : 'black'
   // 初始化：人机建 Worker；真人连 WS。
   useEffect(() => {
     startBgm() // 进入对局自动播放背景音乐（用户点击进入即为交互手势，满足自动播放策略）。
     if (st.mode === 'ai') {
-      g.reset('black')
-      // AI 落子特效每局随机（与玩家本地设置独立）；BoardCanvas 对对手方(白/AI)的落子用 oppEffect 渲染。
+      g.reset(myAiColor) // 玩家执色随机；reset 内部固定黑先手，故 AI 执黑时由 AI 先落子
+      // AI 落子特效每局随机（与玩家本地设置独立）；BoardCanvas 对对手方的落子用 oppEffect 渲染。
       useGame.getState().setOppEffect(randomAiEffect())
       workerRef.current = new Worker(new URL('../ai/worker.ts', import.meta.url), { type: 'module' })
       workerRef.current.onmessage = (e: MessageEvent<{ x: number; y: number; color: Color }>) => {
@@ -278,7 +282,7 @@ export function Game() {
         const wait = Math.max(0, 1000 + Math.random() * 1000 - (performance.now() - aiStartRef.current))
         window.setTimeout(() => {
           if (settledRef.current || useGame.getState().winner) return
-          useGame.getState().place(e.data.x, e.data.y, 'white')
+          useGame.getState().place(e.data.x, e.data.y, aiColor)
           playSfx('place')
           const w = useGame.getState().winner
           if (w) finish(w === useGame.getState().myColor) // AI 落子后若分出胜负立即结算
@@ -295,13 +299,13 @@ export function Game() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 人机模式：轮到 AI（白）且未分胜负时请求 Worker 计算。
+  // 人机模式：开局动画结束后，轮到 AI（可能执黑先手，也可能执白）且未分胜负时请求 Worker 计算。
   useEffect(() => {
-    if (st.mode === 'ai' && g.turn === 'white' && !g.winner) {
+    if (st.mode === 'ai' && introDone && g.turn === aiColor && !g.winner) {
       aiStartRef.current = performance.now()
-      workerRef.current?.postMessage({ board: g.board, color: 'white', level: st.level })
+      workerRef.current?.postMessage({ board: g.board, color: aiColor, level: st.level })
     }
-  }, [g.turn, g.winner, g.board, st.mode, st.level])
+  }, [g.turn, g.winner, g.board, st.mode, st.level, introDone, aiColor])
 
   // 胜负音效由 settleAi/服务端 game_over 负责，这里不再用响应式 effect（避免残留 winner 触发跳转）。
 

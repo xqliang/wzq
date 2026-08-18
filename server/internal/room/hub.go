@@ -3,6 +3,7 @@ package room
 
 import (
 	"errors"
+	"math/rand"
 	"net/http"
 	"sync"
 	"time"
@@ -202,10 +203,15 @@ func (h *Hub) ServeWS(w http.ResponseWriter, req *http.Request, roomID string, u
 	// 支持「再来一局」：对局结束后双方重连同一房间即自动开新局，无需新建房间。
 	bothConnected := len(r.players) == 2 && r.clients[r.players[0]] != nil && r.clients[r.players[1]] != nil
 	if bothConnected && (r.game == nil || r.game.over) {
-		r.game = NewGame(r.players[0], r.players[1])
-		m0, m1 := r.hub.meta(r.players[0]), r.hub.meta(r.players[1])
-		r.sendTo(r.players[0], ServerMsg{Type: "start", Color: "black", OppTier: m1.Tier, OppAvatar: m1.Avatar, OppFrame: m1.Frame, OppEffect: m1.Effect})
-		r.sendTo(r.players[1], ServerMsg{Type: "start", Color: "white", OppTier: m0.Tier, OppAvatar: m0.Avatar, OppFrame: m0.Frame, OppEffect: m0.Effect})
+		// 随机决定谁执黑先手（黑先落子），双方执黑概率均等。
+		black, white := r.players[0], r.players[1]
+		if rand.Intn(2) == 1 {
+			black, white = white, black
+		}
+		r.game = NewGame(black, white)
+		mB, mW := r.hub.meta(black), r.hub.meta(white)
+		r.sendTo(black, ServerMsg{Type: "start", Color: "black", OppTier: mW.Tier, OppAvatar: mW.Avatar, OppFrame: mW.Frame, OppEffect: mW.Effect})
+		r.sendTo(white, ServerMsg{Type: "start", Color: "white", OppTier: mB.Tier, OppAvatar: mB.Avatar, OppFrame: mB.Frame, OppEffect: mB.Effect})
 		r.startTurnTimer()
 	}
 	r.mu.Unlock()

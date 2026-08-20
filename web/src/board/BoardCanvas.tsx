@@ -304,8 +304,8 @@ function drawFrame(ctx: CanvasRenderingContext2D, theme: Theme) {
   ctx.stroke()
 }
 
-// 非木纹皮肤（纯色盘面）的古风花纹装饰：内细描边 + 四角祥云卷。
-// 花纹画在盘面留白区（网格 PAD=30 之内的边距），不与棋子/网格重叠；颜色取自主题(star/line)，随皮肤变化。
+// 非木纹皮肤（纯色盘面）的古风花纹装饰：仅保留内细描边（四角祥云卷已去掉）。
+// 花纹画在盘面留白区（网格 PAD=30 之内的边距），不与棋子/网格重叠；颜色取自主题(line)，随皮肤变化。
 function drawBoardPattern(ctx: CanvasRenderingContext2D, theme: Theme) {
   ctx.save()
   // 内描边（细，低透明度）。
@@ -314,25 +314,6 @@ function drawBoardPattern(ctx: CanvasRenderingContext2D, theme: Theme) {
   ctx.lineWidth = 1.5
   roundRectPath(ctx, 13, 13, PX - 26, PX - 26, 10, 10, 10, 10)
   ctx.stroke()
-  // 四角祥云卷曲（镜像到四个角）。
-  ctx.globalAlpha = 0.5
-  ctx.strokeStyle = theme.star
-  ctx.lineWidth = 2
-  ctx.lineCap = 'round'
-  for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]] as const) {
-    const cx = sx > 0 ? 23 : PX - 23
-    const cy = sy > 0 ? 23 : PX - 23
-    ctx.save()
-    ctx.translate(cx, cy)
-    ctx.scale(sx, sy)
-    ctx.beginPath()
-    ctx.arc(0, 0, 13, PI2 * 0.03, PI2 * 0.24) // 外弧
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.arc(7, 7, 5, PI2 * 0.5, PI2 * 1.05) // 内卷
-    ctx.stroke()
-    ctx.restore()
-  }
   ctx.restore()
 }
 

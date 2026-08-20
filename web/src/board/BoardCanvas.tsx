@@ -296,12 +296,16 @@ function drawFrame(ctx: CanvasRenderingContext2D, theme: Theme) {
   else drawBoardPattern(ctx, theme) // 非贴图皮肤：绘制古风花纹提升质感
   ctx.restore()
   // 3) 盘面/厚度交界高光缝：只画中段、避开两侧圆角转角，接缝自然不突兀。
+  //    低透明度处理成柔和高光，避免在金色等亮色皮肤上变成一道突兀的亮线。
+  ctx.save()
   ctx.strokeStyle = theme.frameLight
+  ctx.globalAlpha = 0.35
   ctx.lineWidth = 1
   ctx.beginPath()
   ctx.moveTo(FRAME_R, PX + 0.5)
   ctx.lineTo(PX - FRAME_R, PX + 0.5)
   ctx.stroke()
+  ctx.restore()
 }
 
 // 非木纹皮肤（纯色盘面）的古风花纹装饰：仅保留内细描边（四角祥云卷已去掉）。

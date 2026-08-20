@@ -208,6 +208,8 @@ export function drawStoneWithEffect(
   stoneR: number,
 ) {
   const cell = stoneR / 0.42 // 特效尺度随棋子半径等比缩放
+  // 特效先画（在棋子下面），再画棋子本体盖在上面，模拟「从子下绽开」的效果。
+  drawEffect(ctx, effect, dust, cx, cy, elapsed, accent, cell)
   // 棋子本体（径向渐变，高光偏左上）。
   const g = ctx.createRadialGradient(cx - stoneR * 0.35, cy - stoneR * 0.35, stoneR * 0.1, cx, cy, stoneR)
   g.addColorStop(0, '#ffffff')
@@ -220,6 +222,4 @@ export function drawStoneWithEffect(
   ctx.lineWidth = 1
   ctx.strokeStyle = 'rgba(120,100,60,0.4)'
   ctx.stroke()
-  // 特效叠在棋子之上。
-  drawEffect(ctx, effect, dust, cx, cy, elapsed, accent, cell)
 }

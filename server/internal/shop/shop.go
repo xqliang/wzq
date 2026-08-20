@@ -6,7 +6,10 @@
 package shop
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/wzq/gomoku/internal/store"
 )
@@ -193,7 +196,7 @@ func (svc *Service) Buy(uid int64, slot, id string) error {
 	if aff, _ := res.RowsAffected(); aff == 0 {
 		return ErrInsufficient
 	}
-	if _, err := tx.Exec(`INSERT INTO user_item (uid, item_id) VALUES (?,?)`, uid, key); err != nil {
+	if _, err := tx.Exec(`INSERT INTO user_item (uid, item_id, purchased_at) VALUES (?,?,?)`, uid, key, time.Now()); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -220,4 +223,105 @@ func (svc *Service) Equip(uid int64, slot, id string) error {
 	}
 	_, err := svc.s.DB.Exec(`UPDATE user SET `+col+`=? WHERE id=?`, id, uid)
 	return err
+}
+
+// validity 是购买类外观的有效期（7 天）。基础款（价格 0）永不过期。
+const validity = 7 * 24 * time.Hour
+
+// defaultSlot 是各槽位外观过期/失效后回退的基础款 id（与 Catalog 基础款一致）。
+var defaultSlot = map[string]string{"board": "wood", "frame": "none", "effect": "ripple"}
+
+// ExpiredItem 描述一件已过期（失效）的已装备外观，供前端弹窗提示。
+type ExpiredItem struct {
+	Slot string `json:"slot"` // board / frame / effect
+	Name string `json:"name"` // 商品中文名
+}
+
+// parseDBTime 解析数据库写入的时间字符串，兼容 sqlite/mysql 的 DATETIME 格式与 RFC3339。
+func parseDBTime(s string) (time.Time, error) {
+	for _, layout := range []string{"2006-01-02 15:04:05", time.RFC3339} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("bad time %q", s)
+}
+
+// expiredKeys 返回用户已购买且已超过有效期的 item 键集合（slot:id）。
+// 只依据 user_item 里的购买记录判定：无购买记录的（基础款或旧数据）永不过期。
+func (svc *Service) expiredKeys(uid int64) (map[string]bool, error) {
+	rows, err := svc.s.DB.Query(`SELECT item_id, purchased_at FROM user_item WHERE uid=?`, uid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	now := time.Now()
+	expired := map[string]bool{}
+	for rows.Next() {
+		var key string
+		var pt sql.NullTime
+		if err := rows.Scan(&key, &pt); err != nil {
+			return nil, err
+		}
+		// 购买时间为空（极端旧数据）不判过期，避免误伤。
+		if !pt.Valid || pt.Time.IsZero() {
+			continue
+		}
+		if now.Sub(pt.Time) > validity {
+			expired[key] = true
+		}
+	}
+	return expired, rows.Err()
+}
+
+// ExpireEquipped 检查三个槽位当前装备的外观：若已超过有效期，则将其回退为基础款、
+// 清除对应购买记录（视为失效，需重新购买），并返回失效项列表供前端弹窗提示。
+// 该方法幂等：同一物品只会在越过 7 天那一刻被处理一次。
+func (svc *Service) ExpireEquipped(uid int64) ([]ExpiredItem, error) {
+	eq, err := svc.equipped(uid)
+	if err != nil {
+		return nil, err
+	}
+	tx, err := svc.s.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	expired := []ExpiredItem{}
+	for _, slot := range []string{"board", "frame", "effect"} {
+		id := eq[slot]
+		if id == "" || id == defaultSlot[slot] {
+			continue // 未装备或已是基础款，无需处理
+		}
+		it, ok := find(slot, id)
+		if !ok || it.Price == 0 {
+			continue // 非法或基础款，永不过期
+		}
+		// 读取该件购买时间：无记录则不判过期。
+		var pt sql.NullTime
+		err := tx.QueryRow(`SELECT purchased_at FROM user_item WHERE uid=? AND item_id=?`, uid, itemKey(slot, id)).Scan(&pt)
+		if err == sql.ErrNoRows {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		if !pt.Valid || time.Since(pt.Time) <= validity {
+			continue // 未过期
+		}
+		// 已过期：回退到基础款 + 删除购买记录。
+		col, _ := equippedCol(slot)
+		if _, err := tx.Exec(`UPDATE user SET `+col+`=? WHERE id=?`, defaultSlot[slot], uid); err != nil {
+			return nil, err
+		}
+		if _, err := tx.Exec(`DELETE FROM user_item WHERE uid=? AND item_id=?`, uid, itemKey(slot, id)); err != nil {
+			return nil, err
+		}
+		expired = append(expired, ExpiredItem{Slot: slot, Name: it.Name})
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return expired, nil
 }

@@ -79,7 +79,7 @@ func (s *Store) Migrate() error {
 			PRIMARY KEY (uid, level_id)
 		)`,
 		`CREATE TABLE IF NOT EXISTS user_item (
-			uid BIGINT, item_id VARCHAR(32), PRIMARY KEY (uid, item_id)
+			uid BIGINT, item_id VARCHAR(32), purchased_at DATETIME, PRIMARY KEY (uid, item_id)
 		)`,
 		`CREATE TABLE IF NOT EXISTS checkin (
 			uid BIGINT PRIMARY KEY, last_day VARCHAR(10), streak INT NOT NULL DEFAULT 0
@@ -119,6 +119,15 @@ func (s *Store) Migrate() error {
 	if _, err := s.DB.Exec(
 		`UPDATE user SET equipped_frame='none' WHERE equipped_frame='gold' AND id NOT IN (SELECT uid FROM user_item WHERE item_id='frame:gold')`,
 	); err != nil {
+		return err
+	}
+	// 外观购买时间（阶段D）：user_item 增加 purchased_at，用于 7 天有效期判定。
+	if err := s.addColumnIfMissing("user_item", "purchased_at", "DATETIME"); err != nil {
+		return err
+	}
+	// 存量购买记录补时间戳：尚无购买时间的记录（迁移前已购买）用当前时间回填，
+	// 使其获得完整的 7 天有效期（而非立即过期）。幂等（只补 NULL）。
+	if _, err := s.DB.Exec(`UPDATE user_item SET purchased_at = CURRENT_TIMESTAMP WHERE purchased_at IS NULL`); err != nil {
 		return err
 	}
 	return nil

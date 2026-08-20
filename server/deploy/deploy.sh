@@ -19,11 +19,13 @@
 #      但保留 config.yaml / .env / .db_password / data /。每日 mysqldump 本地备份 timer 一并装好。
 #
 # 用法:
-#   ./server/deploy/deploy.sh                  # 默认 SSH 主机 ecs、默认环境 prod(8090)
-#   ENV=stage ./server/deploy/deploy.sh        # 部署 stage(8091,库 wzq_stage)
+#   ./server/deploy/deploy.sh                  # 默认 SSH 主机 ecs、默认环境 prod(8090)   ENV=stage ./server/deploy/deploy.sh        # 部署 stage(8091,库 wzq_stage)
 #   ENV=stage ./server/deploy/deploy.sh myhost # 指定 SSH 主机 + 环境
 #
 set -euo pipefail
+
+# 出错时打印失败所在行与命令，避免静默退出（配合各步骤不再丢弃构建输出，真正暴露报错）。
+trap 'echo "错误: 部署在第 $LINENO 行失败: $BASH_COMMAND" >&2' ERR
 
 # ---------------------------------------------------------------------------
 # 0. 参数 & 路径解析
@@ -99,7 +101,9 @@ echo "    编译完成: $LOCAL_BIN ($(du -h "$LOCAL_BIN" | cut -f1))"
 # 2. 构建前端(空 VITE_API_BASE -> 相对 /api + 同源 ws)
 # ---------------------------------------------------------------------------
 echo "==> [2/7] 构建前端 (VITE_API_BASE='') ..."
-( cd "$WEB_DIR" && VITE_API_BASE= npm run build >/dev/null )
+# 构建输出直出，不再丢弃：tsc/vite 报错时能直接在终端看到具体错误（不再被 >/dev/null 吞掉）。
+# set -e 会在构建失败时立即中断并触发 ERR trap，打印失败行号。
+( cd "$WEB_DIR" && VITE_API_BASE= npm run build )
 echo "    前端产物: $WEB_DIR/dist ($(du -sh "$WEB_DIR/dist" | cut -f1))"
 
 # ---------------------------------------------------------------------------

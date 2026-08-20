@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { ensureGuest } from './net/rest'
-import type { User } from './net/rest'
+import { ensureGuest, shopExpired } from './net/rest'
+import type { User, ExpiredItem } from './net/rest'
 import { setSettings, startBgm } from './audio/audio'
 import type { Effect } from './audio/audio'
 import { Home } from './pages/Home'
@@ -18,6 +18,7 @@ import { Settings } from './pages/Settings'
 import { Shop } from './pages/Shop'
 import { Checkin } from './pages/Checkin'
 import { Wheel } from './pages/Wheel'
+import { ExpiredModal } from './components/ExpiredModal'
 
 // 用 location.key 作为 key 强制重挂载 Game：
 // “再来一局”会从 /game 导航到 /game，路由匹配不变不会自动重挂载，
@@ -30,12 +31,20 @@ function GameRoute() {
 // 应用根组件：挂载时确保拥有游客身份，再渲染路由。
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
+  // 打开游戏时检测到期的已装备外观（超过 7 天有效期），供弹窗提示。
+  const [expired, setExpired] = useState<ExpiredItem[] | null>(null)
   useEffect(() => {
     ensureGuest()
       .then((u) => {
         // 同步已装备外观到本地设置：棋盘皮肤驱动对局主题、落子动效驱动特效。
         setSettings({ theme: u.equippedBoard || 'wood', effect: (u.equippedEffect || 'ripple') as Effect })
         setUser(u)
+        // 用户就绪后检查外观是否过期（失效项会在此被回退为基础款）。
+        shopExpired()
+          .then((r) => {
+            if (r.items && r.items.length) setExpired(r.items)
+          })
+          .catch(() => {})
       })
       .catch(console.error)
   }, [])
@@ -68,6 +77,8 @@ export default function App() {
         <Route path="/checkin" element={<Checkin />} />
         <Route path="/wheel" element={<Wheel />} />
       </Routes>
+      {/* 打开游戏时若有过期外观，弹窗提示并引导前往商城重购（须在 Router 内以便 useNavigate）。 */}
+      {expired && <ExpiredModal items={expired} onClose={() => setExpired(null)} />}
     </BrowserRouter>
   )
 }

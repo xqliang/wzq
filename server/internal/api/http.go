@@ -88,6 +88,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/shop", s.handleShop)
 	mux.HandleFunc("/api/shop/buy", s.handleShopBuy)
 	mux.HandleFunc("/api/shop/equip", s.handleShopEquip)
+	mux.HandleFunc("/api/shop/expired", s.handleShopExpired)
 	mux.HandleFunc("/api/checkin", s.handleCheckin)
 	mux.HandleFunc("/api/checkin/claim", s.handleCheckinClaim)
 	mux.HandleFunc("/api/wheel", s.handleWheel)
@@ -484,7 +485,25 @@ func (s *Server) handleShopEquip(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, st)
 }
 
-// shopErrStatus 将商店领域错误映射为 HTTP 状态码。
+// handleShopExpired 检查当前用户已装备外观是否已超过 7 天有效期，并将失效项回退为基础款。
+// 返回本次失效项列表 {slot,name}（为空表示无失效）；前端据此在打开游戏时弹窗提示。
+func (s *Server) handleShopExpired(w http.ResponseWriter, r *http.Request) {
+	uid, err := s.uidFrom(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	expired, err := s.Shop.ExpireEquipped(uid)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	// 预置空切片，保证 JSON 为 [] 而非 null。
+	if expired == nil {
+		expired = []shop.ExpiredItem{}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": expired})
+}
 func shopErrStatus(err error) int {
 	switch err {
 	case shop.ErrNotFound, shop.ErrBadSlot:

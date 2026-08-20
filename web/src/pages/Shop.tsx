@@ -8,6 +8,7 @@ import { Avatar } from '../components/Avatar'
 import { getTheme } from '../board/themes'
 import { setSettings } from '../audio/audio'
 import type { Effect } from '../audio/audio'
+import { EffectLoopPreview } from '../components/EffectLoopPreview'
 
 // 商店分类（对齐竞品：棋盘 / 头像框 / 落子动效）。
 const SLOTS = [
@@ -55,21 +56,25 @@ export function Shop() {
   if (!state) return <div className="loading">{loadErr || '加载中…'}</div>
   const items = state.items.filter((i) => i.slot === slot)
 
+  // 左侧分类灯笼标签（传给 GamePanel 作为 sidebar，渲染在面板左外侧、不被内容区遮挡）。
+  const tabs = (
+    <div className="shop-tabs">
+      {SLOTS.map((s) => (
+        <button key={s.key} className={`shop-tab${slot === s.key ? ' active' : ''}`} onClick={() => setSlot(s.key)}>
+          {s.label}
+        </button>
+      ))}
+    </div>
+  )
+
   return (
-    <GamePanel title="商店" onClose={() => nav('/')} coins={state.coins} scrolls={state.scrolls}>
+    <GamePanel title="商店" onClose={() => nav('/')} coins={state.coins} scrolls={state.scrolls} sidebar={tabs}>
       <div className="shop-body">
-        <div className="shop-tabs">
-          {SLOTS.map((s) => (
-            <button key={s.key} className={`shop-tab${slot === s.key ? ' active' : ''}`} onClick={() => setSlot(s.key)}>
-              {s.label}
-            </button>
-          ))}
-        </div>
         <div className="shop-grid">
           {items.map((it) => (
             <div key={it.slot + it.id} className={`shop-card${it.equipped ? ' equipped' : ''}`}>
               <div className="shop-card-name">{it.name}</div>
-              <div className={`shop-card-preview${it.slot === 'frame' ? '' : ' preview-zoom'}`}>
+              <div className={`shop-card-preview${it.slot === 'board' ? ' preview-zoom' : ''}`}>
                 <ItemPreview item={it} />
               </div>
               <div className="shop-card-foot">
@@ -120,5 +125,6 @@ function ItemPreview({ item }: { item: ShopItem }) {
   if (item.slot === 'frame') {
     return <Avatar src={img('avatar_01')} size={74} frame={item.preview} />
   }
-  return <div className={`effect-swatch effect-${item.preview}`} />
+  // 落子动效：在卡片内循环播放该商品自己的动效（水波卡循环水波，尘屑卡循环尘屑）。
+  return <EffectLoopPreview effect={item.preview} height={76} />
 }

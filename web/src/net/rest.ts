@@ -171,6 +171,16 @@ export const shopBuy = (slot: string, id: string) =>
 export const shopEquip = (slot: string, id: string) =>
   req('/api/shop/equip', 'POST', { slot, id }) as Promise<ShopState>
 
+// 一件因过期（超过 7 天有效期）而失效的已装备外观：slot 槽位，name 中文名。
+export interface ExpiredItem {
+  slot: string
+  name: string
+}
+
+// 检查并处理过期外观：把已超过 7 天有效期的已装备外观回退为基础款（失效需重购），
+// 返回本次失效项列表（为空表示无失效）。打开游戏时调用，据此弹窗提示。
+export const shopExpired = () => req('/api/shop/expired', 'GET') as Promise<{ items: ExpiredItem[] }>
+
 // ===== 每日签到 / 幸运转盘（阶段D）=====
 
 // 一份奖励：kind=coins/scrolls/item。

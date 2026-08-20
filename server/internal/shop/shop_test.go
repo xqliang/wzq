@@ -165,3 +165,56 @@ func TestBuyConcurrent(t *testing.T) {
 		t.Fatalf("owned blue rows=%d want 1", n)
 	}
 }
+
+// TestExpireEquipped 验证 7 天有效期：过期已装备外观会被回退基础款并计入失效列表，
+// 未过期与基础款不受影响；处理后购买记录被清除（需重购）。
+func TestExpireEquipped(t *testing.T) {
+	s := newStore(t)
+	svc := New(s)
+	uid := mkUser(t, s, 5000)
+
+	// 购买并装备一件棋盘皮肤 blue（有效期从现在起 7 天）。
+	if err := svc.Buy(uid, "board", "blue"); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.Equip(uid, "board", "blue"); err != nil {
+		t.Fatal(err)
+	}
+	// 刚购买未过期：ExpireEquipped 应不产生任何失效项，且仍装备 blue。
+	if got, err := svc.ExpireEquipped(uid); err != nil {
+		t.Fatal(err)
+	} else if len(got) != 0 {
+		t.Fatalf("fresh item should not expire, got %v", got)
+	}
+	st, _ := svc.State(uid)
+	if st.Equipped["board"] != "blue" {
+		t.Fatalf("fresh blue should stay equipped, got %s", st.Equipped["board"])
+	}
+
+	// 把购买时间回拨到 8 天前（模拟超过 7 天有效期）。
+	if _, err := s.DB.Exec(`UPDATE user_item SET purchased_at = datetime('now', '-8 days') WHERE uid=? AND item_id='board:blue'`, uid); err != nil {
+		t.Fatal(err)
+	}
+	// 过期处理：blue 失效、回退到基础款 wood、返回一条失效项。
+	got, err := svc.ExpireEquipped(uid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].Slot != "board" {
+		t.Fatalf("expected 1 expired board item, got %+v", got)
+	}
+	st, _ = svc.State(uid)
+	if st.Equipped["board"] != "wood" {
+		t.Fatalf("expired blue should fall back to wood, got %s", st.Equipped["board"])
+	}
+	// 失效后购买记录应被清除（State 里不再显示已拥有，可重购）。
+	for _, it := range st.Items {
+		if it.Slot == "board" && it.ID == "blue" && it.Owned {
+			t.Fatalf("expired blue should be cleared from owned, got %+v", it)
+		}
+	}
+	// 重复调用幂等：第二次不再产出失效项。
+	if got2, _ := svc.ExpireEquipped(uid); len(got2) != 0 {
+		t.Fatalf("second ExpireEquipped should be empty (idempotent), got %+v", got2)
+	}
+}

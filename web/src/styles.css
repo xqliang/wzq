@@ -763,7 +763,6 @@ button:disabled {
   display: inline-block;
   font-size: 30px;
   letter-spacing: 4px;
-  font-weight: 700;
   line-height: 1.15;
   /* padding 让 padding box 高于字形，background-clip:text 才能填满整字（同 .start-num 修复）。 */
   padding: 2px 4px 6px;
@@ -1224,18 +1223,24 @@ button:disabled {
 .shop-body {
   width: 100%;
   min-height: 0;
-  padding-left: 46px;
 }
+/* 动效循环预览画布（落子 tab 各卡片内循环播放单个动效）。 */
+.effect-loop {
+  display: block;
+  border-radius: 10px;
+}
+/* 左侧分类灯笼：从面板左上方垂下，挂在边框外侧，不被内容区遮挡。
+   定位相对于 .gp-sidebar（面板直接子元素）。 */
 .shop-tabs {
   position: absolute;
-  left: -4px;
-  top: 116px;
+  left: -38px;
+  top: -10px;
   z-index: 6;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
-  padding-top: 18px;
+  gap: 16px;
+  padding-top: 22px;
 }
 /* 顶部云纹 + 垂下的金色绳串（拧绳纹理 + 每节灯笼间的绳结小球）。 */
 .shop-tabs::before {
@@ -1264,8 +1269,8 @@ button:disabled {
 /* 分类标签＝红灯笼：红球灯身 + 竖向肋线 + 金色上下托 + 挂线小结 + 白字；区分点亮/未点亮。 */
 .shop-tab {
   position: relative;
-  width: 46px;
-  height: 78px;
+  width: 50px;
+  height: 84px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1279,13 +1284,13 @@ button:disabled {
   color: #ffe9c9;
   /* 未点亮：偏暗红球 + 两条肋线 */
   background:
-    linear-gradient(90deg, transparent 27%, rgba(90, 14, 8, 0.5) 28%, rgba(90, 14, 8, 0.5) 30%, transparent 31%, transparent 69%, rgba(90, 14, 8, 0.5) 70%, rgba(90, 14, 8, 0.5) 72%, transparent 73%),
-    radial-gradient(62% 60% at 50% 42%, #bb3c28 0%, #97281a 66%, #741d13 100%);
-  border: 2px solid #c8923a;
-  border-radius: 50% / 45%;
-  box-shadow: inset 0 -4px 9px rgba(50, 8, 4, 0.55);
+    linear-gradient(90deg, transparent 26%, rgba(90, 14, 8, 0.45) 27%, rgba(90, 14, 8, 0.45) 29.5%, transparent 30.5%, transparent 69.5%, rgba(90, 14, 8, 0.45) 70.5%, rgba(90, 14, 8, 0.45) 73%, transparent 74%),
+    radial-gradient(60% 58% at 50% 40%, #c4432a 0%, #9c2a1a 60%, #7a1d12 100%);
+  border: 2px solid #d4a040;
+  border-radius: 50% / 44%;
+  box-shadow: inset 0 -5px 10px rgba(50, 8, 4, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
   text-shadow: 0 1px 2px rgba(50, 8, 4, 0.85);
-  filter: saturate(0.8) brightness(0.72);
+  filter: saturate(0.75) brightness(0.68);
 }
 /* 金色上下灯托。 */
 .shop-tab::before,
@@ -1316,22 +1321,28 @@ button:disabled {
 .shop-tab.active {
   color: #fff8e6;
   background:
-    linear-gradient(90deg, transparent 27%, rgba(150, 40, 20, 0.4) 28%, rgba(150, 40, 20, 0.4) 30%, transparent 31%, transparent 69%, rgba(150, 40, 20, 0.4) 70%, rgba(150, 40, 20, 0.4) 72%, transparent 73%),
-    radial-gradient(56% 56% at 50% 40%, #ffdf92 0%, #ff8a44 38%, #ec4a20 72%, #c1301a 100%);
-  border-color: #ffe28c;
-  box-shadow: inset 0 0 12px rgba(255, 230, 170, 0.95), 0 0 22px 5px rgba(255, 175, 70, 0.9);
+    linear-gradient(90deg, transparent 25%, rgba(220, 80, 30, 0.35) 26%, rgba(220, 80, 30, 0.35) 29%, transparent 30%, transparent 70%, rgba(220, 80, 30, 0.35) 71%, rgba(220, 80, 30, 0.35) 74%, transparent 75%),
+    radial-gradient(55% 52% at 50% 36%, #ffe8b0 0%, #ff9848 28%, #f05828 62%, #cc2c18 100%);
+  border-color: #ffe598;
+  box-shadow:
+    inset 0 0 16px rgba(255, 235, 180, 0.9),
+    inset 0 -3px 8px rgba(180, 60, 20, 0.4),
+    0 0 28px 8px rgba(255, 175, 65, 0.8),
+    0 0 45px 14px rgba(255, 145, 45, 0.3);
   filter: none;
 }
 .shop-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  flex: 1;
+  /* 固定高度：不同 tab 卡片数量不同，固定高度 + 内部滚动可避免切换时面板高度跳动。
+     顶部已留出动效预览区，此处约两行卡片高度。 */
+  height: calc(85vh - 200px);
   overflow-y: auto;
   overflow-x: hidden;
   align-content: start;
 }
-/* 商品卡：绢帛底 + 深棕描边 + 四角括号，名称带/大预览/底部价格按钮（参考竞品）。 */
+/* 商品卡：绢帛底 + 深棕描边，名称带/大预览/底部价格按钮（参考竞品）。 */
 .shop-card {
   position: relative;
   display: flex;
@@ -1344,20 +1355,6 @@ button:disabled {
   border: 2px solid #c7a05a;
   border-radius: 12px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-/* 卡片四角 L 形括号（参考竞品）。 */
-.shop-card::after {
-  content: '';
-  position: absolute;
-  inset: 5px;
-  pointer-events: none;
-  background-repeat: no-repeat;
-  background-position: top left, top right, bottom left, bottom right;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M1 7V1H7' fill='none' stroke='%238a5a24' stroke-width='2'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M13 7V1H7' fill='none' stroke='%238a5a24' stroke-width='2'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M1 7V13H7' fill='none' stroke='%238a5a24' stroke-width='2'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M13 7V13H7' fill='none' stroke='%238a5a24' stroke-width='2'/%3E%3C/svg%3E");
 }
 .shop-card.equipped {
   border-color: var(--gold);
@@ -1450,32 +1447,11 @@ button:disabled {
 .sw-stone { position: absolute; width: 16px; height: 16px; border-radius: 50%; }
 .sw-stone.b { left: 26%; top: 28%; background: radial-gradient(circle at 35% 35%, #555, #111); }
 .sw-stone.w { right: 22%; bottom: 24%; background: radial-gradient(circle at 35% 35%, #fff, #cfc7b5); }
-.effect-swatch {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 84px;
-  height: 84px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #5c360f;
-  background: radial-gradient(circle at 50% 40%, #fff2cf, #e6cf9a);
-  border: 2px solid #cba76a;
-}
-/* 各落子特效预览色块（区分不同特效的色相）。 */
-.effect-none { background: radial-gradient(circle at 50% 40%, #fff8e8, #e8d8b4); }
-.effect-ripple { background: radial-gradient(circle at 50% 40%, #bfeefc, #4aa9c9); color: #0d4a5c; }
-.effect-dust { background: radial-gradient(circle at 50% 40%, #ffe9b0, #e0a83a); }
-.effect-ink { background: radial-gradient(circle at 50% 40%, #d8d2c4, #6f6a5c); color: #fff; }
-.effect-star { background: radial-gradient(circle at 50% 40%, #fff0a8, #f0c020); }
-.effect-flame { background: radial-gradient(circle at 50% 40%, #ffd9a0, #e8521c); color: #5a1a06; }
-.effect-heart { background: radial-gradient(circle at 50% 40%, #ffd0dc, #e84a72); color: #6a1230; }
 
 /* 无头像框（默认）：仅一圈细中性描边，不喧宾夺主。 */
 .avatar-box.frame-none {
-  border: 2px solid rgba(120, 90, 50, 0.45);
+  border: none;
+  background: none;
 }
 /* 头像框皮肤变体：统一用 ::after 环形贴合头像（inset 与描金环一致，不留空隙）。 */
 .avatar-box.frame-bronze,
@@ -1493,18 +1469,20 @@ button:disabled {
   position: absolute;
   inset: -7%;
   border-radius: 50%;
-  border: 3px solid #b5793f;
+  border: 12px solid #b5793f;
   box-shadow: inset 0 0 0 1.5px #7c4a1e, 0 1px 3px rgba(0, 0, 0, 0.3);
   pointer-events: none;
+  scale: 0.65;
 }
 .avatar-box.frame-jade::after {
   content: '';
   position: absolute;
   inset: -7%;
   border-radius: 50%;
-  border: 3px solid #6fae86;
+  border: 12px solid #6fae86;
   box-shadow: inset 0 0 0 1.5px #2e7d4f, 0 1px 3px rgba(0, 0, 0, 0.3);
   pointer-events: none;
+  scale: 0.65;
 }
 
 /* ===== 竞品风格通用面板 GamePanel（商店/签到/转盘共用）===== */
@@ -1520,6 +1498,10 @@ button:disabled {
      深色聚焦面板，孔明灯与木匾在深底上更醒目、更协调。 */
   background: radial-gradient(130% 100% at 50% 26%, rgba(40, 27, 12, 0.86), rgba(8, 5, 2, 0.95));
 }
+/* 商店面板（带左侧灯笼）：顶部留出 120px 空间展示孔明灯、木匾与关闭按钮。 */
+.gp-mask.has-sidebar {
+  padding: 100px 10px 10px;
+}
 .gp-panel {
   position: relative;
   display: flex;
@@ -1528,8 +1510,6 @@ button:disabled {
   gap: 10px;
   width: 100%;
   max-width: 404px;
-  min-height: 524px;
-  max-height: 88vh;
   padding: 26px 18px 18px;
   /* 青绿(teal)厚描边圆角框 + 内侧浅色线 + 落地阴影（参考竞品配色）。 */
   border: 11px solid #2f8688;
@@ -1537,61 +1517,71 @@ button:disabled {
   background: linear-gradient(180deg, #fbf1d8, #efe0bd);
   box-shadow: inset 0 0 0 3px #6cb6b1, inset 0 0 0 4px rgba(255, 255, 255, 0.4), 0 14px 34px rgba(0, 0, 0, 0.5);
 }
-/* 顶部孔明灯装饰（放大约 1.5 倍并上移，居中叠在上沿、标题之后）。 */
+/* 带左侧灯笼挂栏的商店面板：宽度动态减去灯笼外探空间（避免灯笼被挤出屏幕），
+   并固定高度区间避免切换 tab 抖动。非商城页（签到/转盘）不受此约束，按实际高度。 */
+.gp-panel.has-sidebar {
+  max-width: min(366px, calc(100vw - 70px));
+  min-height: 500px;
+  max-height: 85vh;
+}
+/* 顶部孔明灯装饰：放大显示、上移接近屋顶，居中叠在上沿。加 brightness/saturate
+   让灯笼更亮更暖（与竞品发光感对齐）。 */
 .gp-panel::before {
   content: '';
   position: absolute;
-  top: -134px;
+  top: -108px;
   left: 50%;
   transform: translateX(-50%);
-  width: 92%;
-  height: 140px;
-  z-index: 1;
+  width: 80%;
+  height: 110px;
+  z-index: 2;
   pointer-events: none;
-  background: url('./assets/img/panel_top.png') center / contain no-repeat;
+  background: url('./assets/img/panel_top.png') 47% center / 106% auto no-repeat;
+  filter: brightness(1.1) saturate(1.18) drop-shadow(0 0 14px rgba(255, 180, 60, 0.3));
 }
 .gp-panel > * {
   position: relative;
   z-index: 2;
 }
-/* 顶部飞檐屋顶：SVG 曲线绘制两端上翘的檐口（clip-path 折线做不出平滑上翘）。 */
+/* 顶部飞檐屋顶：teal 横条，标题匾和关闭按钮嵌在屋顶区域内。
+   底部金色装饰线分隔面板内容。左右各超出面板 24px 形成飞檐。 */
 .gp-roof {
   position: absolute;
-  top: -22px;
+  top: -46px;
   left: -24px;
   right: -24px;
-  height: 34px;
+  height: 48px;
   z-index: 1;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 34' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='r' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%2345abac'/%3E%3Cstop offset='.55' stop-color='%232d8385'/%3E%3Cstop offset='1' stop-color='%231b5f62'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M60 3 C44 3 33 7 23 15 C16 20 8 22 3 16 C0 27 9 33 19 33 L101 33 C111 33 120 27 117 16 C112 22 104 20 97 15 C87 7 76 3 60 3 Z' fill='url(%23r)'/%3E%3C/svg%3E") center/100% 100% no-repeat;
-  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.4));
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 48' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='r' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%2348b0b1'/%3E%3Cstop offset='.45' stop-color='%232d8385'/%3E%3Cstop offset='1' stop-color='%231a5e61'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M60 1 C44 1 32 5 22 12 C15 17 7 19 2 11 C-1 24 7 48 18 48 L102 48 C113 48 121 24 118 11 C113 19 105 17 98 12 C88 5 76 1 60 1 Z' fill='url(%23r)'/%3E%3C/svg%3E") center/100% 100% no-repeat;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35));
 }
-/* 屋脊高光。 */
+/* 屋顶底部金色装饰线（与面板内容分隔）。 */
 .gp-roof::after {
   content: '';
   position: absolute;
-  top: 4px;
-  left: 27%;
-  right: 27%;
-  height: 3px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.3);
+  bottom: 1px;
+  left: 6%;
+  right: 6%;
+  height: 2.5px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(195, 150, 55, 0.45) 8%, rgba(225, 180, 75, 0.8) 25%, rgba(240, 200, 100, 0.95) 50%, rgba(225, 180, 75, 0.8) 75%, rgba(195, 150, 55, 0.45) 92%, transparent);
 }
 .gp-titlebar {
   position: absolute;
-  top: -22px;
+  top: -24px;
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 2;
 }
-/* 顶部标题匾：倒梯形(上宽下窄)米金木匾 + 深棕描边 + 两端云纹 + 红字（参考竞品）。
-   形状放 ::before（clip-path 倒梯形 + drop-shadow 跟随斜边描边），云纹放 ::after，文字在最上层不受描边影响。 */
+/* 顶部标题匾：横向宽木匾，木纹渐变底 + 深棕描边 + 两端云纹 + 红字。 */
 .gp-titlebar .banner {
   position: relative;
-  min-width: 172px;
+  min-width: 210px;
   height: auto;
-  padding: 9px 58px 13px;
+  padding: 2px 0px 4px;
   background: none;
 }
 .gp-titlebar .banner::before {
@@ -1599,12 +1589,17 @@ button:disabled {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, #f9e7bd 0%, #eecb8c 40%, #dcb069 72%, #ca995a 100%);
-  /* 倒梯形四角各切一小刀→八边形，斜边过渡更平滑不生硬。 */
-  clip-path: polygon(9% 0, 91% 0, 89% 24%, 85% 100%, 15% 100%, 11% 24%);
-  /* 顶部高光 + 底部内阴影＝匾面凸起立体感。 */
-  box-shadow: inset 0 3px 0 rgba(255, 248, 225, 0.75), inset 0 -6px 8px rgba(150, 95, 35, 0.42);
-  filter: drop-shadow(2px 0 0 #9c6b2e) drop-shadow(-2px 0 0 #9c6b2e) drop-shadow(0 2px 0 #9c6b2e) drop-shadow(0 -2px 0 #9c6b2e);
+  background:
+    linear-gradient(180deg, rgba(255,248,225,0.4) 0%, transparent 20%, transparent 80%, rgba(120, 70, 15, 0.2) 100%),
+    linear-gradient(180deg, #ecc890 0%, #dcb070 25%, #cc9848 60%, #b87830 100%);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 248, 225, 0.6),
+    inset 0 -3px 6px rgba(120, 70, 15, 0.4),
+    0 0 0 2.5px #6a3812,
+    0 0 0 4px rgba(190, 140, 50, 0.35),
+    0 0 8px 1px rgba(200, 150, 60, 0.2),
+    0 2px 5px rgba(0, 0, 0, 0.3);
 }
 .gp-titlebar .banner::after {
   content: '';
@@ -1613,41 +1608,42 @@ button:disabled {
   z-index: -1;
   pointer-events: none;
   background-repeat: no-repeat;
-  background-position: 14px center, right 14px center;
-  /* 两端卷草纹（描边曲线＋端头螺旋卷）：左侧一枚，右侧镜像。 */
+  background-position: 6px center, right 6px center;
+  /* 两端小型螺旋云纹装饰。 */
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='18' fill='none' stroke='%23b07f2a' stroke-width='1.7' stroke-linecap='round'%3E%3Cpath d='M4 9 C4 5 8.5 4 10 7 C11 9 8.5 10.5 7.5 8.6'/%3E%3Cpath d='M10 7 C16 3.5 23 4.5 28 8.5 C30.5 10.5 34 9.5 34.5 6.5'/%3E%3Cpath d='M28 8.5 C26 12 30.5 14 32 11'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='18' fill='none' stroke='%23b07f2a' stroke-width='1.7' stroke-linecap='round'%3E%3Cg transform='translate(36,0) scale(-1,1)'%3E%3Cpath d='M4 9 C4 5 8.5 4 10 7 C11 9 8.5 10.5 7.5 8.6'/%3E%3Cpath d='M10 7 C16 3.5 23 4.5 28 8.5 C30.5 10.5 34 9.5 34.5 6.5'/%3E%3Cpath d='M28 8.5 C26 12 30.5 14 32 11'/%3E%3C/g%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='14' fill='none' stroke='%23906528' stroke-width='1.3' stroke-linecap='round' opacity='0.75'%3E%3Ccircle cx='5' cy='7' r='2.8'/%3E%3Cpath d='M7.5 7 C10 5.5 14 5 17 6.5 C19.5 7.5 22 7 23 5.5'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='14' fill='none' stroke='%23906528' stroke-width='1.3' stroke-linecap='round' opacity='0.75'%3E%3Cg transform='translate(24,0) scale(-1,1)'%3E%3Ccircle cx='5' cy='7' r='2.8'/%3E%3Cpath d='M7.5 7 C10 5.5 14 5 17 6.5 C19.5 7.5 22 7 23 5.5'/%3E%3C/g%3E%3C/svg%3E");
 }
 .gp-titlebar .banner-text {
-  font-size: 30px;
+  font-size: 25px;
   letter-spacing: 5px;
   background-image: none;
   -webkit-background-clip: border-box;
   background-clip: border-box;
-  -webkit-text-fill-color: #a2371a;
-  color: #a2371a;
+  -webkit-text-fill-color: #922a10;
+  color: #922a10;
   filter: none;
-  text-shadow: 0 1px 0 rgba(255, 240, 205, 0.6);
+  text-shadow: 0 1px 0 rgba(255, 240, 205, 0.5);
+  font-weight: 700;
 }
 .gp-close {
   position: absolute;
-  top: 50%;
-  right: -2px;
-  transform: translateY(-50%);
+  top: -10px;
+  right: -15px;
+  transform: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   padding: 0;
   border-radius: 50%;
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 700;
-  color: #8a3410;
-  background: radial-gradient(circle at 42% 34%, #ffbf6b, #ef8330 62%, #c25f14);
-  border: 3px solid #ffe6c2;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  color: #fff5e0;
+  background: radial-gradient(circle at 42% 34%, #ffc878, #f09030 55%, #d06018);
+  border: 2.5px solid #ffe8c8;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255,255,255,0.3);
   z-index: 3;
 }
 .gp-currency {
@@ -1655,7 +1651,7 @@ button:disabled {
   align-items: center;
   gap: 14px;
   width: 100%;
-  margin-top: 6px;
+  margin-top: 10px;
   padding: 0;
   background: none;
   border: none;
@@ -1668,29 +1664,13 @@ button:disabled {
   align-items: center;
   flex: 1;
   gap: 6px;
-  padding: 6px 12px 6px 34px;
-  font-weight: 700;
+  padding: 3px 12px 3px 34px;
   font-size: 17px;
   color: #5a3410;
   background: linear-gradient(180deg, #efd29a, #d8b061);
   border: 2px solid #9c6b2e;
   border-radius: 12px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -2px 4px rgba(120, 80, 30, 0.3);
-}
-/* 两个货币格之间的红宝石加号分隔。 */
-.gp-currency span + span::before {
-  content: '';
-  position: absolute;
-  left: -13px;
-  top: 50%;
-  transform: translateY(-50%) rotate(45deg);
-  width: 18px;
-  height: 18px;
-  background: linear-gradient(135deg, #ef6a4e, #c8341c);
-  border: 2px solid #f3b04a;
-  border-radius: 4px;
-  box-shadow: 0 0 0 2px #c98a3c, 0 1px 3px rgba(0, 0, 0, 0.35);
-  z-index: 2;
 }
 /* 货币图标固定在格内左侧圆形凹槽。 */
 .gp-currency img {
@@ -1708,8 +1688,21 @@ button:disabled {
   gap: 10px;
   width: 100%;
   min-height: 0;
+  margin-top: 10px;
   overflow-y: auto;
   overflow-x: hidden;
+}
+/* 左侧挂栏（商店分类灯笼）：绝对定位在面板左外侧，从顶部屋檐区域垂下。
+   作为面板直接子元素，不受 .gp-content 的 overflow 裁剪。 */
+.gp-sidebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  pointer-events: none; /* 容器不挡点击，子按钮单独开启 */
+}
+.gp-sidebar > * {
+  pointer-events: auto;
 }
 
 /* ===== 每日签到 ===== */
@@ -1857,4 +1850,88 @@ button:disabled {
 @keyframes toast-in {
   from { opacity: 0; transform: translate(-50%, -8px); }
   to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ===== 外观过期提示弹窗 ===== */
+.exp-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(20, 12, 4, 0.78);
+  animation: toast-in 0.2s ease;
+}
+.exp-panel {
+  width: 100%;
+  max-width: 320px;
+  padding: 22px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  background: linear-gradient(180deg, #fcf2da, #efe0bd);
+  border: 3px solid #2f8688;
+  border-radius: 18px;
+  box-shadow: inset 0 0 0 2px #6cb6b1, 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+.exp-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #8a2b2b;
+}
+.exp-desc {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b3f12;
+}
+.exp-list {
+  width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.exp-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: linear-gradient(180deg, #fff7e6, #f1e2c2);
+  border: 1.5px solid #c7a05a;
+  border-radius: 10px;
+}
+.exp-slot { font-size: 13px; color: #8a5a1c; }
+.exp-name { font-size: 15px; font-weight: 700; color: #5c360f; }
+.exp-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 4px;
+}
+.exp-btn {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.exp-btn.primary {
+  color: #fff5e0;
+  background: linear-gradient(180deg, #ffb05a, #ef7a28);
+  border-color: #ffe6c2;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+.exp-btn.secondary {
+  color: #5c360f;
+  background: linear-gradient(180deg, #f0e0bc, #ddc591);
+  border-color: #b8945a;
 }

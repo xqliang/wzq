@@ -184,7 +184,7 @@ export function BoardCanvas({
         drawEffect(ctx, effect, dustRef.current, cx, cy, elapsed, theme.accent)
         drawStone(ctx, last.x, last.y, board[last.y][last.x]!, 1, 1 + 0.45 * k * k, theme)
         // 最近一手静态标记：白子=描边黄点，黑子=靶心，清晰不刺眼（参考竞品）。
-        drawLastMark(ctx, cx, cy, board[last.y][last.x]!)
+        drawLastMark(ctx, cx, cy)
       }
       // 覆盖标记（提示光圈 / 预演步序）
       if (overlays) {
@@ -361,37 +361,17 @@ function drawUndoMark(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
 }
 
 // 最近一手静态标记：白子=描深边的黄色圆点；黑子=靶心（四向短刻线 + 中心点）。清晰而不刺眼。
-function drawLastMark(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: 'black' | 'white') {
+function drawLastMark(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
   ctx.save()
-  if (color === 'white') {
-    ctx.beginPath()
-    ctx.arc(cx, cy, 5, 0, PI2)
-    ctx.fillStyle = '#ffcf2e'
-    ctx.fill()
-    ctx.lineWidth = 1.6
-    ctx.strokeStyle = 'rgba(90,60,15,0.95)'
-    ctx.stroke()
-  } else {
-    const R = 8
-    ctx.strokeStyle = '#ffd24a'
-    ctx.lineWidth = 2
-    ctx.lineCap = 'round'
-    for (const [dx, dy] of [
-      [0, -1],
-      [0, 1],
-      [-1, 0],
-      [1, 0],
-    ]) {
-      ctx.beginPath()
-      ctx.moveTo(cx + dx * R * 0.5, cy + dy * R * 0.5)
-      ctx.lineTo(cx + dx * R, cy + dy * R)
-      ctx.stroke()
-    }
-    ctx.beginPath()
-    ctx.arc(cx, cy, 2.4, 0, PI2)
-    ctx.fillStyle = '#ffd24a'
-    ctx.fill()
-  }
+  // 最近一手标识：黑白子统一用一枚金色圆点（带深色描边），在黑/白棋子上都醒目，
+  // 不再用十字架（旧版黑子用十字，观感不统一）。
+  ctx.beginPath()
+  ctx.arc(cx, cy, 5, 0, PI2)
+  ctx.fillStyle = '#ffcf2e'
+  ctx.fill()
+  ctx.lineWidth = 1.6
+  ctx.strokeStyle = 'rgba(90,60,15,0.95)'
+  ctx.stroke()
   ctx.restore()
 }
 

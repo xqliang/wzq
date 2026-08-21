@@ -3,11 +3,55 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>古风五子棋</title>
+    <style>
+      /* 首屏加载占位：JS 包下载/解析期间展示暖底 + 转圈，避免白屏。
+         颜色与首页一致，React 接管（App 的 loading 态接力显示同位置标题）后自然衔接，无跳动。
+         纯 CSS、无图片依赖，开发与生产构建均可直接解析。 */
+      html, body { margin: 0; height: 100%; }
+      body {
+        background:
+          radial-gradient(120% 90% at 50% 18%, rgba(255, 244, 214, 0.55), rgba(214, 197, 160, 0.55)),
+          linear-gradient(180deg, #efe1c4, #ddc69d);
+        font-family: 'STKaiti', 'KaiTi', 'PingFang SC', system-ui, sans-serif;
+      }
+      #boot {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        box-sizing: border-box;
+      }
+      /* 五子棋标题占位块：与首页 .home-logo 同尺寸比例(780:330)，预留位置防止跳动；
+         加载态用浅色描边块占位（图片由 React 接管后渲染）。 */
+      #boot .boot-logo {
+        width: min(72vw, 296px);
+        aspect-ratio: 780 / 330;
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(255, 248, 225, 0.5), rgba(232, 200, 142, 0.35));
+        box-shadow: inset 0 0 0 1.5px rgba(138, 43, 43, 0.25);
+      }
+      #boot .boot-spin {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 3px solid rgba(138, 43, 43, 0.22);
+        border-top-color: #8a2b2b;
+        animation: boot-spin 0.8s linear infinite;
+      }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot">
+        <div class="boot-logo"></div>
+        <div class="boot-spin"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

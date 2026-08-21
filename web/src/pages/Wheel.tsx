@@ -75,11 +75,16 @@ export function Wheel() {
           className="wheel"
           style={{ transform: `rotate(${rot}deg)`, transition: busy ? 'transform 3s cubic-bezier(0.2,0.8,0.2,1)' : 'none' }}
         >
-          {st.prizes.map((p, i) => (
-            <div key={i} className="wheel-seg" style={{ transform: `rotate(${i * seg + seg / 2}deg)` }}>
-              <span className="wheel-label">{p.label}</span>
-            </div>
-          ))}
+          {st.prizes.map((p, i) => {
+            const a = ((i * seg + seg / 2) * Math.PI) / 180
+            const x = 50 + 33 * Math.sin(a)
+            const y = 50 - 33 * Math.cos(a)
+            return (
+              <span key={i} className="wheel-label" style={{ left: `${x}%`, top: `${y}%` }}>
+                {p.label}
+              </span>
+            )
+          })}
         </div>
         <div className="wheel-hub" />
       </div>

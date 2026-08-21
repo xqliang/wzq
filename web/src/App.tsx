@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { img } from './lib/asset'
 import { ensureGuest, shopExpired } from './net/rest'
 import type { User, ExpiredItem } from './net/rest'
 import { setSettings, startBgm } from './audio/audio'
@@ -58,7 +59,16 @@ export default function App() {
     window.addEventListener('pointerdown', start)
     return () => window.removeEventListener('pointerdown', start)
   }, [])
-  if (!user) return <div className="loading">加载中…</div>
+  if (!user)
+    // 加载态：与首页同位置预留标题占位 + 转圈，React 接管后填入真实数据，避免标题撑高跳动。
+    return (
+      <div className="home screen">
+        <div className="home-logo-box">
+          <img src={img('logo_title')} alt="" className="home-logo" />
+        </div>
+        <div className="app-loading">加载中…</div>
+      </div>
+    )
   return (
     <BrowserRouter>
       <Routes>

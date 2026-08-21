@@ -57,7 +57,10 @@ export function Home({ user }: { user: User }) {
 
   return (
     <div className="home screen">
-      <img src={img('logo_title')} alt="五子棋" className="home-logo" />
+      {/* 标题预留固定比例占位（780:330），图片加载完成后填入、不再撑高，避免页面跳动。 */}
+      <div className="home-logo-box">
+        <img src={img('logo_title')} alt="五子棋" className="home-logo" />
+      </div>
       <header className="profile">
         <Avatar src={img(`${u.avatar}`)} size={60} frame={u.equippedFrame || 'none'} />
         <div className="profile-meta">

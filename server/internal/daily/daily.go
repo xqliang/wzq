@@ -24,10 +24,10 @@ type Reward struct {
 	Label  string `json:"label"`
 }
 
-// checkinRewards 为 7 天签到奖励循环（对齐竞品：金币/特级棋盘/卷轴/大奖）。
+// checkinRewards 为 7 天签到奖励循环（对齐竞品：金币/特级棋盘(青蓝,最贵棋盘)/卷轴/大奖）。
 var checkinRewards = []Reward{
 	{Kind: "coins", Amount: 100, Label: "金币×100"},
-	{Kind: "item", ItemID: "jade", Amount: 1, Label: "特级棋盘"},
+	{Kind: "item", ItemID: "blue", Amount: 1, Label: "特级棋盘"},
 	{Kind: "scrolls", Amount: 10, Label: "卷轴×10"},
 	{Kind: "coins", Amount: 200, Label: "金币×200"},
 	{Kind: "scrolls", Amount: 20, Label: "卷轴×20"},
@@ -170,7 +170,8 @@ func grant(tx *sql.Tx, uid int64, kind string, amount int, itemID string) error 
 			return err
 		}
 		if n == 0 {
-			_, err := tx.Exec(`INSERT INTO user_item (uid, item_id) VALUES (?,?)`, uid, itemID)
+			// 授予皮肤时记录购买时间，使其获得完整的 7 天有效期（与购买一致）。
+			_, err := tx.Exec(`INSERT INTO user_item (uid, item_id, purchased_at) VALUES (?,?,?)`, uid, itemID, time.Now())
 			return err
 		}
 	}

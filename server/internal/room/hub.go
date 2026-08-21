@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/rand"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -284,5 +285,19 @@ func (r *Room) handle(uid int64, msg ClientMsg) {
 		}
 	case "resign":
 		r.finish(r.game.Resign(uid))
+	case "emote":
+		// 表情/快捷语：广播给房间内所有玩家（含发送者自己，便于双方头像下同步展示）。
+		// 限长截断（按 rune 计），避免恶意超长文本刷屏。
+		r.broadcast(ServerMsg{Type: "emote", UID: uid, Text: emoteText(msg.Text)})
 	}
+}
+
+// emoteText 规整表情/快捷语文本：去除首尾空白、限长（32 个字符）。
+func emoteText(s string) string {
+	s = strings.TrimSpace(s)
+	runes := []rune(s)
+	if len(runes) > 32 {
+		return string(runes[:32])
+	}
+	return string(runes)
 }

@@ -1935,3 +1935,159 @@ button:disabled {
   background: linear-gradient(180deg, #f0e0bc, #ddc591);
   border-color: #b8945a;
 }
+
+/* ===== 对战表情/快捷语 ===== */
+/* 头像外层容器：相对定位，承载头像上方的表情气泡。 */
+.player-avatar-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 我方头像可点（真人模式）：手型光标 + 轻微高亮暗示可交互。 */
+.player-avatar.clickable {
+  cursor: pointer;
+  border-radius: 50%;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+.player-avatar.clickable:hover {
+  filter: brightness(1.08);
+}
+.player-avatar.clickable:active {
+  transform: scale(0.94);
+}
+/* 表情气泡：浮在头像上方，带小尾巴指向头像；弹出后渐隐。默认居中（两侧都有余量时）。 */
+.emote-bubble {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 150px;
+  padding: 5px 11px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  color: #5c360f;
+  background: linear-gradient(180deg, #fff7e6, #f3e2bd);
+  border: 1.5px solid #c89a4e;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(60, 40, 10, 0.3);
+  animation: emote-pop 2.5s ease forwards;
+  pointer-events: none;
+  z-index: 7;
+}
+/* 气泡小尾巴（居中，默认指向正下方头像）。 */
+.emote-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #f3e2bd;
+}
+/* 左侧头像（我方）：气泡改为从头像左侧向右展开 + 尾巴贴左，避免溢出屏幕左缘。改用无水平位移的动画。 */
+.emote-bubble.emote-left {
+  left: -2px;
+  transform: none;
+  animation-name: emote-pop-side;
+}
+.emote-bubble.emote-left::after {
+  left: 16px;
+  transform: none;
+}
+/* 右侧头像（对手）：气泡从头像右侧向左展开 + 尾巴贴右，避免溢出屏幕右缘。改用无水平位移的动画。 */
+.emote-bubble.emote-right {
+  left: auto;
+  right: -2px;
+  transform: none;
+  animation-name: emote-pop-side;
+}
+.emote-bubble.emote-right::after {
+  left: auto;
+  right: 16px;
+  transform: none;
+}
+@keyframes emote-pop {
+  0% { opacity: 0; transform: translate(-50%, 6px) scale(0.85); }
+  15% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -4px); }
+}
+/* 侧边锚定气泡的动画：不做水平位移（气泡已靠左/右贴边），仅上下浮现 + 缩放。 */
+@keyframes emote-pop-side {
+  0% { opacity: 0; transform: translateY(6px) scale(0.85); }
+  15% { opacity: 1; transform: translateY(0) scale(1); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+
+/* 表情/快捷语面板：浮在我方头像下方，左侧对齐。 */
+.emote-pop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+}
+.emote-backdrop {
+  position: absolute;
+  inset: 0;
+}
+.emote-panel {
+  position: absolute;
+  top: 76px;
+  left: 12px;
+  width: min(72vw, 280px);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: linear-gradient(180deg, #fcf2da, #efe0bd);
+  border: 2.5px solid #2f8688;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 2px #6cb6b1, 0 10px 26px rgba(0, 0, 0, 0.45);
+  animation: emote-in 0.18s ease;
+}
+@keyframes emote-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.emote-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.emote-text {
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #5c360f;
+  background: linear-gradient(180deg, #fff7e6, #f1e2c2);
+  border: 1.5px solid #c7a05a;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: filter 0.12s ease, transform 0.08s ease;
+}
+.emote-text:hover { filter: brightness(1.05); }
+.emote-text:active { transform: scale(0.95); }
+.emote-divider {
+  height: 1px;
+  background: rgba(150, 110, 50, 0.25);
+}
+.emote-emojis {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.emote-emoji {
+  aspect-ratio: 1;
+  font-size: 22px;
+  line-height: 1;
+  background: linear-gradient(180deg, #fff7e6, #f1e2c2);
+  border: 1.5px solid #c7a05a;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: filter 0.12s ease, transform 0.08s ease;
+}
+.emote-emoji:hover { filter: brightness(1.05); }
+.emote-emoji:active { transform: scale(0.9); }

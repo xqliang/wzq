@@ -7,7 +7,7 @@ import { GameMenu } from '../components/GameMenu'
 import { useGame } from '../store/game'
 import { playSfx, startBgm } from '../audio/audio'
 import { reportAiResult, getCurrentUser, me, adBonus } from '../net/rest'
-import { connectRoom, sendMove, sendUndoReq, sendUndoReply, sendResign } from '../net/ws'
+import { connectRoom, sendMove, sendUndoReq, sendUndoReply, sendResign, sendEmote } from '../net/ws'
 import type { ServerMsg } from '../net/ws'
 import type { Color } from '../core/types'
 import { applyMove } from '../core/board'
@@ -19,6 +19,7 @@ import { Banner } from '../components/Banner'
 import { RankUpOverlay } from '../components/RankUpOverlay'
 import { rankLabel, rankGroup, rankThreshold } from '../theme/ranks'
 import { SettingsModal } from '../components/SettingsModal'
+import { EmotePicker } from '../components/EmotePicker'
 
 // 人机对战时 AI 的落子特效：每局开局从可见特效中随机挑一个（不含“无”），与玩家自己的设置相互独立。
 const AI_EFFECTS = ['ripple', 'dust', 'ink', 'star', 'flame', 'heart'] as const
@@ -77,6 +78,10 @@ export function Game() {
   const [adPlaying, setAdPlaying] = useState(false)
   const [doubled, setDoubled] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  // 对战表情/快捷语：openEmote 控制面板显隐；emote={uid,text} 表示某玩家刚发了一条（头像下飘字）。
+  const [openEmote, setOpenEmote] = useState(false)
+  const [emote, setEmote] = useState<{ uid: number; text: string } | null>(null)
+  const emoteTimer = useRef<number | undefined>(undefined)
   // 悔棋：undoPick=我方选择悔几步；undoAsk=对手请求待我审批；toast=飘动通知。
   const [undoPick, setUndoPick] = useState(false)
   const [undoAsk, setUndoAsk] = useState<{ from: number; steps: number } | null>(null)
@@ -262,6 +267,15 @@ export function Game() {
         finish(m.winner === myUid, m.reason)
         break
       }
+      case 'emote': {
+        // 对手（或自己）发来表情/快捷语：在发送者头像下展示 ~2.5s。
+        if (m.text) {
+          window.clearTimeout(emoteTimer.current)
+          setEmote({ uid: m.uid ?? myUid ?? 0, text: m.text })
+          emoteTimer.current = window.setTimeout(() => setEmote(null), 2500)
+        }
+        break
+      }
     }
   }
 
@@ -309,12 +323,12 @@ export function Game() {
 
   // 胜负音效由 settleAi/服务端 game_over 负责，这里不再用响应式 effect（避免残留 winner 触发跳转）。
 
-  // 人机模式：轮到我方且开局 3-2-1 已结束时才开启 30s 倒计时；AI 思考/开局动画期间不计时。
+  // 人机模式：双方都有 30s 思考时限——我方与 AI 回合都显示倒计时（AI 回合也计时，便于看到对手思考）。
   useEffect(() => {
     if (st.mode !== 'ai' || !started || !introDone) return
-    if (!g.winner && g.turn === g.myColor) setDeadline(Date.now() + 30000)
+    if (!g.winner) setDeadline(Date.now() + 30000) // 任意一方回合都开启倒计时
     else setDeadline(null)
-  }, [g.turn, g.winner, started, introDone, st.mode, g.myColor])
+  }, [g.turn, g.winner, started, introDone, st.mode])
 
   // 回合倒计时：每 250ms 计算剩余秒；≤5s 滴答提示；归零处理超时
   // （人机模式判我方负；真人模式由服务端裁决，客户端仅展示）。
@@ -327,7 +341,9 @@ export function Game() {
       if (s <= 0) {
         clearInterval(t)
         setDeadline(null)
-        if (st.mode === 'ai' && !useGame.getState().winner) {
+        // 仅我方回合超时才判负：AI 回合超时不处理（AI 总会落子，计时仅作展示）。
+        const cur = useGame.getState()
+        if (st.mode === 'ai' && cur.turn === cur.myColor && !cur.winner) {
           playSfx('timeout')
           finish(false, 'timeout') // 人机超时判负
         }
@@ -416,10 +432,18 @@ export function Game() {
       ? [{ x: hint.x, y: hint.y, color: '#f1c40f', label: '★' }]
       : undefined
 
+  const myUid = getCurrentUser()?.id
+  // 真人模式才允许点自己头像发表情/快捷语。
+  const isPvp = st.mode === 'pvp'
+  const sendEmoteMsg = (text: string) => {
+    if (wsRef.current) sendEmote(wsRef.current, text)
+  }
+
   return (
     <div className="game screen">
       <PlayerBar
         me={{
+          uid: myUid,
           nickname: '我',
           avatar: 'avatar_01',
           rankLabel: rankLabel(rankResult?.tier ?? preTierRef.current),
@@ -442,7 +466,12 @@ export function Game() {
               }
             : null
         }
+        myUid={myUid}
+        emote={emote}
+        onMeAvatarClick={isPvp ? () => setOpenEmote(true) : undefined}
       />
+      {/* 表情/快捷语面板：点自己头像弹出，浮在我方头像下方。仅真人模式。 */}
+      {openEmote && isPvp && <EmotePicker onPick={sendEmoteMsg} onClose={() => setOpenEmote(false)} />}
       <div className="board-stage">
         <BoardCanvas
           onConfirm={onConfirm}

@@ -15,6 +15,7 @@ export type ServerMsg = {
   agree?: boolean
   n?: number
   players?: number
+  text?: string // 表情/快捷语内容（在发送者头像下方展示）
   oppTier?: number // 开局下发的对手段位阶
   oppAvatar?: string // 对手头像
   oppFrame?: string // 对手头像框
@@ -41,3 +42,5 @@ export const sendUndoReq = (ws: WebSocket, steps: number) => ws.send(JSON.string
 export const sendUndoReply = (ws: WebSocket, agree: boolean) => ws.send(JSON.stringify({ type: 'undo_reply', agree }))
 // 认输。
 export const sendResign = (ws: WebSocket) => ws.send(JSON.stringify({ type: 'resign' }))
+// 发送表情/快捷语（预制文本或表情符号），对方实时收到并在我的头像下方展示。
+export const sendEmote = (ws: WebSocket, text: string) => ws.send(JSON.stringify({ type: 'emote', text }))

@@ -286,9 +286,14 @@ func (r *Room) handle(uid int64, msg ClientMsg) {
 	case "resign":
 		r.finish(r.game.Resign(uid))
 	case "emote":
-		// 表情/快捷语：广播给房间内所有玩家（含发送者自己，便于双方头像下同步展示）。
+		// 表情/快捷语：只转发给对手（不发给发送者自己，也不发给无关的其他人）。
 		// 限长截断（按 rune 计），避免恶意超长文本刷屏。
-		r.broadcast(ServerMsg{Type: "emote", UID: uid, Text: emoteText(msg.Text)})
+		m := ServerMsg{Type: "emote", UID: uid, Text: emoteText(msg.Text)}
+		for _, p := range r.players {
+			if p != uid {
+				r.sendTo(p, m)
+			}
+		}
 	}
 }
 

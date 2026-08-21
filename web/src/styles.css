@@ -1069,6 +1069,12 @@ button:disabled {
   text-shadow: 0 1px 0 #5a3410, 0 2px 3px rgba(0, 0, 0, 0.35);
   font-size: 17px;
   font-weight: 700;
+  line-height: 1;
+  /* flex 居中：去除默认内边距后，文字在两轴上真正居中（iOS 上不偏）。 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   box-shadow: 0 3px 0 #7c4a1e, var(--shadow);
 }
 /* 窄屏（iOS 手机等）圆形木牌按钮再缩小，保证与回合提示同行居中、不被挤换行。 */
@@ -1988,10 +1994,10 @@ button:disabled {
 .player-avatar.clickable:active {
   transform: scale(0.94);
 }
-/* 表情气泡：浮在头像上方，带小尾巴指向头像；弹出后渐隐。默认居中（两侧都有余量时）。 */
+/* 表情气泡：浮在头像下方（不贴顶，避免被屏幕顶部裁剪），带小尾巴指向上方头像；弹出后渐隐。 */
 .emote-bubble {
   position: absolute;
-  bottom: calc(100% + 6px);
+  top: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
   max-width: 150px;
@@ -2007,17 +2013,17 @@ button:disabled {
   box-shadow: 0 3px 8px rgba(60, 40, 10, 0.3);
   animation: emote-pop 2.5s ease forwards;
   pointer-events: none;
-  z-index: 7;
+  z-index: 20;
 }
-/* 气泡小尾巴（居中，默认指向正下方头像）。 */
+/* 气泡小尾巴（居中，指向上方头像）。 */
 .emote-bubble::after {
   content: '';
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
   border: 5px solid transparent;
-  border-top-color: #f3e2bd;
+  border-bottom-color: #f3e2bd;
 }
 /* 左侧头像（我方）：气泡改为从头像左侧向右展开 + 尾巴贴左，避免溢出屏幕左缘。改用无水平位移的动画。 */
 .emote-bubble.emote-left {
@@ -2042,14 +2048,14 @@ button:disabled {
   transform: none;
 }
 @keyframes emote-pop {
-  0% { opacity: 0; transform: translate(-50%, 6px) scale(0.85); }
+  0% { opacity: 0; transform: translate(-50%, -6px) scale(0.85); }
   15% { opacity: 1; transform: translate(-50%, 0) scale(1); }
   85% { opacity: 1; }
   100% { opacity: 0; transform: translate(-50%, -4px); }
 }
-/* 侧边锚定气泡的动画：不做水平位移（气泡已靠左/右贴边），仅上下浮现 + 缩放。 */
+/* 侧边锚定气泡的动画：不做水平位移（气泡已靠左/右贴边），仅上下浮现 + 缩放（从上方落入）。 */
 @keyframes emote-pop-side {
-  0% { opacity: 0; transform: translateY(6px) scale(0.85); }
+  0% { opacity: 0; transform: translateY(-6px) scale(0.85); }
   15% { opacity: 1; transform: translateY(0) scale(1); }
   85% { opacity: 1; }
   100% { opacity: 0; transform: translateY(-4px); }
@@ -2108,13 +2114,18 @@ button:disabled {
 }
 .emote-emojis {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  /* minmax(0,1fr) 让单元格可缩到内容最小宽以下，避免彩色 emoji 撑破面板右缘。 */
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
 }
 .emote-emoji {
   aspect-ratio: 1;
-  font-size: 22px;
+  min-width: 0;
+  font-size: 20px;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(180deg, #fff7e6, #f1e2c2);
   border: 1.5px solid #c7a05a;
   border-radius: 10px;

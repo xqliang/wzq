@@ -1790,8 +1790,11 @@ button:disabled {
   height: 100%;
   border-radius: 50%;
   border: 8px solid #3f97ad;
-  /* 交替深浅两色形成 8 个扇区、交界分明；已去掉外边缘阴影。 */
-  background: repeating-conic-gradient(from -22.5deg, #f7e6b4 0 45deg, #e6c472 45deg 90deg);
+  /* 第一层：径向分隔线（每 45° 一条、与扇区边界对齐），把圆形切成 8 个清晰三角扇区；
+     第二层：交替深浅两色填充各扇区。已去掉外边缘阴影。 */
+  background:
+    repeating-conic-gradient(from 21.95deg, rgba(160, 110, 40, 0.55) 0 1.1deg, transparent 1.1deg 45deg),
+    repeating-conic-gradient(from -22.5deg, #f7e6b4 0 45deg, #e6c472 45deg 90deg);
   box-shadow: inset 0 0 0 4px rgba(255, 248, 224, 0.7);
 }
 .wheel-seg {
@@ -1810,23 +1813,29 @@ button:disabled {
   height: 50%;
   display: flex;
   justify-content: center;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 100%; /* 底部中心＝轮盘中心，绕此旋转到扇区中心角 */
   pointer-events: none;
 }
-/* 文字落在辐条外侧（扇区中部）：深棕 + 浅色描边投影，在浅金扇区上清晰可读。
-   反向 rotate(-ang) 让文字始终正向朝外（不随辐条倒置），但随轮盘整体公转。 */
+/* 文字落在辐条中部（≈三角扇区的形心一带）：窄宽(42px)自动折两行「金币× / 80」，
+   上宽下窄自然呈三角排列，水平居中。反向 rotate(-ang)（JS 内联）让文字始终正向朝外可读，
+   但随轮盘整体公转、不重排。深棕字 + 浅色描边投影，在扇区底色上清晰可读。 */
 .wheel-label-text {
   position: absolute;
-  top: 40px;
-  font-size: 13px;
+  /* 文字块中心落在扇区形心一带（≈2/3 半径，三角扇区最宽处）：该处弧长最充裕、
+     8 个标签互不重叠。窄宽(36px)＋小字(10px)自动折两行「金币× / 80」，
+     上宽下窄自然呈三角排列、水平居中。随轮盘整体公转、不重排。 */
+  top: 30%;
+  width: 36px;
+  text-align: center;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1.1;
+  letter-spacing: 0;
+  white-space: normal;
   color: #5c360f;
   text-shadow:
-    0 1px 0 rgba(255, 248, 225, 0.85),
-    0 -1px 0 rgba(255, 248, 225, 0.6),
-    0 0 4px rgba(255, 248, 225, 0.5);
+    0 1px 0 rgba(255, 248, 225, 0.9),
+    0 0 3px rgba(255, 248, 225, 0.55);
 }
 .wheel-hub {
   position: absolute;

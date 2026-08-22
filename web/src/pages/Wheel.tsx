@@ -77,13 +77,15 @@ export function Wheel() {
         >
           {/* 各扇区奖品标签：一次排好、随轮盘整体旋转。每个标签是一条从中心向外的
              「辐条」（定位在顶部中心、绕轮盘中心旋转到扇区中心角），文字落在辐条
-             外侧＝扇区中部。文字反向旋转保持正向朝外，但随轮盘一起公转、不重排。 */}
+             外侧＝扇区中部。文字反向旋转保持正向朝外（ upright 可读），
+             但随轮盘一起公转、不重排。 */}
           {st.prizes.map((p, i) => {
             const ang = i * seg + seg / 2 // 扇区中心角（顶部为 0°，顺时针）
+            const [unit, num] = p.label.split('×') // "金币×50" → ["金币", "50"]
             return (
               <span key={i} className="wheel-label" style={{ transform: `rotate(${ang}deg)` }}>
                 <span className="wheel-label-text" style={{ transform: `rotate(${-ang}deg)` }}>
-                  {p.label}
+                  {unit}×<br />{num ?? ''}
                 </span>
               </span>
             )

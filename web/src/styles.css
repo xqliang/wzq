@@ -2038,15 +2038,35 @@ button:disabled {
   pointer-events: none;
   z-index: 20;
 }
-/* 气泡小尾巴（居中，指向上方头像）。 */
+/* 气泡小尾巴：做出「从气泡边框凸出的缺口」效果。
+   ::after 外圈棕色三角（只比内圈大 1px，描边与气泡 1.5px 边框同色 #c89a4e）：
+   其底边特意下探盖住气泡顶边框（top: 2px 让三角与边框重叠），打断边框线，
+   使棕色描边像环绕着尾巴根部，三角形像是从棕色描边内凸出。
+   ::before 内圈米色三角（填充色）叠在上层，比外圈小 1px，留出 1px 棕色描边。
+   z-index 高于头像，确保尾巴不被头像盖住。 */
 .emote-bubble::after {
   content: '';
   position: absolute;
-  bottom: 100%;
+  top: -14px; /* 底边落在顶边框线(y=0)，三角向上凸出 7px，盖住该处边框 → 缺口凸出 */
   left: 50%;
   transform: translateX(-50%);
-  border: 5px solid transparent;
-  border-bottom-color: #f3e2bd;
+  width: 0;
+  height: 0;
+  border: 7px solid transparent;
+  border-bottom-color: #c89a4e; /* 外圈棕色描边（1px 环比内圈大） */
+  z-index: 2;
+}
+.emote-bubble::before {
+  content: '';
+  position: absolute;
+  top: -11px; /* 比外圈低 1px，米色完全含在棕色内：上下左右各露 1px 棕色描边 */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  border-bottom-color: #f7e9ce; /* 内圈米色填充 */
+  z-index: 3;
 }
 /* 左侧头像（我方）：气泡改为从头像左侧向右展开 + 尾巴贴左，避免溢出屏幕左缘。改用无水平位移的动画。 */
 .emote-bubble.emote-left {
@@ -2055,7 +2075,12 @@ button:disabled {
   animation-name: emote-pop-side;
 }
 .emote-bubble.emote-left::after {
-  left: 16px;
+  left: 14px;
+  transform: none;
+}
+.emote-bubble.emote-left::before {
+  left: 15.5px;
+  top: -11px;
   transform: none;
 }
 /* 右侧头像（对手）：气泡从头像右侧向左展开 + 尾巴贴右，避免溢出屏幕右缘。改用无水平位移的动画。 */
@@ -2067,7 +2092,13 @@ button:disabled {
 }
 .emote-bubble.emote-right::after {
   left: auto;
-  right: 16px;
+  right: 14px;
+  transform: none;
+}
+.emote-bubble.emote-right::before {
+  left: auto;
+  right: 15.5px;
+  top: -11px;
   transform: none;
 }
 @keyframes emote-pop {

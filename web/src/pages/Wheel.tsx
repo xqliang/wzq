@@ -75,13 +75,16 @@ export function Wheel() {
           className="wheel"
           style={{ transform: `rotate(${rot}deg)`, transition: busy ? 'transform 3s cubic-bezier(0.2,0.8,0.2,1)' : 'none' }}
         >
+          {/* 各扇区奖品标签：一次排好、随轮盘整体旋转。每个标签是一条从中心向外的
+             「辐条」（定位在顶部中心、绕轮盘中心旋转到扇区中心角），文字落在辐条
+             外侧＝扇区中部。文字反向旋转保持正向朝外，但随轮盘一起公转、不重排。 */}
           {st.prizes.map((p, i) => {
-            const a = ((i * seg + seg / 2) * Math.PI) / 180
-            const x = 50 + 33 * Math.sin(a)
-            const y = 50 - 33 * Math.cos(a)
+            const ang = i * seg + seg / 2 // 扇区中心角（顶部为 0°，顺时针）
             return (
-              <span key={i} className="wheel-label" style={{ left: `${x}%`, top: `${y}%` }}>
-                {p.label}
+              <span key={i} className="wheel-label" style={{ transform: `rotate(${ang}deg)` }}>
+                <span className="wheel-label-text" style={{ transform: `rotate(${-ang}deg)` }}>
+                  {p.label}
+                </span>
               </span>
             )
           })}

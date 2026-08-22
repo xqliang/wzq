@@ -977,6 +977,8 @@ button:disabled {
 }
 
 .player-bar {
+  position: relative;
+  z-index: 5; /* 高于棋盘(board-stage, auto)，确保头像下飘出的表情气泡不被棋盘遮挡。 */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1798,21 +1800,33 @@ button:disabled {
   display: flex;
   justify-content: center;
 }
-/* 奖品文字：绝对定位（left/top 由 JS 按角度算出），居中锚定；深棕 + 浅色字描边投影，
-   在浅金扇区上清晰可读，落在扇区外侧三角区。随轮盘一起旋转。 */
+/* 奖品标签：从轮盘中心向外的「辐条」（零宽、高 50%），绕底部中心(=轮盘中心)
+   旋转到扇区中心角。随轮盘一起旋转，文字相对扇区固定、不重排。 */
 .wheel-label {
   position: absolute;
-  transform: translate(-50%, -50%);
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 50%;
+  display: flex;
+  justify-content: center;
+  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+/* 文字落在辐条外侧（扇区中部）：深棕 + 浅色描边投影，在浅金扇区上清晰可读。
+   反向 rotate(-ang) 让文字始终正向朝外（不随辐条倒置），但随轮盘整体公转。 */
+.wheel-label-text {
+  position: absolute;
+  top: 40px;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.5px;
+  white-space: nowrap;
   color: #5c360f;
   text-shadow:
     0 1px 0 rgba(255, 248, 225, 0.85),
     0 -1px 0 rgba(255, 248, 225, 0.6),
     0 0 4px rgba(255, 248, 225, 0.5);
-  white-space: nowrap;
-  pointer-events: none;
 }
 .wheel-hub {
   position: absolute;
